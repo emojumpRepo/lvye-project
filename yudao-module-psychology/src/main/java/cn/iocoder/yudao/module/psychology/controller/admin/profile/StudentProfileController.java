@@ -1,0 +1,119 @@
+package cn.iocoder.yudao.module.psychology.controller.admin.profile;
+
+import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
+import cn.iocoder.yudao.framework.operatelog.core.annotations.OperateLog;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import java.io.IOException;
+import java.util.List;
+
+import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.framework.operatelog.core.enums.OperateTypeEnum.*;
+
+@Tag(name = "管理后台 - 学生档案")
+@RestController
+@RequestMapping("/admin-api/psychology/student-profile")
+@Validated
+public class StudentProfileController {
+
+    @Resource
+    private StudentProfileService studentProfileService;
+
+    @PostMapping("/create")
+    @Operation(summary = "创建学生档案")
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:create')")
+    public CommonResult<Long> createStudentProfile(@Valid @RequestBody StudentProfileSaveReqVO createReqVO) {
+        return success(studentProfileService.createStudentProfile(createReqVO));
+    }
+
+    @PutMapping("/update")
+    @Operation(summary = "更新学生档案")
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
+    public CommonResult<Boolean> updateStudentProfile(@Valid @RequestBody StudentProfileSaveReqVO updateReqVO) {
+        studentProfileService.updateStudentProfile(updateReqVO);
+        return success(true);
+    }
+
+    @DeleteMapping("/delete")
+    @Operation(summary = "删除学生档案")
+    @Parameter(name = "id", description = "编号", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:delete')")
+    public CommonResult<Boolean> deleteStudentProfile(@RequestParam("id") Long id) {
+        studentProfileService.deleteStudentProfile(id);
+        return success(true);
+    }
+
+    @GetMapping("/get")
+    @Operation(summary = "获得学生档案")
+    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    public CommonResult<StudentProfileRespVO> getStudentProfile(@RequestParam("id") Long id) {
+        StudentProfileDO studentProfile = studentProfileService.getStudentProfile(id);
+        return success(BeanUtils.toBean(studentProfile, StudentProfileRespVO.class));
+    }
+
+    @GetMapping("/page")
+    @Operation(summary = "获得学生档案分页")
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    public CommonResult<PageResult<StudentProfileRespVO>> getStudentProfilePage(@Valid StudentProfilePageReqVO pageReqVO) {
+        PageResult<StudentProfileDO> pageResult = studentProfileService.getStudentProfilePage(pageReqVO);
+        return success(BeanUtils.toBean(pageResult, StudentProfileRespVO.class));
+    }
+
+    @GetMapping("/export-excel")
+    @Operation(summary = "导出学生档案 Excel")
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:export')")
+    @OperateLog(type = EXPORT)
+    public void exportStudentProfileExcel(@Valid StudentProfilePageReqVO pageReqVO,
+                                          HttpServletResponse response) throws IOException {
+        pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
+        List<StudentProfileDO> list = studentProfileService.getStudentProfilePage(pageReqVO).getList();
+        // 导出 Excel
+        ExcelUtils.write(response, "学生档案.xls", "数据", StudentProfileRespVO.class,
+                BeanUtils.toBean(list, StudentProfileRespVO.class));
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "批量导入学生档案")
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:import')")
+    @OperateLog(type = IMPORT)
+    public CommonResult<StudentProfileImportRespVO> importStudentProfile(@Valid @RequestBody StudentProfileImportReqVO importReqVO) {
+        return success(studentProfileService.importStudentProfile(importReqVO));
+    }
+
+    @PutMapping("/graduate/{id}")
+    @Operation(summary = "设置学生毕业状态")
+    @Parameter(name = "id", description = "编号", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:graduate')")
+    public CommonResult<Boolean> graduateStudent(@PathVariable("id") Long id) {
+        studentProfileService.graduateStudent(id);
+        return success(true);
+    }
+
+    @PutMapping("/psychological-status/{id}")
+    @Operation(summary = "更新学生心理状态")
+    @Parameter(name = "id", description = "编号", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
+    public CommonResult<Boolean> updatePsychologicalStatus(@PathVariable("id") Long id,
+                                                           @RequestParam("psychologicalStatus") Integer psychologicalStatus,
+                                                           @RequestParam("riskLevel") Integer riskLevel) {
+        studentProfileService.updatePsychologicalStatus(id, psychologicalStatus, riskLevel);
+        return success(true);
+    }
+
+}
