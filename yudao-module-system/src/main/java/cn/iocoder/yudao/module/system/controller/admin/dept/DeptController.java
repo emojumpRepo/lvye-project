@@ -81,4 +81,12 @@ public class DeptController {
         return success(BeanUtils.toBean(dept, DeptRespVO.class));
     }
 
+    @GetMapping("/childList")
+    @Operation(summary = "获取部门列表")
+    @PreAuthorize("@ss.hasPermission('system:dept:query')")
+    public CommonResult<List<DeptRespVO>> getDeptChildList(Long parentDeptId) {
+        List<DeptDO> list = deptService.getChildDeptList(parentDeptId);
+        return success(BeanUtils.toBean(list, DeptRespVO.class));
+    }
+
 }

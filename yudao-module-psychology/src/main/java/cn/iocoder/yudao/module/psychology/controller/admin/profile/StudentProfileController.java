@@ -5,25 +5,23 @@ import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
-import cn.iocoder.yudao.framework.operatelog.core.annotations.OperateLog;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import java.io.IOException;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
-import static cn.iocoder.yudao.framework.operatelog.core.enums.OperateTypeEnum.*;
 
 @Tag(name = "管理后台 - 学生档案")
 @RestController
@@ -78,7 +76,6 @@ public class StudentProfileController {
     @GetMapping("/export-excel")
     @Operation(summary = "导出学生档案 Excel")
     @PreAuthorize("@ss.hasPermission('psychology:student-profile:export')")
-    @OperateLog(type = EXPORT)
     public void exportStudentProfileExcel(@Valid StudentProfilePageReqVO pageReqVO,
                                           HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
@@ -91,7 +88,6 @@ public class StudentProfileController {
     @PostMapping("/import")
     @Operation(summary = "批量导入学生档案")
     @PreAuthorize("@ss.hasPermission('psychology:student-profile:import')")
-    @OperateLog(type = IMPORT)
     public CommonResult<StudentProfileImportRespVO> importStudentProfile(@Valid @RequestBody StudentProfileImportReqVO importReqVO) {
         return success(studentProfileService.importStudentProfile(importReqVO));
     }

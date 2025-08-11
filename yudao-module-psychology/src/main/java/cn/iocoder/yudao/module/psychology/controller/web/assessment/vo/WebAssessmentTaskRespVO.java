@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.psychology.controller.app.assessment.vo;
+package cn.iocoder.yudao.module.psychology.controller.web.assessment.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

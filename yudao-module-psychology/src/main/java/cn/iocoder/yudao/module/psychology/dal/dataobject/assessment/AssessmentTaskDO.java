@@ -11,39 +11,50 @@ import java.time.LocalDateTime;
 /**
  * 测评任务 DO
  */
-@TableName(value = "psy_assessment_task", autoResultMap = true)
-@KeySequence("psy_assessment_task_seq")
+@TableName(value = "lvye_assessment_task", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class AssessmentTaskDO extends TenantBaseDO {
 
-    /** 主键 */
+    /**
+     * 主键
+     */
     @TableId
     private Long id;
 
-    /** 任务编号（唯一） */
+    /**
+     * 任务编号（唯一）
+     */
     private String taskNo;
 
-    /** 任务名称 */
+    /**
+     * 任务名称
+     */
     private String name;
 
-    /** 量表编号，固定问卷 A/B */
+    /**
+     * 量表编号，固定问卷 A/B
+     */
     private String scaleCode;
 
-    /** 目标对象（字典：target_audience） */
+    /**
+     *目标对象（字典：target_audience）
+     */
     private Integer targetAudience;
 
-    /** 状态（枚举：AssessmentTaskStatusEnum） */
+    /**
+     * 状态（枚举：AssessmentTaskStatusEnum）
+     */
     private Integer status;
 
-    /** 发布人管理员编号 */
+    /**
+     * 发布人管理员编号
+     */
     private Long publishUserId;
 
-    /** 截止时间 */
+    /**
+     * 截止时间
+     */
     private LocalDateTime deadline;
 
 }

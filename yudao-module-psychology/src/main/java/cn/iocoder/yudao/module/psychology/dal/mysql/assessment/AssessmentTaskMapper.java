@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskPageReqVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
@@ -25,6 +26,11 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
 
     default AssessmentTaskDO selectByTaskNo(String taskNo) {
         return selectOne(AssessmentTaskDO::getTaskNo, taskNo);
+    }
+
+    default int updateStatusByTaskNo(AssessmentTaskDO updateObj) {
+        return update(new LambdaUpdateWrapper<AssessmentTaskDO>()
+                .eq(AssessmentTaskDO::getTaskNo, updateObj.getTaskNo()).eq(AssessmentTaskDO::getStatus, updateObj.getStatus()));
     }
 
 }

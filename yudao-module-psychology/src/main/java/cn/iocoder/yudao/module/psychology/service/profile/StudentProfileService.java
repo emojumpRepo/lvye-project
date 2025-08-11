@@ -3,8 +3,8 @@ package cn.iocoder.yudao.module.psychology.service.profile;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import jakarta.validation.Valid;
 
-import javax.validation.Valid;
 
 /**
  * 学生档案 Service 接口
