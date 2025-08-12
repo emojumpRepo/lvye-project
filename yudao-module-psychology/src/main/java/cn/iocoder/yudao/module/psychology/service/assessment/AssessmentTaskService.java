@@ -5,8 +5,6 @@ import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import jakarta.validation.Valid;
 
-import java.util.List;
-
 /**
  * 测评任务 Service 接口
  */
@@ -48,7 +46,7 @@ public interface AssessmentTaskService {
      * @param pageReqVO 分页查询
      * @return 测评任务分页
      */
-    PageResult<AssessmentTaskDO> getAssessmentTaskPage(AssessmentTaskPageReqVO pageReqVO);
+    PageResult<AssessmentTaskVO> getAssessmentTaskPage(AssessmentTaskPageReqVO pageReqVO);
 
     /**
      * 发布测评任务
@@ -67,18 +65,16 @@ public interface AssessmentTaskService {
     /**
      * 添加参与者
      *
-     * @param taskNo 任务编号
-     * @param userIds 用户列表
+     * @param reqVO 任务编号
      */
-    void addParticipants(String taskNo, List<Long> userIds);
+    void addParticipants(AssessmentTaskParticipantsReqVO reqVO);
 
     /**
      * 移除参与者
      *
-     * @param taskNo 任务编号
-     * @param userIds 用户列表
+     * @param reqVO 任务编号
      */
-    void removeParticipants(String taskNo, List<Long> userIds);
+    void removeParticipants(AssessmentTaskParticipantsReqVO reqVO);
 
     /**
      * 获取任务统计信息

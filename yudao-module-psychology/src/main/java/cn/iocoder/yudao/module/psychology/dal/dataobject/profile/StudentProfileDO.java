@@ -9,51 +9,60 @@ import lombok.*;
 /**
  * 学生档案 DO
  */
-@TableName(value = "psy_student_profile", autoResultMap = true)
-@KeySequence("psy_student_profile_seq")
+@TableName(value = "lvye_student_profile")
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class StudentProfileDO extends TenantBaseDO {
 
-    /** 主键 */
+    /**
+     * 主键
+     */
     @TableId
     private Long id;
 
-    /** 关联会员用户编号（学生），关联 member_user 的 id */
-    private Long memberUserId;
+    /**
+     * 用户编号（学生），关联 system_users 的 id
+     */
+    private Long userId;
 
-    /** 学号 */
+    /**
+     * 学号 用户编号（学生），关联 system_users 的 username
+     */
     private String studentNo;
 
-    /** 姓名 */
+    /**
+     * 姓名 关联 system_users 的 kickname
+     */
     private String name;
 
-    /** 性别（字典：system_user_sex） */
-    private Integer sex;
-
-    /** 手机号 */
-    private String mobile;
-
-    /** 年级部门编号，关联 system_dept.id */
+    /**
+     * 年级部门编号，关联 system_dept.id
+     */
     private Long gradeDeptId;
 
-    /** 班级部门编号，关联 system_dept.id */
+    /**
+     * 班级部门编号，关联 system_dept.id
+     */
     private Long classDeptId;
 
-    /** 毕业状态（字典：graduation_status） */
+    /**
+     * 毕业状态（字典：graduation_status）
+     */
     private Integer graduationStatus;
 
-    /** 心理状态（字典：psychological_status） */
+    /**
+     * 心理状态
+     */
     private Integer psychologicalStatus;
 
-    /** 风险等级（字典：risk_level） */
+    /**
+     * 风险等级
+     */
     private Integer riskLevel;
 
-    /** 备注 */
+    /**
+     * 备注
+     */
     private String remark;
 }
 

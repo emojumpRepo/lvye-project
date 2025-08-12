@@ -1,14 +1,24 @@
 package cn.iocoder.yudao.module.psychology.service.profile;
 
+import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
-import cn.iocoder.yudao.module.psychology.convert.profile.StudentProfileConvert;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileRecordDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileRecordMapper;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
+import cn.iocoder.yudao.module.system.service.permission.PermissionService;
+import cn.iocoder.yudao.module.system.service.user.AdminUserService;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 
@@ -32,47 +44,107 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     private StudentProfileMapper studentProfileMapper;
 
     @Resource
+    private StudentProfileRecordMapper studentProfileRecordMapper;
+
+    @Resource
+    private AdminUserMapper adminUserMapper;
+
+    @Resource
+    private PermissionService permissionService;
+
+    @Resource
+    private AdminUserService adminUserService;
+
+    @Resource
     private AdminUserApi adminUserApi;
 
     @Resource
     private DeptApi deptApi;
 
+    @Resource
+    private RoleMapper roleMapper;
+
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Long createStudentProfile(@Valid StudentProfileSaveReqVO createReqVO) {
         // 校验学号唯一性
         validateStudentNoUnique(null, createReqVO.getStudentNo());
-
-        // 插入
+        //插入用户表
+        AdminUserDO adminUserDO = new AdminUserDO();
+        adminUserDO.setUsername(createReqVO.getStudentNo());
+        adminUserDO.setDeptId(createReqVO.getClassDeptId());
+        adminUserDO.setNickname(createReqVO.getName());
+        adminUserDO.setSex(createReqVO.getSex());
+        adminUserDO.setMobile(createReqVO.getMobile());
+        adminUserDO.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        adminUserMapper.insert(adminUserDO);
+        // 插入学生档案表
         StudentProfileDO studentProfile = BeanUtils.toBean(createReqVO, StudentProfileDO.class);
+        studentProfile.setUserId(adminUserDO.getId());
         studentProfileMapper.insert(studentProfile);
-        
+        //设置学生角色
+        Set<Long> roles = new HashSet<>();
+        roles.add(roleMapper.selectOne(RoleDO::getName, "学生").getId());
+        permissionService.assignUserRole(adminUserDO.getId(), roles);
+        //插入学生历史记录表
+        StudentProfileRecordDO studentProfileRecordDO = new StudentProfileRecordDO();
+        studentProfileRecordDO.setStudentNo(createReqVO.getStudentNo());
+//        studentProfileRecordDO.setStudyYear()
+        studentProfileRecordDO.setGradeDeptId(createReqVO.getGradeDeptId());
+        studentProfileRecordDO.setClassDeptId(createReqVO.getClassDeptId());
+        studentProfileRecordMapper.insert(studentProfileRecordDO);
         // 返回
         return studentProfile.getId();
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateStudentProfile(@Valid StudentProfileSaveReqVO updateReqVO) {
         // 校验存在
-        validateStudentProfileExists(updateReqVO.getId());
+        StudentProfileDO studentProfileDO = validateStudentProfileExists(updateReqVO.getId());
         // 校验学号唯一性
         validateStudentNoUnique(updateReqVO.getId(), updateReqVO.getStudentNo());
-
-        // 更新
+        // 更新学生表
         StudentProfileDO updateObj = BeanUtils.toBean(updateReqVO, StudentProfileDO.class);
         studentProfileMapper.updateById(updateObj);
+        //插入用户表
+        AdminUserDO adminUserDO = new AdminUserDO();
+        adminUserDO.setId(studentProfileDO.getUserId());
+        adminUserDO.setUsername(updateReqVO.getStudentNo());
+        adminUserDO.setDeptId(updateReqVO.getClassDeptId());
+        adminUserDO.setNickname(updateReqVO.getName());
+        adminUserDO.setSex(updateReqVO.getSex());
+        adminUserDO.setMobile(updateReqVO.getMobile());
+        adminUserDO.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        adminUserMapper.updateById(adminUserDO);
+        //如果有更换年级或者班级，就要插入记录表
+        if (!studentProfileDO.getGradeDeptId().equals(updateReqVO.getGradeDeptId()) || !studentProfileDO.getClassDeptId().equals(updateReqVO.getClassDeptId())){
+            StudentProfileRecordDO studentProfileRecordDO = new StudentProfileRecordDO();
+            studentProfileRecordDO.setStudentNo(updateReqVO.getStudentNo());
+            //        studentProfileRecordDO.setStudyYear()
+            studentProfileRecordDO.setGradeDeptId(updateReqVO.getGradeDeptId());
+            studentProfileRecordDO.setClassDeptId(updateReqVO.getClassDeptId());
+            studentProfileRecordMapper.insert(studentProfileRecordDO);
+        }
     }
 
     @Override
     public void deleteStudentProfile(Long id) {
         // 校验存在
-        validateStudentProfileExists(id);
-        // 删除
+        StudentProfileDO studentProfileDO = validateStudentProfileExists(id);
+        // 删除学生档案
         studentProfileMapper.deleteById(id);
+        //删除用户档案
+        adminUserService.deleteUser(studentProfileDO.getUserId());
+        //删除其他内容....
     }
 
-    private void validateStudentProfileExists(Long id) {
-        if (studentProfileMapper.selectById(id) == null) {
+    private StudentProfileDO validateStudentProfileExists(Long id) {
+        StudentProfileDO profileDO = studentProfileMapper.selectById(id);
+        if (profileDO == null) {
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
+        } else {
+            return profileDO;
         }
     }
 
@@ -91,13 +163,15 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     }
 
     @Override
-    public StudentProfileDO getStudentProfile(Long id) {
-        return studentProfileMapper.selectById(id);
+    public StudentProfileDO getStudentProfile(Long studentProfileId) {
+        return studentProfileMapper.selectById(studentProfileId);
     }
 
     @Override
-    public PageResult<StudentProfileDO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO) {
-        return studentProfileMapper.selectPage(pageReqVO);
+    public PageResult<StudentProfileVO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO) {
+        IPage<StudentProfileVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
+        studentProfileMapper.selectPageList(page, pageReqVO);
+        return new PageResult<>(page.getRecords(), page.getTotal());
     }
 
     @Override

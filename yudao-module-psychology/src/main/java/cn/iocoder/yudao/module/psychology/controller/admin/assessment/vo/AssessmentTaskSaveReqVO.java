@@ -27,7 +27,4 @@ public class AssessmentTaskSaveReqVO extends AssessmentTaskBaseVO {
     @Valid
     private List<Long> userIdList;
 
-    @Schema(description = "参与人员标识", example = "1")
-    private int parentFlag;
-
 }
