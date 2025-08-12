@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
@@ -68,6 +69,7 @@ public class StudentProfileController {
     @GetMapping("/page")
     @Operation(summary = "获得学生档案分页")
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    @DataPermission(enable = false)
     public CommonResult<PageResult<StudentProfileVO>> getStudentProfilePage(@Valid StudentProfilePageReqVO pageReqVO) {
         PageResult<StudentProfileVO> pageResult = studentProfileService.getStudentProfilePage(pageReqVO);
         return success(BeanUtils.toBean(pageResult, StudentProfileVO.class));
