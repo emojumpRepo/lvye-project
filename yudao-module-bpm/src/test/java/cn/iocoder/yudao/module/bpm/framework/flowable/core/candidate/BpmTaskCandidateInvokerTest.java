@@ -1,6 +1,5 @@
 package cn.iocoder.yudao.module.bpm.framework.flowable.core.candidate;
 
-import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
@@ -65,7 +64,7 @@ public class BpmTaskCandidateInvokerTest extends BaseMockitoUnitTest {
     public void setUp() {
         userStrategy = new BpmTaskCandidateUserStrategy(); // 创建 strategy 实例
         when(emptyStrategy.getStrategy()).thenReturn(BpmTaskCandidateStrategyEnum.ASSIGN_EMPTY);
-        strategyList = ListUtil.of(userStrategy, emptyStrategy); // 创建 strategyList
+        strategyList = List.of(userStrategy, emptyStrategy); // 创建 strategyList
         taskCandidateInvoker = new BpmTaskCandidateInvoker(strategyList, adminUserApi);
     }
 

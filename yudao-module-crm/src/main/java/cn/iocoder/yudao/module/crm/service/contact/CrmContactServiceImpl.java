@@ -24,12 +24,12 @@ import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import com.mzt.logapi.context.LogRecordContext;
 import com.mzt.logapi.service.impl.DiffParseFunction;
 import com.mzt.logapi.starter.annotation.LogRecord;
+import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -159,10 +159,10 @@ public class CrmContactServiceImpl implements CrmContactService {
         // 2. 删除联系人
         contactMapper.deleteById(id);
 
-        // 4.1 删除商机关联
-        contactBusinessService.deleteContactBusinessByContactId(id);
-        // 4.2 删除数据权限
+        // 4.1 删除数据权限
         permissionService.deletePermission(CrmBizTypeEnum.CRM_CONTACT.getType(), id);
+        // 4.2 删除商机关联
+        contactBusinessService.deleteContactBusinessByContactId(id);
 
         // 记录操作日志上下文
         LogRecordContext.putVariable("contactName", contact.getName());
