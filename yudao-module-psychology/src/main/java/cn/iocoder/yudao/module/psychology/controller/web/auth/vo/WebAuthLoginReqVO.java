@@ -1,9 +1,9 @@
 package cn.iocoder.yudao.module.psychology.controller.web.auth.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
 
 @Schema(description = "学生家长端 - 登录 Request VO")
 @Data

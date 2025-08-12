@@ -1,0 +1,15 @@
+package cn.iocoder.yudao.module.psychology.dal.mysql.assessment;
+
+import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptTaskDO;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * @Author: MinGoo
+ * @CreateTime: 2025-08-11
+ * @Description:部门测评关联任务数据库组件
+ * @Version: 1.0
+ */
+@Mapper
+public interface AssessmentDeptTaskMapper extends BaseMapperX<AssessmentDeptTaskDO> {
+}

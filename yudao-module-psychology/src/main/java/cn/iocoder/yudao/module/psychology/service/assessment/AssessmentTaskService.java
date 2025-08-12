@@ -3,8 +3,8 @@ package cn.iocoder.yudao.module.psychology.service.assessment;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
+import jakarta.validation.Valid;
 
-import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -30,17 +30,17 @@ public interface AssessmentTaskService {
     /**
      * 删除测评任务
      *
-     * @param id 编号
+     * @param taskNo 编号
      */
-    void deleteAssessmentTask(Long id);
+    void deleteAssessmentTask(String taskNo);
 
     /**
      * 获得测评任务
      *
-     * @param id 编号
+     * @param taskNo 编号
      * @return 测评任务
      */
-    AssessmentTaskDO getAssessmentTask(Long id);
+    AssessmentTaskDO getAssessmentTask(String taskNo);
 
     /**
      * 获得测评任务分页
@@ -53,32 +53,32 @@ public interface AssessmentTaskService {
     /**
      * 发布测评任务
      *
-     * @param id 任务编号
+     * @param taskNo 任务编号
      */
-    void publishAssessmentTask(Long id);
+    void publishAssessmentTask(String taskNo);
 
     /**
      * 关闭测评任务
      *
-     * @param id 任务编号
+     * @param taskNo 任务编号
      */
-    void closeAssessmentTask(Long id);
+    void closeAssessmentTask(String taskNo);
 
     /**
      * 添加参与者
      *
-     * @param taskId 任务编号
-     * @param studentProfileIds 学生档案编号列表
+     * @param taskNo 任务编号
+     * @param userIds 用户列表
      */
-    void addParticipants(Long taskId, List<Long> studentProfileIds);
+    void addParticipants(String taskNo, List<Long> userIds);
 
     /**
      * 移除参与者
      *
-     * @param taskId 任务编号
-     * @param studentProfileIds 学生档案编号列表
+     * @param taskNo 任务编号
+     * @param userIds 用户列表
      */
-    void removeParticipants(Long taskId, List<Long> studentProfileIds);
+    void removeParticipants(String taskNo, List<Long> userIds);
 
     /**
      * 获取任务统计信息

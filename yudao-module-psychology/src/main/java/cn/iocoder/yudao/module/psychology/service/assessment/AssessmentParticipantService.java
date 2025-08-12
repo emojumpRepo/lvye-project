@@ -10,11 +10,11 @@ public interface AssessmentParticipantService {
     /**
      * 开始参与测评
      *
-     * @param taskId 任务编号
+     * @param taskNo 任务编号
      * @param memberUserId 会员用户编号
      * @param isParent 是否家长参与
      */
-    void startAssessment(Long taskId, Long memberUserId, Boolean isParent);
+    void startAssessment(String taskNo, Long memberUserId, Boolean isParent);
 
     /**
      * 提交测评答案

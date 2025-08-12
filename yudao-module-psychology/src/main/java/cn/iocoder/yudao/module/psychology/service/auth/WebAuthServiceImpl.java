@@ -4,11 +4,10 @@ import cn.iocoder.yudao.module.psychology.controller.web.auth.vo.WebAuthLoginReq
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-
-import javax.annotation.Resource;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 

@@ -9,12 +9,12 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentAnswerM
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
 import java.time.LocalDateTime;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -41,9 +41,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void startAssessment(Long taskId, Long memberUserId, Boolean isParent) {
+    public void startAssessment(String taskNo, Long memberUserId, Boolean isParent) {
         // 校验任务存在
-        if (assessmentTaskService.getAssessmentTask(taskId) == null) {
+        if (assessmentTaskService.getAssessmentTask(taskNo) == null) {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
         }
 
@@ -54,19 +54,19 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         }
 
         // 检查是否已经参与
-        AssessmentParticipantDO existingParticipant = participantMapper.selectByTaskIdAndStudentId(taskId, studentProfile.getId());
-        if (existingParticipant != null) {
-            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_PARTICIPANT_EXISTS);
-        }
-
-        // 创建参与记录
-        AssessmentParticipantDO participant = new AssessmentParticipantDO();
-        participant.setTaskId(taskId);
-        participant.setStudentProfileId(studentProfile.getId());
-        participant.setIsParent(isParent);
-        participant.setCompletionStatus(ParticipantCompletionStatusEnum.IN_PROGRESS.getStatus());
-        participant.setStartTime(LocalDateTime.now());
-        participantMapper.insert(participant);
+//        AssessmentParticipantDO existingParticipant = participantMapper.selectByTaskIdAndStudentId(taskNo, studentProfile.getId());
+//        if (existingParticipant != null) {
+//            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_PARTICIPANT_EXISTS);
+//        }
+//
+//        // 创建参与记录
+//        AssessmentParticipantDO participant = new AssessmentParticipantDO();
+//        participant.setTaskId(taskNo);
+//        participant.setStudentProfileId(studentProfile.getId());
+//        participant.setIsParent(isParent);
+//        participant.setCompletionStatus(ParticipantCompletionStatusEnum.IN_PROGRESS.getStatus());
+//        participant.setStartTime(LocalDateTime.now());
+//        participantMapper.insert(participant);
     }
 
     @Override

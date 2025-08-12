@@ -1,10 +1,10 @@
 package cn.iocoder.yudao.module.psychology.controller.admin.profile.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 @Schema(description = "管理后台 - 学生档案导入 Request VO")

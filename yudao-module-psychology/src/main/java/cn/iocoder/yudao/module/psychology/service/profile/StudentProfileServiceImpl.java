@@ -9,13 +9,13 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
-import javax.validation.Valid;
 import java.util.Objects;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
