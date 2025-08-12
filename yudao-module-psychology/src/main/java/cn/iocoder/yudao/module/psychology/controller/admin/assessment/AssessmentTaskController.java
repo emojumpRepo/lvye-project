@@ -61,7 +61,7 @@ public class AssessmentTaskController {
 
     @PostMapping("/delete")
     @Operation(summary = "删除测评任务")
-    @Parameter(name = "id", description = "编号", required = true)
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:delete')")
     public CommonResult<Boolean> deleteAssessmentTask(@RequestParam("taskNo") String taskNo) {
         assessmentTaskService.deleteAssessmentTask(taskNo);
@@ -70,7 +70,7 @@ public class AssessmentTaskController {
 
     @GetMapping("/get")
     @Operation(summary = "获得测评任务")
-    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:query')")
     public CommonResult<AssessmentTaskRespVO> getAssessmentTask(@RequestParam("taskNo") String taskNo) {
         AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTask(taskNo);
@@ -80,9 +80,9 @@ public class AssessmentTaskController {
     @GetMapping("/page")
     @Operation(summary = "获得测评任务分页")
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:query')")
-    public CommonResult<PageResult<AssessmentTaskRespVO>> getAssessmentTaskPage(@Valid AssessmentTaskPageReqVO pageReqVO) {
-        PageResult<AssessmentTaskDO> pageResult = assessmentTaskService.getAssessmentTaskPage(pageReqVO);
-        return success(BeanUtils.toBean(pageResult, AssessmentTaskRespVO.class));
+    public CommonResult<PageResult<AssessmentTaskVO>> getAssessmentTaskPage(@Valid AssessmentTaskPageReqVO pageReqVO) {
+        PageResult<AssessmentTaskVO> pageResult = assessmentTaskService.getAssessmentTaskPage(pageReqVO);
+        return success(BeanUtils.toBean(pageResult, AssessmentTaskVO.class));
     }
 
     @GetMapping("/export-excel")
@@ -91,24 +91,24 @@ public class AssessmentTaskController {
     public void exportAssessmentTaskExcel(@Valid AssessmentTaskPageReqVO pageReqVO,
                                           HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
-        List<AssessmentTaskDO> list = assessmentTaskService.getAssessmentTaskPage(pageReqVO).getList();
+        List<AssessmentTaskVO> list = assessmentTaskService.getAssessmentTaskPage(pageReqVO).getList();
         ExcelUtils.write(response, "测评任务.xls", "数据", AssessmentTaskRespVO.class,
                 BeanUtils.toBean(list, AssessmentTaskRespVO.class));
     }
 
-    @PutMapping("/publish")
+    @PostMapping("/publish")
     @Operation(summary = "发布测评任务")
-    @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:publish')")
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
+//    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:publish')")
     public CommonResult<Boolean> publishAssessmentTask(@RequestParam("taskNo") String taskNo) {
         assessmentTaskService.publishAssessmentTask(taskNo);
         return success(true);
     }
 
-    @PutMapping("/close")
+    @PostMapping("/close")
     @Operation(summary = "关闭测评任务")
-    @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:close')")
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
+//    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:close')")
     public CommonResult<Boolean> closeAssessmentTask(@RequestParam("taskNo") String taskNo) {
         assessmentTaskService.closeAssessmentTask(taskNo);
         return success(true);
@@ -116,21 +116,17 @@ public class AssessmentTaskController {
 
     @PostMapping("/add-participants")
     @Operation(summary = "添加参与者")
-    @Parameter(name = "id", description = "任务编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:manage-participants')")
-    public CommonResult<Boolean> addParticipants(@RequestParam("taskNo") String taskNo,
-                                                 @RequestBody List<Long> userIds) {
-        assessmentTaskService.addParticipants(taskNo, userIds);
+    public CommonResult<Boolean> addParticipants(@RequestBody AssessmentTaskParticipantsReqVO reqVO) {
+        assessmentTaskService.addParticipants(reqVO);
         return success(true);
     }
 
-    @DeleteMapping("/remove-participants/{id}")
+    @PostMapping("/remove-participants")
     @Operation(summary = "移除参与者")
-    @Parameter(name = "id", description = "任务编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:manage-participants')")
-    public CommonResult<Boolean> removeParticipants(@RequestParam("taskNo") String taskNo,
-                                                    @RequestBody List<Long> userIds) {
-        assessmentTaskService.removeParticipants(taskNo, userIds);
+    public CommonResult<Boolean> removeParticipants(@RequestBody AssessmentTaskParticipantsReqVO reqVO) {
+        assessmentTaskService.removeParticipants(reqVO);
         return success(true);
     }
 

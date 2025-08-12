@@ -36,10 +36,10 @@ public interface StudentProfileService {
     /**
      * 获得学生档案
      *
-     * @param id 编号
+     * @param studentProfileId 学生档案ID
      * @return 学生档案
      */
-    StudentProfileDO getStudentProfile(Long id);
+    StudentProfileDO getStudentProfile(Long studentProfileId);
 
     /**
      * 获得学生档案分页
@@ -47,7 +47,7 @@ public interface StudentProfileService {
      * @param pageReqVO 分页查询
      * @return 学生档案分页
      */
-    PageResult<StudentProfileDO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO);
+    PageResult<StudentProfileVO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO);
 
     /**
      * 根据学号获取学生档案
@@ -58,7 +58,7 @@ public interface StudentProfileService {
     StudentProfileDO getStudentProfileByNo(String studentNo);
 
     /**
-     * 根据会员用户编号获取学生档案
+     * 根据学号获取学生档案
      *
      * @param memberUserId 会员用户编号
      * @return 学生档案

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper">
+
+    <select id="selectPageList"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskVO" >
+        SELECT a.*,b.nickname AS publishUser FROM lvye_assessment_task a
+        LEFT JOIN system_users b ON a.publish_user_id = b.id
+        <where>
+             1 = 1
+            <if test="pageReqVO.taskNo != null and pageReqVO.taskNo !=''">
+                AND a.task_no = #{pageReqVO.taskNo}
+            </if>
+            <if test="pageReqVO.name != null and pageReqVO.name !=''">
+                AND a.name = #{pageReqVO.name}
+            </if>
+            <if test="pageReqVO.scaleCode != null and pageReqVO.scaleCode !=''">
+                AND a.scale_code LIKE CONCAT('%',#{pageReqVO.scaleCode},'%')
+            </if>
+            <if test="pageReqVO.targetAudience != null">
+                AND a.target_audience = #{pageReqVO.targetAudience}
+            </if>
+            <if test="pageReqVO.status != null">
+                AND a.status = #{pageReqVO.status}
+            </if>
+            <if test="pageReqVO.publishUserId != null">
+                AND a.publish_user_id = #{pageReqVO.publishUserId}
+            </if>
+            ORDER BY id DESC
+        </where>
+    </select>
+
+</mapper>

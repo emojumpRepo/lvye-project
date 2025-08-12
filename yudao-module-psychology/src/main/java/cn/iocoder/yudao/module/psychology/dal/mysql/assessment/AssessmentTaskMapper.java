@@ -4,9 +4,14 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskPageReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 @Mapper
 public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
@@ -30,8 +35,11 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
 
     default int updateStatusByTaskNo(AssessmentTaskDO updateObj) {
         return update(new LambdaUpdateWrapper<AssessmentTaskDO>()
-                .eq(AssessmentTaskDO::getTaskNo, updateObj.getTaskNo()).eq(AssessmentTaskDO::getStatus, updateObj.getStatus()));
+                .eq(AssessmentTaskDO::getTaskNo, updateObj.getTaskNo()).set(AssessmentTaskDO::getStatus, updateObj.getStatus()));
     }
+
+    IPage<AssessmentTaskVO> selectPageList(IPage<AssessmentTaskVO> page, @Param("pageReqVO") AssessmentTaskPageReqVO pageReqVO);
+
 
 }
 

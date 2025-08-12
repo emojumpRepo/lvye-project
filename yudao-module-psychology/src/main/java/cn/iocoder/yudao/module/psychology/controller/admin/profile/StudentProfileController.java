@@ -25,7 +25,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - 学生档案")
 @RestController
-@RequestMapping("/admin-api/psychology/student-profile")
+@RequestMapping("/psychology/student-profile")
 @Validated
 public class StudentProfileController {
 
@@ -34,23 +34,23 @@ public class StudentProfileController {
 
     @PostMapping("/create")
     @Operation(summary = "创建学生档案")
-    @PreAuthorize("@ss.hasPermission('psychology:student-profile:create')")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:create')")
     public CommonResult<Long> createStudentProfile(@Valid @RequestBody StudentProfileSaveReqVO createReqVO) {
         return success(studentProfileService.createStudentProfile(createReqVO));
     }
 
-    @PutMapping("/update")
+    @PostMapping("/update")
     @Operation(summary = "更新学生档案")
-    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
     public CommonResult<Boolean> updateStudentProfile(@Valid @RequestBody StudentProfileSaveReqVO updateReqVO) {
         studentProfileService.updateStudentProfile(updateReqVO);
         return success(true);
     }
 
-    @DeleteMapping("/delete")
+    @PostMapping("/delete")
     @Operation(summary = "删除学生档案")
     @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('psychology:student-profile:delete')")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:delete')")
     public CommonResult<Boolean> deleteStudentProfile(@RequestParam("id") Long id) {
         studentProfileService.deleteStudentProfile(id);
         return success(true);
@@ -59,18 +59,18 @@ public class StudentProfileController {
     @GetMapping("/get")
     @Operation(summary = "获得学生档案")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
-    public CommonResult<StudentProfileRespVO> getStudentProfile(@RequestParam("id") Long id) {
-        StudentProfileDO studentProfile = studentProfileService.getStudentProfile(id);
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    public CommonResult<StudentProfileRespVO> getStudentProfile(@RequestParam("studentProfileId") Long studentProfileId) {
+        StudentProfileDO studentProfile = studentProfileService.getStudentProfile(studentProfileId);
         return success(BeanUtils.toBean(studentProfile, StudentProfileRespVO.class));
     }
 
     @GetMapping("/page")
     @Operation(summary = "获得学生档案分页")
-    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
-    public CommonResult<PageResult<StudentProfileRespVO>> getStudentProfilePage(@Valid StudentProfilePageReqVO pageReqVO) {
-        PageResult<StudentProfileDO> pageResult = studentProfileService.getStudentProfilePage(pageReqVO);
-        return success(BeanUtils.toBean(pageResult, StudentProfileRespVO.class));
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    public CommonResult<PageResult<StudentProfileVO>> getStudentProfilePage(@Valid StudentProfilePageReqVO pageReqVO) {
+        PageResult<StudentProfileVO> pageResult = studentProfileService.getStudentProfilePage(pageReqVO);
+        return success(BeanUtils.toBean(pageResult, StudentProfileVO.class));
     }
 
     @GetMapping("/export-excel")
@@ -79,7 +79,7 @@ public class StudentProfileController {
     public void exportStudentProfileExcel(@Valid StudentProfilePageReqVO pageReqVO,
                                           HttpServletResponse response) throws IOException {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
-        List<StudentProfileDO> list = studentProfileService.getStudentProfilePage(pageReqVO).getList();
+        List<StudentProfileVO> list = studentProfileService.getStudentProfilePage(pageReqVO).getList();
         // 导出 Excel
         ExcelUtils.write(response, "学生档案.xls", "数据", StudentProfileRespVO.class,
                 BeanUtils.toBean(list, StudentProfileRespVO.class));
@@ -95,7 +95,7 @@ public class StudentProfileController {
     @PutMapping("/graduate/{id}")
     @Operation(summary = "设置学生毕业状态")
     @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('psychology:student-profile:graduate')")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:graduate')")
     public CommonResult<Boolean> graduateStudent(@PathVariable("id") Long id) {
         studentProfileService.graduateStudent(id);
         return success(true);
@@ -104,7 +104,7 @@ public class StudentProfileController {
     @PutMapping("/psychological-status/{id}")
     @Operation(summary = "更新学生心理状态")
     @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
     public CommonResult<Boolean> updatePsychologicalStatus(@PathVariable("id") Long id,
                                                            @RequestParam("psychologicalStatus") Integer psychologicalStatus,
                                                            @RequestParam("riskLevel") Integer riskLevel) {

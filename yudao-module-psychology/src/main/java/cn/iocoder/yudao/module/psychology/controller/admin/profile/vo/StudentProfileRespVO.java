@@ -20,4 +20,11 @@ public class StudentProfileRespVO extends StudentProfileBaseVO {
     @Schema(description = "更新时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime updateTime;
 
+    @Schema(description = "年级", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String gradeName;
+
+    @Schema(description = "班级", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String className;
+
+
 }

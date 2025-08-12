@@ -7,6 +7,7 @@ import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND;
 
@@ -28,15 +29,18 @@ public class AssessmentTaskBaseVO {
     @NotBlank(message = "量表编号不能为空")
     private String scaleCode;
 
-    @Schema(description = "目标对象", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "目标对象 1-学生，2-家长", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "目标对象不能为空")
     private Integer targetAudience;
 
     @Schema(description = "发布人管理员编号", example = "1")
     private Long publishUserId;
 
+    @Schema(description = "发布人管理员", example = "张三")
+    private String publishUser;
+
     @Schema(description = "截止时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
-    private LocalDateTime deadline;
+    private Date deadline;
 
 }

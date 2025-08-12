@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.psychology.dal.mysql.assessment;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptTaskDO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -12,4 +13,10 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface AssessmentDeptTaskMapper extends BaseMapperX<AssessmentDeptTaskDO> {
+
+    default void deleteByTaskNo(String taskNo) {
+        delete(new LambdaQueryWrapperX<AssessmentDeptTaskDO>()
+                .eq(AssessmentDeptTaskDO::getTaskNo, taskNo));
+    }
+
 }

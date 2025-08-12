@@ -3,14 +3,21 @@ package cn.iocoder.yudao.module.psychology.controller.admin.profile.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+import java.time.LocalDateTime;
 
 /**
- * 学生档案 Base VO，提供给添加、修改、详细的子 VO 使用
- * 如果子 VO 存在差异的字段，请不要添加到这里，影响 Swagger 文档生成
+ * @Author: MinGoo
+ * @CreateTime: 2025-08-13
+ * @Description:学生档案信息
+ * @Version: 1.0
  */
 @Data
-public class StudentProfileBaseVO {
+@ToString(callSuper = true)
+public class StudentProfileVO {
 
     @Schema(description = "用户编号", example = "123")
     private Long userId;
@@ -49,4 +56,18 @@ public class StudentProfileBaseVO {
     @Schema(description = "备注", example = "这是一个备注")
     private String remark;
 
+    @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
+    private Long id;
+
+    @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
+    private LocalDateTime createTime;
+
+    @Schema(description = "更新时间", requiredMode = Schema.RequiredMode.REQUIRED)
+    private LocalDateTime updateTime;
+
+    @Schema(description = "年级")
+    private String gradeName;
+
+    @Schema(description = "班级")
+    private String className;
 }
