@@ -35,6 +35,7 @@ public class StudentProfileController {
 
     @PostMapping("/create")
     @Operation(summary = "创建学生档案")
+    @DataPermission(enable = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:create')")
     public CommonResult<Long> createStudentProfile(@Valid @RequestBody StudentProfileSaveReqVO createReqVO) {
         return success(studentProfileService.createStudentProfile(createReqVO));
@@ -43,27 +44,30 @@ public class StudentProfileController {
     @PostMapping("/update")
     @Operation(summary = "更新学生档案")
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
+    @DataPermission(enable = false)
     public CommonResult<Boolean> updateStudentProfile(@Valid @RequestBody StudentProfileSaveReqVO updateReqVO) {
         studentProfileService.updateStudentProfile(updateReqVO);
         return success(true);
     }
 
-    @PostMapping("/delete")
+    @DeleteMapping("/delete/{studentProfileId}")
     @Operation(summary = "删除学生档案")
-    @Parameter(name = "id", description = "编号", required = true)
+    @Parameter(name = "studentProfileId", description = "学生编号", required = true)
+    @DataPermission(enable = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:delete')")
-    public CommonResult<Boolean> deleteStudentProfile(@RequestParam("id") Long id) {
-        studentProfileService.deleteStudentProfile(id);
+    public CommonResult<Boolean> deleteStudentProfile(@PathVariable("studentProfileId") Long studentProfileId) {
+        studentProfileService.deleteStudentProfile(studentProfileId);
         return success(true);
     }
 
-    @GetMapping("/get")
+    @GetMapping("/get/{studentProfileId}")
     @Operation(summary = "获得学生档案")
-    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+    @Parameter(name = "studentProfileId", description = "学生编号", required = true, example = "1024")
+    @DataPermission(enable = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
-    public CommonResult<StudentProfileRespVO> getStudentProfile(@RequestParam("studentProfileId") Long studentProfileId) {
-        StudentProfileDO studentProfile = studentProfileService.getStudentProfile(studentProfileId);
-        return success(BeanUtils.toBean(studentProfile, StudentProfileRespVO.class));
+    public CommonResult<StudentProfileVO> getStudentProfile(@PathVariable("studentProfileId") Long studentProfileId) {
+        StudentProfileVO studentProfile = studentProfileService.getStudentProfile(studentProfileId);
+        return success(BeanUtils.toBean(studentProfile, StudentProfileVO.class));
     }
 
     @GetMapping("/page")
@@ -94,23 +98,24 @@ public class StudentProfileController {
         return success(studentProfileService.importStudentProfile(importReqVO));
     }
 
-    @PutMapping("/graduate/{id}")
+    @PutMapping("/graduate/{studentProfileId}")
     @Operation(summary = "设置学生毕业状态")
     @Parameter(name = "id", description = "编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:graduate')")
-    public CommonResult<Boolean> graduateStudent(@PathVariable("id") Long id) {
-        studentProfileService.graduateStudent(id);
+    public CommonResult<Boolean> graduateStudent(@PathVariable("studentProfileId") Long studentProfileId) {
+        studentProfileService.graduateStudent(studentProfileId);
         return success(true);
     }
 
-    @PutMapping("/psychological-status/{id}")
+    @PutMapping("/psychological-status/{studentProfileId}")
     @Operation(summary = "更新学生心理状态")
     @Parameter(name = "id", description = "编号", required = true)
+    @DataPermission(enable = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
-    public CommonResult<Boolean> updatePsychologicalStatus(@PathVariable("id") Long id,
+    public CommonResult<Boolean> updatePsychologicalStatus(@PathVariable("studentProfileId") Long studentProfileId,
                                                            @RequestParam("psychologicalStatus") Integer psychologicalStatus,
                                                            @RequestParam("riskLevel") Integer riskLevel) {
-        studentProfileService.updatePsychologicalStatus(id, psychologicalStatus, riskLevel);
+        studentProfileService.updatePsychologicalStatus(studentProfileId, psychologicalStatus, riskLevel);
         return success(true);
     }
 

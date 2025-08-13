@@ -4,7 +4,12 @@
 
     <select id="selectPageList"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskVO" >
-        SELECT a.*,b.nickname AS publishUser FROM lvye_assessment_task a
+        SELECT
+        a.*,
+        b.nickname AS publishUser,
+        (select count(*) from lvye_assessment_user_task c where a.task_no = c.task_no and status = 2 and c.deleted = 0) as finish_num,
+        (select count(*) from lvye_assessment_user_task c where a.task_no = c.task_no and c.deleted = 0) as total_num
+        FROM lvye_assessment_task a
         LEFT JOIN system_users b ON a.publish_user_id = b.id
         <where>
              1 = 1

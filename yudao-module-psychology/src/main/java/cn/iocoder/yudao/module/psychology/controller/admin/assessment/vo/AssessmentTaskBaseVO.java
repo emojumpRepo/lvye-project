@@ -23,7 +23,7 @@ public class AssessmentTaskBaseVO {
 
     @Schema(description = "任务名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "2024年春季心理测评")
     @NotBlank(message = "任务名称不能为空")
-    private String name;
+    private String taskName;
 
     @Schema(description = "量表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "A")
     @NotBlank(message = "量表编号不能为空")
@@ -38,6 +38,10 @@ public class AssessmentTaskBaseVO {
 
     @Schema(description = "发布人管理员", example = "张三")
     private String publishUser;
+
+    @Schema(description = "开始时间")
+    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
+    private Date startline;
 
     @Schema(description = "截止时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)

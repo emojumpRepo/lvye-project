@@ -25,4 +25,16 @@ public class AssessmentTaskRespVO extends AssessmentTaskBaseVO {
     @Schema(description = "更新时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime updateTime;
 
+    /**
+     * 完成人数
+     */
+    @Schema(description = "完成人数")
+    private Integer finishNum;
+
+    /**
+     * 总人数
+     */
+    @Schema(description = "总人数")
+    private Integer totalNum;
+
 }

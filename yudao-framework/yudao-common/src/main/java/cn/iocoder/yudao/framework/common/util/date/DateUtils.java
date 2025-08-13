@@ -3,6 +3,7 @@ package cn.iocoder.yudao.framework.common.util.date;
 import cn.hutool.core.date.LocalDateTimeUtil;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -145,5 +146,12 @@ public class DateUtils {
     public static boolean isYesterday(LocalDateTime date) {
         return LocalDateTimeUtil.isSameDay(date, LocalDateTime.now().minusDays(1));
     }
+
+    // 获取当前时间的字符串表示
+    public static String getNowDatetimeStr() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        return LocalDateTime.now().format(formatter);
+    }
+
 
 }

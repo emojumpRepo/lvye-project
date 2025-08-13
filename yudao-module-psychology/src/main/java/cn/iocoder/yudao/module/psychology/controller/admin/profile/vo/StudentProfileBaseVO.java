@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.validator.constraints.Length;
 
 /**
  * 学生档案 Base VO，提供给添加、修改、详细的子 VO 使用
@@ -17,16 +18,20 @@ public class StudentProfileBaseVO {
 
     @Schema(description = "学号", requiredMode = Schema.RequiredMode.REQUIRED, example = "2024001")
     @NotBlank(message = "学号不能为空")
+    @Length(max = 60, message = "学号不能超过 60")
     private String studentNo;
 
     @Schema(description = "姓名", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
     @NotBlank(message = "姓名不能为空")
+    @Length(max = 120, message = "姓名不能超过 120")
     private String name;
 
     @Schema(description = "性别", example = "1")
+    @Length(max = 1, message = "性别不能超过 1")
     private Integer sex;
 
     @Schema(description = "手机号", example = "13800138000")
+    @Length(max = 11, message = "手机号不能超过11")
     private String mobile;
 
     @Schema(description = "年级部门编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
@@ -38,12 +43,15 @@ public class StudentProfileBaseVO {
     private Long classDeptId;
 
     @Schema(description = "毕业状态", example = "0")
+    @Length(max = 1, message = "毕业状态不能超过 1")
     private Integer graduationStatus;
 
     @Schema(description = "心理状态", example = "1")
+    @Length(max = 1, message = "心理状态不能超过 1")
     private Integer psychologicalStatus;
 
     @Schema(description = "风险等级", example = "1")
+    @Length(max = 1, message = "风险等级不能超过 1")
     private Integer riskLevel;
 
     @Schema(description = "备注", example = "这是一个备注")

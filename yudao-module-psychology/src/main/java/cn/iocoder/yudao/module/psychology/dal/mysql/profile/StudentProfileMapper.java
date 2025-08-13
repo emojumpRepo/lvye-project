@@ -22,7 +22,6 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
                 .eqIfPresent(StudentProfileDO::getGraduationStatus, reqVO.getGraduationStatus())
                 .eqIfPresent(StudentProfileDO::getPsychologicalStatus, reqVO.getPsychologicalStatus())
                 .eqIfPresent(StudentProfileDO::getRiskLevel, reqVO.getRiskLevel())
-                .betweenIfPresent(StudentProfileDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(StudentProfileDO::getId));
     }
 
@@ -35,6 +34,8 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
     }
 
     IPage<StudentProfileVO> selectPageList(IPage<StudentProfileVO> page, @Param("pageReqVO") StudentProfilePageReqVO pageReqVO);
+
+    StudentProfileVO selectInfoById(Long studentProfileId);
 
 }
 

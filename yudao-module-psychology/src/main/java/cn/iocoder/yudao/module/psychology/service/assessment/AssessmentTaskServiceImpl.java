@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.date.DateUtils;
+import cn.iocoder.yudao.framework.common.util.number.NumberUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
@@ -19,6 +21,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
@@ -67,9 +70,11 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Transactional(rollbackFor = Exception.class)
     public Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO) {
         // 校验任务编号唯一性
-        validateTaskNoUnique(null, createReqVO.getTaskNo());
+        validateTaskNameUnique(null, createReqVO.getTaskName());
         // 插入测评信息
+        createReqVO.setTaskNo("TASK_" + DateUtils.getNowDatetimeStr() + "_" + NumberUtils.randomNumber());
         AssessmentTaskDO assessmentTask = BeanUtils.toBean(createReqVO, AssessmentTaskDO.class);
+        //生成任务编号
         assessmentTask.setStatus(AssessmentTaskStatusEnum.NOT_STARTED.getStatus());
         assessmentTask.setPublishUserId(SecurityFrameworkUtils.getLoginUserId());
         assessmentTaskMapper.insert(assessmentTask);
@@ -133,6 +138,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteAssessmentTask(String taskNo) {
         // 校验存在
         AssessmentTaskDO assessmentTaskDO = getAssessmentTaskByNo(taskNo);
@@ -141,7 +147,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             assessmentTaskMapper.deleteById(assessmentTaskDO.getId());
             // 删除相关参与者
             userTaskMapper.deleteByTaskNo(taskNo);
-            // 删除相关参与者
+            // 删除相关年级/班级你
             deptTaskMapper.deleteByTaskNo(taskNo);
         } else {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
@@ -154,17 +160,32 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         }
     }
 
-    private void validateTaskNoUnique(Long id, String taskNo) {
-        AssessmentTaskDO task = assessmentTaskMapper.selectByTaskNo(taskNo);
+    @Override
+    public void validateTaskNameUnique(Long id, String taskName) {
+        AssessmentTaskDO task = assessmentTaskMapper.selectByTaskName(taskName);
         if (task == null) {
             return;
         }
         // 如果 id 为空，说明不用比较是否为相同 id 的任务
         if (id == null) {
-            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_CODE_DUPLICATE);
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NAME_DUPLICATE);
         }
         if (!Objects.equals(task.getId(), id)) {
-            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_CODE_DUPLICATE);
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NAME_DUPLICATE);
+        }
+    }
+
+    private void validateTaskNoUnique(Long id, String taskNo) {
+        AssessmentTaskDO task = assessmentTaskMapper.selectByTaskName(taskNo);
+        if (task == null) {
+            return;
+        }
+        // 如果 id 为空，说明不用比较是否为相同 id 的任务
+        if (id == null) {
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NAME_DUPLICATE);
+        }
+        if (!Objects.equals(task.getId(), id)) {
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NAME_DUPLICATE);
         }
     }
 
@@ -173,6 +194,10 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         AssessmentTaskDO assessmentTaskDO = assessmentTaskMapper.selectByTaskNo(taskNo);
         AdminUserDO userDO = adminUserService.getUser(assessmentTaskDO.getPublishUserId());
         assessmentTaskDO.setPublishUser(userDO != null ? userDO.getNickname() : "");
+        assessmentTaskDO.setTotalNum(userTaskMapper.selectCount(new LambdaUpdateWrapper<AssessmentUserTaskDO>()
+                .eq(AssessmentUserTaskDO::getTaskNo,taskNo)));
+        assessmentTaskDO.setFinishNum(userTaskMapper.selectCount(new LambdaUpdateWrapper<AssessmentUserTaskDO>()
+                .eq(AssessmentUserTaskDO::getTaskNo,taskNo).eq(AssessmentUserTaskDO::getStatus,2)));
         return assessmentTaskDO;
     }
 
@@ -222,11 +247,12 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Transactional(rollbackFor = Exception.class)
     public void addParticipants(AssessmentTaskParticipantsReqVO reqVO) {
         // 校验任务存在
-        if (Objects.isNull(getAssessmentTaskByNo(reqVO.getTaskNo()))){
+        AssessmentTaskDO assessmentTaskDO = getAssessmentTaskByNo(reqVO.getTaskNo());
+        if (Objects.isNull(assessmentTaskDO)){
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
         }
         for (Long userId : reqVO.getUserIds()) {
-            // 校验学生档案存在
+            // 校验用户档案存在
             if (adminUserService.getUser(userId) == null) {
                 throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
             }
@@ -240,7 +266,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             AssessmentUserTaskDO userTaskDO = new AssessmentUserTaskDO();
             userTaskDO.setTaskNo(reqVO.getTaskNo());
             userTaskDO.setUserId(userId);
-            userTaskDO.setParentFlag(0);
+            userTaskDO.setParentFlag(assessmentTaskDO.getTargetAudience());
             userTaskDO.setStatus(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus());
             userTaskMapper.insert(userTaskDO);
         }
@@ -282,6 +308,11 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Override
     public AssessmentTaskDO getAssessmentTaskByNo(String taskNo) {
         return assessmentTaskMapper.selectByTaskNo(taskNo);
+    }
+
+    @Override
+    public List<AssessmentTaskUserVO> selectListByTaskNo(String taskNo){
+        return userTaskMapper.selectListByTaskNo(taskNo);
     }
 
 }

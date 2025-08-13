@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -32,7 +33,7 @@ public class AssessmentTaskDO extends TenantBaseDO {
     /**
      * 任务名称
      */
-    private String name;
+    private String taskName;
 
     /**
      * 量表编号，固定问卷 A/B
@@ -55,15 +56,33 @@ public class AssessmentTaskDO extends TenantBaseDO {
     private Long publishUserId;
 
     /**
+     * 开始时间
+     */
+    private Date startline;
+
+    /**
+     * 截止时间
+     */
+    private Date deadline;
+
+    /**
      * 发布人管理员
      */
     @TableField(exist = false)
     private String publishUser;
 
     /**
-     * 截止时间
+     * 完成人数
      */
-    private Date deadline;
+    @TableField(exist = false)
+    private Long finishNum;
+
+    /**
+     * 总人数
+     */
+    @TableField(exist = false)
+    private Long totalNum;
+
 
 }
 
