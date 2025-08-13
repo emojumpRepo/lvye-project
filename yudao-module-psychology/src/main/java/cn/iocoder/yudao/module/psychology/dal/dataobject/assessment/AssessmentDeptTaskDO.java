@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.assessment;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,6 +16,12 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class AssessmentDeptTaskDO extends TenantBaseDO {
+
+    /**
+     * ID 编号，自增
+     */
+    @TableId
+    private Long id;
 
     /**
      * 任务编号

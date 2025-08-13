@@ -5,6 +5,8 @@ import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 /**
  * 测评任务 Service 接口
  */
@@ -91,5 +93,19 @@ public interface AssessmentTaskService {
      * @return 测评任务
      */
     AssessmentTaskDO getAssessmentTaskByNo(String taskNo);
+
+    /**
+     * 根据任务编号获取任务人员列表
+     * @param taskNo
+     * @return
+     */
+    List<AssessmentTaskUserVO> selectListByTaskNo(String taskNo);
+
+    /**
+     * 检查任务名是否重复
+     * @param id
+     * @param taskName
+     */
+    void validateTaskNameUnique(Long id, String taskName);
 
 }

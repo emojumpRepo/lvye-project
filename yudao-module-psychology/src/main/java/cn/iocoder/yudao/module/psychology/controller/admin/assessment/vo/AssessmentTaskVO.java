@@ -32,7 +32,7 @@ public class AssessmentTaskVO extends TenantBaseDO {
      * 任务名称
      */
     @Schema(description = "任务名称")
-    private String name;
+    private String taskName;
 
     /**
      * 量表编号，固定问卷 A/B
@@ -65,11 +65,28 @@ public class AssessmentTaskVO extends TenantBaseDO {
     private String publishUser;
 
     /**
+     * 开始时间
+     */
+    @Schema(description = "开始时间")
+    private Date startline;
+
+    /**
      * 截止时间
      */
     @Schema(description = "截止时间")
     private Date deadline;
 
+    /**
+     * 完成人数
+     */
+    @Schema(description = "完成人数")
+    private Long finishNum;
+
+    /**
+     * 总人数
+     */
+    @Schema(description = "总人数")
+    private Long totalNum;
 
 }
 

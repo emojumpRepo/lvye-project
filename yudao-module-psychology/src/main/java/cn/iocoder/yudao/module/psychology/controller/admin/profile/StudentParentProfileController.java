@@ -46,22 +46,22 @@ public class StudentParentProfileController {
 
     @PostMapping("/delete")
     @Operation(summary = "刪除学生家长档案-根据家长ID")
-    public CommonResult<Boolean> deleteStudentProfile(@RequestParam Long contactId) {
-        studentParentProfileService.deleteStudentParentContact(contactId);
+    public CommonResult<Boolean> deleteStudentProfile(@RequestParam Long id) {
+        studentParentProfileService.deleteStudentParentContact(id);
         return success(true);
     }
 
     @PostMapping("/delete-by-student")
     @Operation(summary = "刪除学生家长档案-根据学生档案ID")
-    public CommonResult<Boolean> deleteStudentProfileByStudentProfileId(@RequestParam Long StudentProfileId) {
-        studentParentProfileService.deleteStudentParentContactByStudentProfileId(StudentProfileId);
+    public CommonResult<Boolean> deleteStudentProfileByStudentProfileId(@RequestParam Long studentProfileId) {
+        studentParentProfileService.deleteStudentParentContactByStudentProfileId(studentProfileId);
         return success(true);
     }
 
     @GetMapping("/list")
     @Operation(summary = "查询学生监护人档案")
-    public CommonResult<List<ParentContactDO>> createStudentProfile(@RequestParam Long StudentProfileId) {
-        List<ParentContactDO> result = studentParentProfileService.selectStudentParentContactByStudentProfileId(StudentProfileId);
+    public CommonResult<List<ParentContactDO>> createStudentProfile(@RequestParam Long studentProfileId) {
+        List<ParentContactDO> result = studentParentProfileService.selectStudentParentContactByStudentProfileId(studentProfileId);
         return success(result);
     }
 

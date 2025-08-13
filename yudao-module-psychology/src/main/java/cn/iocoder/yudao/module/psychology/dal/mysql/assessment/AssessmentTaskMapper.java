@@ -19,7 +19,7 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
     default PageResult<AssessmentTaskDO> selectPage(AssessmentTaskPageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<AssessmentTaskDO>()
                 .likeIfPresent(AssessmentTaskDO::getTaskNo, reqVO.getTaskNo())
-                .likeIfPresent(AssessmentTaskDO::getName, reqVO.getName())
+                .likeIfPresent(AssessmentTaskDO::getTaskName, reqVO.getName())
                 .eqIfPresent(AssessmentTaskDO::getScaleCode, reqVO.getScaleCode())
                 .eqIfPresent(AssessmentTaskDO::getTargetAudience, reqVO.getTargetAudience())
                 .eqIfPresent(AssessmentTaskDO::getStatus, reqVO.getStatus())
@@ -27,6 +27,10 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
                 .betweenIfPresent(AssessmentTaskDO::getDeadline, reqVO.getDeadline())
                 .betweenIfPresent(AssessmentTaskDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(AssessmentTaskDO::getId));
+    }
+
+    default AssessmentTaskDO selectByTaskName(String taskName) {
+        return selectOne(AssessmentTaskDO::getTaskName, taskName);
     }
 
     default AssessmentTaskDO selectByTaskNo(String taskNo) {

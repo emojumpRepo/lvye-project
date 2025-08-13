@@ -39,8 +39,4 @@ public class StudentProfilePageReqVO extends PageParam {
     @Schema(description = "风险等级", example = "1")
     private Integer riskLevel;
 
-    @Schema(description = "创建时间")
-    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
-    private LocalDateTime[] createTime;
-
 }

@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.psychology.service.profile;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.infra.api.config.ConfigApi;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileRecordDO;
@@ -22,6 +23,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -39,6 +41,8 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 @Validated
 @Slf4j
 public class StudentProfileServiceImpl implements StudentProfileService {
+
+    static final String USER_INIT_PASSWORD_KEY = "system.user.init-password";
 
     @Resource
     private StudentProfileMapper studentProfileMapper;
@@ -64,6 +68,12 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     @Resource
     private RoleMapper roleMapper;
 
+    @Resource
+    private PasswordEncoder passwordEncoder;
+
+    @Resource
+    private ConfigApi configApi;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createStudentProfile(@Valid StudentProfileSaveReqVO createReqVO) {
@@ -77,6 +87,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         adminUserDO.setSex(createReqVO.getSex());
         adminUserDO.setMobile(createReqVO.getMobile());
         adminUserDO.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        String initPassword = configApi.getConfigValueByKey(USER_INIT_PASSWORD_KEY);
+        adminUserDO.setPassword(encodePassword(initPassword));
         adminUserMapper.insert(adminUserDO);
         // 插入学生档案表
         StudentProfileDO studentProfile = BeanUtils.toBean(createReqVO, StudentProfileDO.class);
@@ -163,8 +175,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     }
 
     @Override
-    public StudentProfileDO getStudentProfile(Long studentProfileId) {
-        return studentProfileMapper.selectById(studentProfileId);
+    public StudentProfileVO getStudentProfile(Long studentProfileId) {
+        return studentProfileMapper.selectInfoById(studentProfileId);
     }
 
     @Override
@@ -217,7 +229,6 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     public void updatePsychologicalStatus(Long id, Integer psychologicalStatus, Integer riskLevel) {
         // 校验存在
         validateStudentProfileExists(id);
-        
         // 更新心理状态
         StudentProfileDO updateObj = new StudentProfileDO();
         updateObj.setId(id);
@@ -239,6 +250,16 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         updateObj.setId(id);
         updateObj.setGraduationStatus(1); // 1-已毕业
         studentProfileMapper.updateById(updateObj);
+    }
+
+    /**
+     * 对密码进行加密
+     *
+     * @param password 密码
+     * @return 加密后的密码
+     */
+    private String encodePassword(String password) {
+        return passwordEncoder.encode(password);
     }
 
 }

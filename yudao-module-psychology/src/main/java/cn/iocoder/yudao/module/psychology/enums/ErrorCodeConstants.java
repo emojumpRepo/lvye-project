@@ -21,7 +21,7 @@ public interface ErrorCodeConstants {
     ErrorCode ASSESSMENT_TASK_CLOSED = new ErrorCode(1_003_002_001, "测评任务已关闭");
     ErrorCode ASSESSMENT_TASK_EXPIRED = new ErrorCode(1_003_002_002, "测评任务已过期");
     ErrorCode ASSESSMENT_TASK_NOT_STARTED = new ErrorCode(1_003_002_003, "测评任务未开始");
-    ErrorCode ASSESSMENT_TASK_CODE_DUPLICATE = new ErrorCode(1_003_002_004, "任务编号已存在");
+    ErrorCode ASSESSMENT_TASK_NAME_DUPLICATE = new ErrorCode(1_003_002_004, "任务名称已存在");
     ErrorCode ASSESSMENT_TASK_PARTICIPANT_EXISTS = new ErrorCode(1_003_002_005, "该学生已参与此测评任务");
 
     // ========== 测评量表相关 1-003-003-000 ==========

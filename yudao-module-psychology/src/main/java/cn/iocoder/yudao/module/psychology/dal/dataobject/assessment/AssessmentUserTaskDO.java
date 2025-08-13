@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.assessment;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,9 +21,16 @@ import java.util.Date;
 public class AssessmentUserTaskDO extends TenantBaseDO {
 
     /**
+     * ID 编号，自增
+     */
+    @TableId
+    private Long id;
+
+    /**
      * 任务编号
      */
     private String taskNo;
+
     /**
      * 用户id
      */
@@ -40,11 +48,18 @@ public class AssessmentUserTaskDO extends TenantBaseDO {
     private Integer status;
 
     /**
+     * 风险等级
+     */
+    private Integer riskLevel;
+
+    /**
      * 开始作答时间
      */
     private Date startTime;
 
-    /** 提交时间 */
+    /**
+     * 提交时间
+     */
     private Date submitTime;
 
 }

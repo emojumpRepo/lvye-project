@@ -39,7 +39,7 @@ public interface StudentProfileService {
      * @param studentProfileId 学生档案ID
      * @return 学生档案
      */
-    StudentProfileDO getStudentProfile(Long studentProfileId);
+    StudentProfileVO getStudentProfile(Long studentProfileId);
 
     /**
      * 获得学生档案分页

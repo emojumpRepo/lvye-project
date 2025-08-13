@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
@@ -46,6 +47,7 @@ public class AssessmentTaskController {
 
     @PostMapping("/create")
     @Operation(summary = "创建测评任务")
+    @DataPermission(enable = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:create')")
     public CommonResult<Long> createAssessmentTask(@Valid @RequestBody AssessmentTaskSaveReqVO createReqVO) {
         return success(assessmentTaskService.createAssessmentTask(createReqVO));
@@ -54,6 +56,7 @@ public class AssessmentTaskController {
     @PostMapping("/update")
     @Operation(summary = "更新测评任务")
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:update')")
+    @DataPermission(enable = false)
     public CommonResult<Boolean> updateAssessmentTask(@Valid @RequestBody AssessmentTaskSaveReqVO updateReqVO) {
         assessmentTaskService.updateAssessmentTask(updateReqVO);
         return success(true);
@@ -63,6 +66,7 @@ public class AssessmentTaskController {
     @Operation(summary = "删除测评任务")
     @Parameter(name = "taskNo", description = "任务编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:delete')")
+    @DataPermission(enable = false)
     public CommonResult<Boolean> deleteAssessmentTask(@RequestParam("taskNo") String taskNo) {
         assessmentTaskService.deleteAssessmentTask(taskNo);
         return success(true);
@@ -72,6 +76,7 @@ public class AssessmentTaskController {
     @Operation(summary = "获得测评任务")
     @Parameter(name = "taskNo", description = "任务编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:query')")
+    @DataPermission(enable = false)
     public CommonResult<AssessmentTaskRespVO> getAssessmentTask(@RequestParam("taskNo") String taskNo) {
         AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTask(taskNo);
         return success(BeanUtils.toBean(assessmentTask, AssessmentTaskRespVO.class));
@@ -80,6 +85,7 @@ public class AssessmentTaskController {
     @GetMapping("/page")
     @Operation(summary = "获得测评任务分页")
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:query')")
+    @DataPermission(enable = false)
     public CommonResult<PageResult<AssessmentTaskVO>> getAssessmentTaskPage(@Valid AssessmentTaskPageReqVO pageReqVO) {
         PageResult<AssessmentTaskVO> pageResult = assessmentTaskService.getAssessmentTaskPage(pageReqVO);
         return success(BeanUtils.toBean(pageResult, AssessmentTaskVO.class));
@@ -100,6 +106,7 @@ public class AssessmentTaskController {
     @Operation(summary = "发布测评任务")
     @Parameter(name = "taskNo", description = "任务编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:publish')")
+    @DataPermission(enable = false)
     public CommonResult<Boolean> publishAssessmentTask(@RequestParam("taskNo") String taskNo) {
         assessmentTaskService.publishAssessmentTask(taskNo);
         return success(true);
@@ -109,6 +116,7 @@ public class AssessmentTaskController {
     @Operation(summary = "关闭测评任务")
     @Parameter(name = "taskNo", description = "任务编号", required = true)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:close')")
+    @DataPermission(enable = false)
     public CommonResult<Boolean> closeAssessmentTask(@RequestParam("taskNo") String taskNo) {
         assessmentTaskService.closeAssessmentTask(taskNo);
         return success(true);
@@ -117,6 +125,7 @@ public class AssessmentTaskController {
     @PostMapping("/add-participants")
     @Operation(summary = "添加参与者")
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:manage-participants')")
+    @DataPermission(enable = false)
     public CommonResult<Boolean> addParticipants(@RequestBody AssessmentTaskParticipantsReqVO reqVO) {
         assessmentTaskService.addParticipants(reqVO);
         return success(true);
@@ -125,6 +134,7 @@ public class AssessmentTaskController {
     @PostMapping("/remove-participants")
     @Operation(summary = "移除参与者")
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:manage-participants')")
+    @DataPermission(enable = false)
     public CommonResult<Boolean> removeParticipants(@RequestBody AssessmentTaskParticipantsReqVO reqVO) {
         assessmentTaskService.removeParticipants(reqVO);
         return success(true);
@@ -137,5 +147,26 @@ public class AssessmentTaskController {
     public CommonResult<AssessmentTaskStatisticsRespVO> getTaskStatistics(@PathVariable("id") Long id) {
         return success(assessmentTaskService.getTaskStatistics(id));
     }
+
+    @GetMapping("/participants-list")
+    @Operation(summary = "获得测评任务人员列表")
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
+//    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<AssessmentTaskUserVO>> getAssessmentTaskUserList(@RequestParam("taskNo") String taskNo) {
+        List<AssessmentTaskUserVO> assessmentTaskUserList = assessmentTaskService.selectListByTaskNo(taskNo);
+        return success(BeanUtils.toBean(assessmentTaskUserList, AssessmentTaskUserVO.class));
+    }
+
+    @PostMapping("/check-by-name")
+    @Operation(summary = "检查测评任务名是否存在")
+    @Parameter(name = "taskName", description = "任务名称", required = true)
+//    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:query')")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> checkTaskName(@RequestParam("taskName") String taskName) {
+        assessmentTaskService.validateTaskNameUnique(null, taskName);
+        return success(true);
+    }
+
 
 }

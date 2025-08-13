@@ -2,8 +2,12 @@ package cn.iocoder.yudao.module.psychology.dal.mysql.assessment;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskUserVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * @Author: MinGoo
@@ -30,5 +34,7 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
         delete(new LambdaQueryWrapperX<AssessmentUserTaskDO>()
                 .eq(AssessmentUserTaskDO::getTaskNo, taskNo));
     }
+
+    List<AssessmentTaskUserVO> selectListByTaskNo(@Param("taskNo") String taskNo);
 
 }
