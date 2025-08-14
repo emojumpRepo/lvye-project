@@ -69,6 +69,14 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO) {
+        // 检查是否需要立即发布
+        boolean isPublish = createReqVO.getIsPublish() != null && createReqVO.getIsPublish();
+        return createAssessmentTask(createReqVO, isPublish);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO, boolean isPublish) {
         // 校验任务编号唯一性
         validateTaskNameUnique(null, createReqVO.getTaskName());
         // 插入测评信息
@@ -122,6 +130,18 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             userTaskList.add(assessmentUserTaskDO);
         }
         userTaskMapper.insertBatch(userTaskList);
+
+        // 如果需要立即发布，则发布任务
+        if (isPublish) {
+            try {
+                publishAssessmentTask(createReqVO.getTaskNo());
+            } catch (Exception e) {
+                log.error("创建任务后自动发布失败，任务编号：{}，错误信息：{}", createReqVO.getTaskNo(), e.getMessage(), e);
+                // 这里可以选择抛出异常或者记录日志继续执行
+                // 为了保证任务创建成功，这里选择记录日志继续执行
+            }
+        }
+
         // 返回
         return assessmentTask.getId();
     }

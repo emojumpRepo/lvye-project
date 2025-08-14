@@ -56,4 +56,7 @@ public class AssessmentTaskSaveReqVO{
     @Schema(description = "用户列表", example = "[1,2,3,4]")
     private List<Long> userIdList;
 
+    @Schema(description = "是否立即发布任务", example = "false")
+    private Boolean isPublish = false;
+
 }

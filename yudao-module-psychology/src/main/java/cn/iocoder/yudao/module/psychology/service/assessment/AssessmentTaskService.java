@@ -21,6 +21,15 @@ public interface AssessmentTaskService {
     Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO);
 
     /**
+     * 创建测评任务（支持立即发布）
+     *
+     * @param createReqVO 创建信息
+     * @param isPublish 是否立即发布
+     * @return 编号
+     */
+    Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO, boolean isPublish);
+
+    /**
      * 更新测评任务
      *
      * @param updateReqVO 更新信息
