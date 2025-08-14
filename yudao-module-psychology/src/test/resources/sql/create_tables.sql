@@ -34,16 +34,46 @@ CREATE INDEX IF NOT EXISTS idx_psy_crisis_source ON psy_crisis_intervention(sour
 CREATE INDEX IF NOT EXISTS idx_psy_crisis_reporter_source ON psy_crisis_intervention(reporter_user_id, source_type);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_psy_dept_ext_dept ON psy_dept_ext(dept_id);
 
-CREATE TABLE IF NOT EXISTS psy_assessment_task (
+CREATE TABLE IF NOT EXISTS lvye_assessment_task (
     id                BIGINT PRIMARY KEY,
     tenant_id         BIGINT,
     task_no           VARCHAR(64) NOT NULL,
-    name              VARCHAR(128) NOT NULL,
+    task_name         VARCHAR(128) NOT NULL,
     scale_code        VARCHAR(64) NOT NULL,
     target_audience   INT NOT NULL,
     status            INT NOT NULL,
     publish_user_id   BIGINT,
+    startline         TIMESTAMP,
     deadline          TIMESTAMP,
+    creator           VARCHAR(64),
+    updater           VARCHAR(64),
+    create_time       TIMESTAMP,
+    update_time       TIMESTAMP,
+    deleted           BIT
+);
+
+CREATE TABLE IF NOT EXISTS lvye_assessment_user_task (
+    id                BIGINT PRIMARY KEY,
+    tenant_id         BIGINT,
+    task_no           VARCHAR(64) NOT NULL,
+    user_id           BIGINT NOT NULL,
+    parent_flag       INT NOT NULL,
+    status            INT NOT NULL,
+    risk_level        INT,
+    start_time        TIMESTAMP,
+    submit_time       TIMESTAMP,
+    creator           VARCHAR(64),
+    updater           VARCHAR(64),
+    create_time       TIMESTAMP,
+    update_time       TIMESTAMP,
+    deleted           BIT
+);
+
+CREATE TABLE IF NOT EXISTS lvye_assessment_dept_task (
+    id                BIGINT PRIMARY KEY,
+    tenant_id         BIGINT,
+    task_no           VARCHAR(64) NOT NULL,
+    dept_id           BIGINT NOT NULL,
     creator           VARCHAR(64),
     updater           VARCHAR(64),
     create_time       TIMESTAMP,
