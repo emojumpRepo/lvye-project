@@ -79,6 +79,15 @@ public class StudentProfileController {
         return success(BeanUtils.toBean(pageResult, StudentProfileVO.class));
     }
 
+    @GetMapping("/simple-list")
+    @Operation(summary = "获得学生档案精简列表", description = "不分页，主要用于前端的下拉选项")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<StudentProfileVO>> getStudentProfileSimpleList(StudentProfilePageReqVO reqVO) {
+        List<StudentProfileVO> list = studentProfileService.getStudentProfileList(reqVO);
+        return success(list);
+    }
+
     @GetMapping("/export-excel")
     @Operation(summary = "导出学生档案 Excel")
     @PreAuthorize("@ss.hasPermission('psychology:student-profile:export')")
