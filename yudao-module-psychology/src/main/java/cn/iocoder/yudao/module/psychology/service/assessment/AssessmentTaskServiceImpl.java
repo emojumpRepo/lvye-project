@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.common.util.number.NumberUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
@@ -333,6 +334,12 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Override
     public List<AssessmentTaskUserVO> selectListByTaskNo(String taskNo){
         return userTaskMapper.selectListByTaskNo(taskNo);
+    }
+
+    @Override
+    public List<WebAssessmentTaskVO> selectListByUserId(){
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        return assessmentTaskMapper.selectListByUserId(userId);
     }
 
 }

@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper">
 
     <select id="selectPageList"
-            resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskVO" >
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskVO">
         SELECT
         a.*,
         b.nickname AS publishUser,
-        (select count(*) from lvye_assessment_user_task c where a.task_no = c.task_no and status = 2 and c.deleted = 0) as finish_num,
+        (select count(*) from lvye_assessment_user_task c where a.task_no = c.task_no and status = 2 and c.deleted = 0)
+        as finish_num,
         (select count(*) from lvye_assessment_user_task c where a.task_no = c.task_no and c.deleted = 0) as total_num
         FROM lvye_assessment_task a
         LEFT JOIN system_users b ON a.publish_user_id = b.id
         <where>
-             1 = 1
+            1 = 1
             <if test="pageReqVO.taskNo != null and pageReqVO.taskNo !=''">
                 AND a.task_no = #{pageReqVO.taskNo}
             </if>
@@ -33,6 +34,13 @@
             </if>
             ORDER BY id DESC
         </where>
+    </select>
+
+    <select id="selectListByUserId"
+            resultType="cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskRespVO">
+        SELECT a.id, a.task_no, a.task_name, a.scale_code, a.status, a.startline, a.deadline, b.nickname AS publishUser
+        FROM lvye_assessment_task a LEFT JOIN system_users b ON a.publish_user_id = b.id
+        WHERE a.task_no in (select task_no from lvye_assessment_user_task where user_id = #{userId})
     </select>
 
 </mapper>

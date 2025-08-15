@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.psychology.controller.web.profile.vo;
+package cn.iocoder.yudao.module.psychology.controller.app.profile.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
