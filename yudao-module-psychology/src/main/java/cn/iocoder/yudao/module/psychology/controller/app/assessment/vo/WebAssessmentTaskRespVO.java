@@ -1,9 +1,9 @@
-package cn.iocoder.yudao.module.psychology.controller.web.assessment.vo;
+package cn.iocoder.yudao.module.psychology.controller.app.assessment.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Schema(description = "学生家长端 - 测评任务 Response VO")
 @Data
@@ -16,7 +16,7 @@ public class WebAssessmentTaskRespVO {
     private String taskNo;
 
     @Schema(description = "任务名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "2024年春季心理测评")
-    private String name;
+    private String taskName;
 
     @Schema(description = "量表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "A")
     private String scaleCode;
@@ -24,10 +24,14 @@ public class WebAssessmentTaskRespVO {
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
-    @Schema(description = "截止时间")
-    private LocalDateTime deadline;
+    @Schema(description = "开始时间")
+    private Date startline;
 
-    @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    private LocalDateTime createTime;
+    @Schema(description = "截止时间")
+    private Date deadline;
+
+    @Schema(description = "发布人管理员")
+    private String publishUser;
+
 
 }

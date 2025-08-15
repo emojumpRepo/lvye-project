@@ -1,8 +1,8 @@
-package cn.iocoder.yudao.module.psychology.controller.web.profile;
+package cn.iocoder.yudao.module.psychology.controller.app.profile;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
-import cn.iocoder.yudao.module.psychology.controller.web.profile.vo.WebStudentProfileRespVO;
+import cn.iocoder.yudao.module.psychology.controller.app.profile.vo.WebStudentProfileRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import io.swagger.v3.oas.annotations.Operation;

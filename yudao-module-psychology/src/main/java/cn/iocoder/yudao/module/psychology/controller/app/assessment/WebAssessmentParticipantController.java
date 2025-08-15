@@ -1,7 +1,7 @@
-package cn.iocoder.yudao.module.psychology.controller.web.assessment;
+package cn.iocoder.yudao.module.psychology.controller.app.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
-import cn.iocoder.yudao.module.psychology.controller.web.assessment.vo.WebAssessmentParticipateReqVO;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentParticipantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
