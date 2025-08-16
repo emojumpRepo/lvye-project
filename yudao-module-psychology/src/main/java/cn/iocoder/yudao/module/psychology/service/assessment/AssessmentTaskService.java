@@ -91,10 +91,10 @@ public interface AssessmentTaskService {
     /**
      * 获取任务统计信息
      *
-     * @param taskId 任务编号
+     * @param taskNo 任务编号
      * @return 统计信息
      */
-    AssessmentTaskStatisticsRespVO getTaskStatistics(Long taskId);
+    AssessmentTaskStatisticsRespVO getTaskStatistics(String taskNo);
 
     /**
      * 根据任务编号获取任务

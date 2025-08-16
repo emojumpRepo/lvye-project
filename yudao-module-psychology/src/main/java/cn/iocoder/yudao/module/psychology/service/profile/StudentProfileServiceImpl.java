@@ -1,8 +1,10 @@
 package cn.iocoder.yudao.module.psychology.service.profile;
 
+import cn.iocoder.yudao.framework.common.biz.system.permission.dto.DeptDataPermissionRespDTO;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.infra.api.config.ConfigApi;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
@@ -10,6 +12,7 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileR
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileRecordMapper;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
+import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
 import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
@@ -73,6 +76,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Resource
     private ConfigApi configApi;
+
+    @Resource
+    private PermissionApi permissionApi;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -181,6 +187,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Override
     public PageResult<StudentProfileVO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        DeptDataPermissionRespDTO deptDataPermissionRespDTO = permissionApi.getDeptDataPermission(userId);
+
         IPage<StudentProfileVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
         studentProfileMapper.selectPageList(page, pageReqVO);
         return new PageResult<>(page.getRecords(), page.getTotal());

@@ -40,6 +40,7 @@ public class AssessmentTaskController {
 
     @GetMapping("/get-exam-template")
     @Operation(summary = "获得测评任务")
+    @DataPermission(enable = false)
     public CommonResult<List<AssessmentTemplateDO>> getAssessmentTemplate() {
         List<AssessmentTemplateDO> result = templateMapper.selectTempalteList();
         return success(result);
@@ -140,12 +141,13 @@ public class AssessmentTaskController {
         return success(true);
     }
 
-    @GetMapping("/statistics/{id}")
+    @GetMapping("/statistics")
     @Operation(summary = "获取任务统计信息")
-    @Parameter(name = "id", description = "任务编号", required = true)
-    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:statistics')")
-    public CommonResult<AssessmentTaskStatisticsRespVO> getTaskStatistics(@PathVariable("id") Long id) {
-        return success(assessmentTaskService.getTaskStatistics(id));
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
+//    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:statistics')")
+    @DataPermission(enable = false)
+    public CommonResult<AssessmentTaskStatisticsRespVO> getTaskStatistics(@RequestParam("taskNo") String taskNo) {
+        return success(assessmentTaskService.getTaskStatistics(taskNo));
     }
 
     @GetMapping("/participants-list")

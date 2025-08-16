@@ -37,4 +37,8 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
 
     List<AssessmentTaskUserVO> selectListByTaskNo(@Param("taskNo") String taskNo);
 
+    Long selectCountByTaskNo(@Param("taskNo") String taskNo);
+
+    Long selectCountByTaskNoAndStatus(@Param("taskNo") String taskNo, @Param("status") Integer status);
+
 }

@@ -3,6 +3,8 @@ package cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Schema(description = "管理后台 - 测评任务统计 Response VO")
 @Data
 public class AssessmentTaskStatisticsRespVO {
@@ -20,6 +22,6 @@ public class AssessmentTaskStatisticsRespVO {
     private Long notStartedParticipants;
 
     @Schema(description = "完成率", requiredMode = Schema.RequiredMode.REQUIRED, example = "80.0")
-    private Double completionRate;
+    private BigDecimal completionRate;
 
 }

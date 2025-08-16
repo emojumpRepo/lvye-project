@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
+import cn.iocoder.yudao.framework.common.biz.system.permission.dto.DeptDataPermissionRespDTO;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.number.NumberUtils;
@@ -18,6 +19,7 @@ import cn.iocoder.yudao.module.psychology.enums.AssessmentTaskStatusEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
@@ -32,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -50,9 +53,6 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     private AssessmentTaskMapper assessmentTaskMapper;
     
     @Resource
-    private AssessmentParticipantMapper participantMapper;
-    
-    @Resource
     private StudentProfileService studentProfileService;
 
     @Resource
@@ -66,6 +66,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Resource
     private AssessmentDeptTaskMapper deptTaskMapper;
+
+    @Resource
+    private PermissionApi permissionApi;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -150,7 +153,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Override
     public void updateAssessmentTask(@Valid AssessmentTaskSaveReqVO updateReqVO) {
         // 校验存在
-        validateAssessmentTaskExists(updateReqVO.getId());
+        validateAssessmentTaskExists(updateReqVO.getTaskNo());
         // 校验任务编号唯一性
         validateTaskNoUnique(updateReqVO.getId(), updateReqVO.getTaskNo());
         // 更新
@@ -175,8 +178,8 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         }
     }
 
-    private void validateAssessmentTaskExists(Long id) {
-        if (assessmentTaskMapper.selectById(id) == null) {
+    private void validateAssessmentTaskExists(String taskNo) {
+        if (assessmentTaskMapper.selectByTaskNo(taskNo) == null) {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
         }
     }
@@ -224,8 +227,14 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Override
     public PageResult<AssessmentTaskVO> getAssessmentTaskPage(AssessmentTaskPageReqVO pageReqVO) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        List<Long> taskNos = new ArrayList<>();
+        DeptDataPermissionRespDTO deptDataPermissionRespDTO = permissionApi.getDeptDataPermission(userId);
+        if (!deptDataPermissionRespDTO.getAll()){
+            taskNos = deptTaskMapper.selectTaskListByDeptIds(deptDataPermissionRespDTO.getDeptIds());
+        }
         IPage<AssessmentTaskVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
-        assessmentTaskMapper.selectPageList(page, pageReqVO);
+        assessmentTaskMapper.selectPageList(page, pageReqVO, taskNos);
         return new PageResult<>(page.getRecords(), page.getTotal());
     }
 
@@ -307,22 +316,24 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     }
 
     @Override
-    public AssessmentTaskStatisticsRespVO getTaskStatistics(Long taskId) {
+    public AssessmentTaskStatisticsRespVO getTaskStatistics(String taskNo) {
         // 校验任务存在
-        validateAssessmentTaskExists(taskId);
+        validateAssessmentTaskExists(taskNo);
 
         // 统计参与者信息
-        long totalParticipants = participantMapper.countByTaskId(taskId);
-        long completedParticipants = participantMapper.countByTaskIdAndStatus(taskId, ParticipantCompletionStatusEnum.COMPLETED.getStatus());
-        long inProgressParticipants = participantMapper.countByTaskIdAndStatus(taskId, ParticipantCompletionStatusEnum.IN_PROGRESS.getStatus());
+        long totalParticipants = userTaskMapper.selectCountByTaskNo(taskNo);
+        long completedParticipants = userTaskMapper.selectCountByTaskNoAndStatus(taskNo, ParticipantCompletionStatusEnum.COMPLETED.getStatus());
+        long inProgressParticipants = userTaskMapper.selectCountByTaskNoAndStatus(taskNo, ParticipantCompletionStatusEnum.IN_PROGRESS.getStatus());
 
         AssessmentTaskStatisticsRespVO statistics = new AssessmentTaskStatisticsRespVO();
         statistics.setTotalParticipants(totalParticipants);
         statistics.setCompletedParticipants(completedParticipants);
         statistics.setInProgressParticipants(inProgressParticipants);
         statistics.setNotStartedParticipants(totalParticipants - completedParticipants - inProgressParticipants);
-        statistics.setCompletionRate(totalParticipants > 0 ? (double) completedParticipants / totalParticipants * 100 : 0.0);
-
+        BigDecimal total = new BigDecimal(statistics.getTotalParticipants());
+        BigDecimal completed = new BigDecimal(statistics.getCompletedParticipants());
+        BigDecimal completionRate = completed.divide(total, 2, BigDecimal.ROUND_HALF_UP);
+        statistics.setCompletionRate(totalParticipants > 0 ? completionRate : new BigDecimal("0.00"));
         return statistics;
     }
 

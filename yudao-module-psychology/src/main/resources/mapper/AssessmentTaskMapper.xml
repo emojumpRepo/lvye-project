@@ -13,7 +13,13 @@
         FROM lvye_assessment_task a
         LEFT JOIN system_users b ON a.publish_user_id = b.id
         <where>
-            1 = 1
+            a.deleted = 0
+            <if test="taskNos != null and !taskNos.isEmpty()">
+                AND a.task_no IN
+                <foreach item="taskNo" collection="taskNos" open="(" separator="," close=")">
+                    #{taskNo}
+                </foreach>
+            </if>
             <if test="pageReqVO.taskNo != null and pageReqVO.taskNo !=''">
                 AND a.task_no = #{pageReqVO.taskNo}
             </if>
@@ -40,7 +46,7 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskRespVO">
         SELECT a.id, a.task_no, a.task_name, a.scale_code, a.status, a.startline, a.deadline, b.nickname AS publishUser
         FROM lvye_assessment_task a LEFT JOIN system_users b ON a.publish_user_id = b.id
-        WHERE a.task_no in (select task_no from lvye_assessment_user_task where user_id = #{userId})
+        WHERE a.task_no in (select task_no from lvye_assessment_user_task where user_id = #{userId}) and a.deleted = 0
     </select>
 
 </mapper>
