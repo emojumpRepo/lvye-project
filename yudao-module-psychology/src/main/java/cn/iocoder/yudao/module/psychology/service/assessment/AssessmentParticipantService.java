@@ -1,6 +1,6 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
-import cn.iocoder.yudao.module.psychology.controller.web.assessment.vo.WebAssessmentParticipateReqVO;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO;
 
 /**
  * 测评参与 Service 接口
