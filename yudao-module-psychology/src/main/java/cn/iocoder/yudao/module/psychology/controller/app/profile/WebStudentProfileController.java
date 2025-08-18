@@ -4,8 +4,10 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.controller.app.profile.vo.WebStudentProfileRespVO;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +20,8 @@ import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUti
 @Validated
 public class WebStudentProfileController {
 
-    // 简化实现：移除复杂的依赖
+    @Resource
+    private StudentProfileService studentProfileService;
 
     @GetMapping("/my-profile")
     @Operation(summary = "获得我的学生档案")
