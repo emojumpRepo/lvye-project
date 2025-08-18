@@ -77,11 +77,11 @@ public interface StudentProfileService {
 
     /**
      * 批量导入学生档案
-     *
-     * @param importReqVO 导入请求
-     * @return 导入结果
+     * @param studentList
+     * @param isUpdateSupport
+     * @return
      */
-    StudentProfileImportRespVO importStudentProfile(StudentProfileImportReqVO importReqVO);
+    StudentProfileImportRespVO importStudentProfile(List<StudentImportExcelVO> studentList, boolean isUpdateSupport);
 
     /**
      * 更新学生心理状态

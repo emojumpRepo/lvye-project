@@ -15,6 +15,9 @@ public interface ErrorCodeConstants {
     ErrorCode STUDENT_NO_DUPLICATE = new ErrorCode(1_003_001_002, "学号已存在");
     ErrorCode STUDENT_PROFILE_GRADUATED = new ErrorCode(1_003_001_003, "学生已毕业，无法操作");
     ErrorCode PARENT_INFO_REQUIRED = new ErrorCode(1_003_001_004, "家长信息为必填项");
+    ErrorCode STUDENT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_001_005, "导入用户数据不能为空！");
+    ErrorCode STUDENT_GRADE_OR_CLASS_IS_EMPTY = new ErrorCode(1_003_001_005, "年级/班级数据不能为空！");
+    ErrorCode STUDENT_GRADE_OR_CLASS_NOT_MATCH = new ErrorCode(1_003_001_005, "年级/班级数据不匹配！");
 
     // ========== 测评任务相关 1-003-002-000 ==========
     ErrorCode ASSESSMENT_TASK_NOT_EXISTS = new ErrorCode(1_003_002_000, "测评任务不存在");
