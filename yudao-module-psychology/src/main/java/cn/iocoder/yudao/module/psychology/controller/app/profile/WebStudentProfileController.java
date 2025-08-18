@@ -12,7 +12,7 @@ import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUti
 
 @Tag(name = "学生家长端 - 学生档案")
 @RestController
-@RequestMapping("/web-api/psychology/student-profile")
+@RequestMapping("/app-api/psychology/student-profile")
 @Validated
 public class WebStudentProfileController {
 

@@ -17,7 +17,7 @@ import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUti
 
 @Tag(name = "学生家长端 - 测评参与")
 @RestController
-@RequestMapping("/web-api/psychology/assessment-participant")
+@RequestMapping("/app-api/psychology/assessment-participant")
 @Validated
 public class WebAssessmentParticipantController {
 
