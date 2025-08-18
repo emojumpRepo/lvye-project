@@ -57,4 +57,35 @@ public interface ErrorCodeConstants {
     ErrorCode GRADE_GRADUATION_FAILED = new ErrorCode(1_003_009_001, "年级毕业操作失败");
     ErrorCode CLASS_TEACHER_ASSIGNMENT_FAILED = new ErrorCode(1_003_009_002, "班主任分配失败");
 
+    // ========== 问卷管理相关 1-003-010-000 ==========
+    ErrorCode QUESTIONNAIRE_NOT_EXISTS = new ErrorCode(1_003_010_000, "问卷不存在");
+    ErrorCode QUESTIONNAIRE_NOT_PUBLISHED = new ErrorCode(1_003_010_001, "问卷未发布");
+    ErrorCode QUESTIONNAIRE_ALREADY_PUBLISHED = new ErrorCode(1_003_010_002, "问卷已发布");
+    ErrorCode QUESTIONNAIRE_SYNC_FAILED = new ErrorCode(1_003_010_003, "问卷同步失败");
+    ErrorCode QUESTIONNAIRE_LINK_INVALID = new ErrorCode(1_003_010_004, "问卷链接无效");
+    ErrorCode QUESTIONNAIRE_TITLE_DUPLICATE = new ErrorCode(1_003_010_005, "问卷标题已存在");
+
+    // ========== 问卷结果相关 1-003-011-000 ==========
+    ErrorCode QUESTIONNAIRE_RESULT_NOT_EXISTS = new ErrorCode(1_003_011_000, "问卷结果不存在");
+    ErrorCode QUESTIONNAIRE_RESULT_ALREADY_EXISTS = new ErrorCode(1_003_011_001, "问卷结果已存在");
+    ErrorCode QUESTIONNAIRE_RESULT_GENERATION_FAILED = new ErrorCode(1_003_011_002, "问卷结果生成失败");
+    ErrorCode QUESTIONNAIRE_NOT_SUPPORTED = new ErrorCode(1_003_011_003, "问卷不支持结果生成");
+    ErrorCode QUESTIONNAIRE_ANSWERS_INCOMPLETE = new ErrorCode(1_003_011_004, "问卷答案不完整");
+
+    // ========== 测评结果扩展相关 1-003-012-000 ==========
+    ErrorCode ASSESSMENT_RESULT_GENERATION_FAILED = new ErrorCode(1_003_012_000, "测评结果生成失败");
+    ErrorCode ASSESSMENT_QUESTIONNAIRE_RESULTS_INCOMPLETE = new ErrorCode(1_003_012_001, "测评关联的问卷结果不完整");
+    ErrorCode ASSESSMENT_CONFIG_NOT_FOUND = new ErrorCode(1_003_012_002, "测评配置未找到");
+
+    // ========== 结果生成器相关 1-003-013-000 ==========
+    ErrorCode RESULT_GENERATOR_NOT_FOUND = new ErrorCode(1_003_013_000, "结果生成器未找到");
+    ErrorCode RESULT_GENERATION_CONFIG_INVALID = new ErrorCode(1_003_013_001, "结果生成配置无效");
+    ErrorCode RESULT_GENERATION_TIMEOUT = new ErrorCode(1_003_013_002, "结果生成超时");
+    ErrorCode RESULT_GENERATION_CONFIG_NOT_FOUND = new ErrorCode(1_003_013_003, "结果生成配置未找到");
+
+    // ========== 数据迁移相关 1-003-014-000 ==========
+    ErrorCode DATA_MIGRATION_FAILED = new ErrorCode(1_003_014_000, "数据迁移失败");
+    ErrorCode DATA_VALIDATION_FAILED = new ErrorCode(1_003_014_001, "数据验证失败");
+    ErrorCode DATA_INCONSISTENCY_DETECTED = new ErrorCode(1_003_014_002, "检测到数据不一致");
+
 }

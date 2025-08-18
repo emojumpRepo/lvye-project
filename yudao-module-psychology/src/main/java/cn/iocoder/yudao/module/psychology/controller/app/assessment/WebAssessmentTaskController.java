@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.psychology.controller.app.assessment;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskRespVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
@@ -31,7 +32,7 @@ public class WebAssessmentTaskController {
     @Operation(summary = "获得我的测评任务列表")
     @DataPermission(enable = false)
     public CommonResult<List<WebAssessmentTaskRespVO>> getMyAssessmentTasks() {
-        List<WebAssessmentTaskVO> list = assessmentTaskService.selectListByUserId();
+        List<cn.iocoder.yudao.module.psychology.service.assessment.vo.WebAssessmentTaskVO> list = assessmentTaskService.selectListByUserId(SecurityFrameworkUtils.getLoginUserId());
         return success(BeanUtils.toBean(list, WebAssessmentTaskRespVO.class));
     }
 

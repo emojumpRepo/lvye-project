@@ -1,21 +1,17 @@
 package cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
- * 测评任务 DO
+ * 测评任务 VO
  */
+@Schema(description = "管理后台 - 测评任务 Response VO")
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class AssessmentTaskVO extends TenantBaseDO {
+public class AssessmentTaskVO {
 
     /**
      * 主键
@@ -87,6 +83,18 @@ public class AssessmentTaskVO extends TenantBaseDO {
      */
     @Schema(description = "总人数")
     private Long totalNum;
+
+    /**
+     * 创建时间
+     */
+    @Schema(description = "创建时间")
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    @Schema(description = "更新时间")
+    private LocalDateTime updateTime;
 
 }
 

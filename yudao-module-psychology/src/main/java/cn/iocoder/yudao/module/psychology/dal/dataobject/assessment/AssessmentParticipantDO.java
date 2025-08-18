@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.assessment;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -11,8 +10,7 @@ import java.time.LocalDateTime;
 /**
  * 测评任务参与者 DO
  */
-@TableName(value = "psy_assessment_participant", autoResultMap = true)
-@KeySequence("psy_assessment_participant_seq")
+@TableName(value = "lvye_assessment_participant", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)

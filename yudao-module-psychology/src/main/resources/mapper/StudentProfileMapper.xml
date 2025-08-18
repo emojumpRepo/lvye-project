@@ -17,7 +17,7 @@
                 AND a.name = #{pageReqVO.name}
             </if>
             <if test="pageReqVO.sex != null">
-                AND a.sex = #{pageReqVO.sex}
+                AND b.sex = #{pageReqVO.sex}
             </if>
             <if test="pageReqVO.gradeDeptId != null">
                 AND a.grade_dept_id = #{pageReqVO.gradeDeptId}
@@ -34,7 +34,7 @@
             <if test="pageReqVO.riskLevel != null">
                 AND a.risk_level = #{pageReqVO.riskLevel}
             </if>
-            ORDER BY id DESC
+            ORDER BY a.id DESC
         </where>
     </select>
 
