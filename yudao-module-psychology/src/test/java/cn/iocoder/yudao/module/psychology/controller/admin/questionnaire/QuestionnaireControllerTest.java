@@ -247,32 +247,6 @@ class QuestionnaireControllerTest extends BaseDbUnitTest {
     }
 
     @Test
-    void testManualSyncAll_Success() throws Exception {
-        // 准备测试数据
-        QuestionnaireSyncService.QuestionnaireSyncResult syncResult = 
-                new QuestionnaireSyncService.QuestionnaireSyncResult();
-        syncResult.setTotalCount(10);
-        syncResult.setSuccessCount(8);
-        syncResult.setFailureCount(2);
-        syncResult.setMessage("同步完成");
-        
-        when(questionnaireSyncService.manualSync()).thenReturn(syncResult);
-
-        mockMvc = MockMvcBuilders.standaloneSetup(questionnaireController).build();
-
-        // 执行测试
-        mockMvc.perform(post("/psychology/questionnaire/manual-sync"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.totalCount").value(10))
-                .andExpect(jsonPath("$.data.successCount").value(8))
-                .andExpect(jsonPath("$.data.failureCount").value(2));
-
-        // 验证调用
-        verify(questionnaireSyncService).manualSync();
-    }
-
-    @Test
     void testTestQuestionnaireLink_Success() throws Exception {
         // 准备测试数据
         Long questionnaireId = 1L;

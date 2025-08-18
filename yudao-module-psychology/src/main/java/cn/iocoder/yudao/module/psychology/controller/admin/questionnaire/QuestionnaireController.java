@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.psychology.convert.questionnaire.QuestionnaireCon
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireAccessService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireSyncService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,6 +40,9 @@ public class QuestionnaireController {
 
     @Resource
     private QuestionnaireAccessService questionnaireAccessService;
+
+    @Resource
+    private QuestionnaireSyncService questionnaireSyncService;
 
     @PostMapping("/create")
     @Operation(summary = "创建问卷")
@@ -208,15 +212,39 @@ public class QuestionnaireController {
     @PostMapping("/manual-sync")
     @Operation(summary = "手动同步所有问卷")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire:sync')")
-    public CommonResult<String> manualSyncAll() {
+    public CommonResult<QuestionnaireSyncRespVO> manualSync() {
         try {
-            // TODO: 实现具体的手动同步逻辑
-            log.info("手动同步所有问卷（简化实现）");
-            int count = 0;
-            return success("已触发同步任务，共处理 " + count + " 个问卷");
+            log.info("开始同步外部问卷系统数据");
+
+            QuestionnaireSyncService.QuestionnaireSyncResult result = questionnaireSyncService.syncQuestionnaires();
+            
+            QuestionnaireSyncRespVO respVO = new QuestionnaireSyncRespVO();
+            
+            if (result.isSuccess()) {
+                respVO.setSuccess(true);
+                respVO.setMessage(String.format("同步完成：处理%d个问卷，新增%d个，更新%d个，关闭%d个，失败%d个", 
+                    result.getTotalProcessed(), result.getNewAdded(), result.getUpdated(), 
+                    result.getInvalidated(), result.getFailed()));
+                respVO.setSyncStatus(result.getFailed() > 0 ? 2 : 1); // 有失败时返回状态2
+            } else {
+                respVO.setSuccess(false);
+                respVO.setMessage("同步失败：" + result.getErrorMessage());
+                respVO.setSyncStatus(-1);
+            }
+            
+            respVO.setSyncTime(LocalDateTime.now());
+            
+            return success(respVO);
         } catch (Exception e) {
-            log.error("手动同步所有问卷失败", e);
-            return success("同步失败：" + e.getMessage());
+            log.error("同步问卷状态失败", e);
+            
+            QuestionnaireSyncRespVO respVO = new QuestionnaireSyncRespVO();
+            respVO.setSuccess(false);
+            respVO.setMessage("同步失败：" + e.getMessage());
+            respVO.setSyncTime(LocalDateTime.now());
+            respVO.setSyncStatus(-1);
+            
+            return success(respVO);
         }
     }
 
