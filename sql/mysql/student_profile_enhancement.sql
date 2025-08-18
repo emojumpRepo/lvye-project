@@ -7,14 +7,22 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 为 lvye_student_profile 表添加新字段
-ALTER TABLE `lvye_student_profile` 
+ALTER TABLE `lvye_student_profile`
 ADD COLUMN `birth_date` DATE COMMENT '出生日期' AFTER `name`,
 ADD COLUMN `home_address` VARCHAR(500) COMMENT '家庭住址' AFTER `birth_date`,
+ADD COLUMN `sex` TINYINT COMMENT '性别（字典：system_user_sex）' AFTER `home_address`,
 ADD COLUMN `special_marks` VARCHAR(500) DEFAULT NULL COMMENT '特殊标记（多选，逗号分隔字典键值）' AFTER `risk_level`;
 
 -- 添加索引优化查询
 CREATE INDEX `idx_birth_date` ON `lvye_student_profile`(`birth_date`);
+CREATE INDEX `idx_sex` ON `lvye_student_profile`(`sex`);
 CREATE INDEX `idx_special_marks` ON `lvye_student_profile`(`special_marks`);
+
+-- 从 system_users 表同步现有数据的性别信息
+UPDATE `lvye_student_profile` sp
+INNER JOIN `system_users` su ON sp.user_id = su.id
+SET sp.sex = su.sex
+WHERE sp.sex IS NULL AND su.sex IS NOT NULL;
 
 -- 创建完整的学生档案表（如果不存在）
 CREATE TABLE IF NOT EXISTS `lvye_student_profile` (
@@ -24,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `lvye_student_profile` (
     `name` VARCHAR(120) NOT NULL COMMENT '姓名',
     `birth_date` DATE COMMENT '出生日期',
     `home_address` VARCHAR(500) COMMENT '家庭住址',
+    `sex` TINYINT COMMENT '性别（字典：system_user_sex）',
     `grade_dept_id` BIGINT NOT NULL COMMENT '年级部门编号，关联 system_dept.id',
     `class_dept_id` BIGINT NOT NULL COMMENT '班级部门编号，关联 system_dept.id',
     `graduation_status` TINYINT COMMENT '毕业状态（字典：graduation_status）',

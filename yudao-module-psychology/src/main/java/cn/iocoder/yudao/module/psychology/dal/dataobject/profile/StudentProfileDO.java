@@ -48,6 +48,11 @@ public class StudentProfileDO extends TenantBaseDO {
     private String homeAddress;
 
     /**
+     * 性别（字典：system_user_sex）
+     */
+    private Integer sex;
+
+    /**
      * 年级部门编号，关联 system_dept.id
      */
     private Long gradeDeptId;
