@@ -7,8 +7,10 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.timeline.StudentTimelineDO;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
+import cn.iocoder.yudao.module.system.enums.common.SexEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,8 +20,10 @@ import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -32,6 +36,9 @@ public class StudentProfileController {
 
     @Resource
     private StudentProfileService studentProfileService;
+
+    @Resource
+    private StudentTimelineService studentTimelineService;
 
     @PostMapping("/create")
     @Operation(summary = "创建学生档案")
@@ -113,8 +120,10 @@ public class StudentProfileController {
     @PostMapping("/import")
     @Operation(summary = "批量导入学生档案")
     @PreAuthorize("@ss.hasPermission('psychology:student-profile:import')")
-    public CommonResult<StudentProfileImportRespVO> importStudentProfile(@Valid @RequestBody StudentProfileImportReqVO importReqVO) {
-        return success(studentProfileService.importStudentProfile(importReqVO));
+    public CommonResult<StudentProfileImportRespVO> importStudentProfile(@RequestParam("file") MultipartFile file,
+                                                                         @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
+        List<StudentImportExcelVO> list = ExcelUtils.read(file, StudentImportExcelVO.class);
+        return success(studentProfileService.importStudentProfile(list, updateSupport));
     }
 
     @PutMapping("/graduate/{studentProfileId}")
@@ -136,5 +145,27 @@ public class StudentProfileController {
         studentProfileService.updatePsychologicalStatus(studentProfileId, psychologicalStatus, riskLevel);
         return success(true);
     }
+
+    @GetMapping("/get-import-template")
+    @Operation(summary = "获得导入学生档案模板")
+    public void importTemplate(HttpServletResponse response) throws IOException {
+        // 手动创建导出 demo
+        List<StudentImportExcelVO> list = Arrays.asList(
+                StudentImportExcelVO.builder().studentNo("123456").name("小明").sex(SexEnum.MALE.name())
+                        .birthDate("2008-05-20").homeAddress("广东省广州市").mobile("13800013800")
+                        .gradeName("一年级").className("一年级(1)班").build());
+        // 输出
+        ExcelUtils.write(response, "学生档案导入模板.xls", "学生列表", StudentImportExcelVO.class, list);
+    }
+
+    @GetMapping("/timeline-list")
+    @Operation(summary = "获得学生时间线列表")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<StudentTimelineDO>> getStudentTimeListList(@RequestParam String studentProfileId) {
+        List<StudentTimelineDO> list = studentTimelineService.selectListByStudentProfileId(studentProfileId);
+        return success(list);
+    }
+
 
 }

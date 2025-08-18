@@ -220,4 +220,9 @@ public class DeptServiceImpl implements DeptService {
         });
     }
 
+    @Override
+    public DeptDO getDeptByName(String name){
+        return deptMapper.selectByName(name);
+    }
+
 }

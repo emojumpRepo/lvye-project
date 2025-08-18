@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.psychology.service.profile;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.biz.system.permission.dto.DeptDataPermissionRespDTO;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
@@ -12,6 +13,7 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileR
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileRecordMapper;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
+import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
 import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
@@ -19,6 +21,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
+import cn.iocoder.yudao.module.system.enums.common.SexEnum;
 import cn.iocoder.yudao.module.system.service.permission.PermissionService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -30,6 +33,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +42,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_IMPORT_LIST_IS_EMPTY;
 
 /**
  * 学生档案 Service 实现类
@@ -46,7 +52,11 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 @Slf4j
 public class StudentProfileServiceImpl implements StudentProfileService {
 
-    static final String USER_INIT_PASSWORD_KEY = "system.user.init-password";
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
+
+    static final String USER_INIT_PASSWORD_KEY = "student.defaultPassword";
+
+    static final String SCHOOL_YEAR = "school.year";
 
     @Resource
     private StudentProfileMapper studentProfileMapper;
@@ -81,6 +91,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     @Resource
     private PermissionApi permissionApi;
 
+    @Resource
+    private StudentTimelineService studentTimelineService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createStudentProfile(@Valid StudentProfileSaveReqVO createReqVO) {
@@ -106,12 +119,15 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         roles.add(roleMapper.selectOne(RoleDO::getName, "学生").getId());
         permissionService.assignUserRole(adminUserDO.getId(), roles);
         //插入学生历史记录表
+        String schoolYear = configApi.getConfigValueByKey(SCHOOL_YEAR);
         StudentProfileRecordDO studentProfileRecordDO = new StudentProfileRecordDO();
         studentProfileRecordDO.setStudentNo(createReqVO.getStudentNo());
-//        studentProfileRecordDO.setStudyYear()
+        studentProfileRecordDO.setStudyYear(schoolYear);
         studentProfileRecordDO.setGradeDeptId(createReqVO.getGradeDeptId());
         studentProfileRecordDO.setClassDeptId(createReqVO.getClassDeptId());
         studentProfileRecordMapper.insert(studentProfileRecordDO);
+        //登记时间线
+        //....
         // 返回
         return studentProfile.getId();
     }
@@ -137,7 +153,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         adminUserDO.setStatus(CommonStatusEnum.ENABLE.getStatus());
         adminUserMapper.updateById(adminUserDO);
         //如果有更换年级或者班级，就要插入记录表
-        if (!studentProfileDO.getGradeDeptId().equals(updateReqVO.getGradeDeptId()) || !studentProfileDO.getClassDeptId().equals(updateReqVO.getClassDeptId())){
+        if (!studentProfileDO.getGradeDeptId().equals(updateReqVO.getGradeDeptId()) || !studentProfileDO.getClassDeptId().equals(updateReqVO.getClassDeptId())) {
             StudentProfileRecordDO studentProfileRecordDO = new StudentProfileRecordDO();
             studentProfileRecordDO.setStudentNo(updateReqVO.getStudentNo());
             //        studentProfileRecordDO.setStudyYear()
@@ -145,6 +161,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
             studentProfileRecordDO.setClassDeptId(updateReqVO.getClassDeptId());
             studentProfileRecordMapper.insert(studentProfileRecordDO);
         }
+        //登记时间线
+        //....
     }
 
     @Override
@@ -156,6 +174,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         //删除用户档案
         adminUserService.deleteUser(studentProfileDO.getUserId());
         //删除其他内容....
+        //登记时间线
+        //....
     }
 
     private StudentProfileDO validateStudentProfileExists(Long id) {
@@ -216,28 +236,32 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public StudentProfileImportRespVO importStudentProfile(StudentProfileImportReqVO importReqVO) {
+    public StudentProfileImportRespVO importStudentProfile(List<StudentImportExcelVO> studentList, boolean isUpdateSupport) {
         StudentProfileImportRespVO respVO = new StudentProfileImportRespVO();
-        
-        if (importReqVO.getStudentProfiles() == null || importReqVO.getStudentProfiles().isEmpty()) {
-            respVO.setSuccessCount(0);
-            respVO.setFailureCount(0);
-            return respVO;
+        // 1.1 参数校验
+        if (CollUtil.isEmpty(studentList)) {
+            throw exception(ErrorCodeConstants.STUDENT_IMPORT_LIST_IS_EMPTY);
         }
-
         int successCount = 0;
         int failureCount = 0;
-        
-        for (StudentProfileSaveReqVO profile : importReqVO.getStudentProfiles()) {
-            try {
-                createStudentProfile(profile);
-                successCount++;
-            } catch (Exception e) {
-                failureCount++;
-                log.error("[importStudentProfile][导入学生档案失败] 学号: {}, 错误: {}", profile.getStudentNo(), e.getMessage());
+
+        for (StudentImportExcelVO student : studentList) {
+            StudentProfileDO studentProfileDO = studentProfileMapper.selectByStudentNo(student.getStudentNo());
+            if (Objects.isNull(studentProfileDO)){
+                try {
+                    this.saveStudentInfoByExcel(student);
+                    successCount = successCount ++;
+                } catch (Exception e){
+                    logger.error("学生:" + student.getName() + "导入失败");
+                    respVO.setFailReason(e.getMessage());
+                    failureCount = failureCount ++;
+                }
+            } else {
+                if (isUpdateSupport){
+                    //暂不实现
+                }
             }
         }
-        
         respVO.setSuccessCount(successCount);
         respVO.setFailureCount(failureCount);
         return respVO;
@@ -262,7 +286,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         if (studentProfile == null) {
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
-        
+
         // 更新毕业状态
         StudentProfileDO updateObj = new StudentProfileDO();
         updateObj.setId(id);
@@ -283,6 +307,48 @@ public class StudentProfileServiceImpl implements StudentProfileService {
      */
     private String encodePassword(String password) {
         return passwordEncoder.encode(password);
+    }
+
+    private void saveStudentInfoByExcel(StudentImportExcelVO student){
+        // 校验学号唯一性
+        validateStudentNoUnique(null, student.getStudentNo());
+        DeptRespDTO gradeDept = deptApi.getByDeptName(student.getGradeName());
+        DeptRespDTO classDept = deptApi.getByDeptName(student.getClassName());
+        if (gradeDept == null || classDept == null){
+            throw exception(ErrorCodeConstants.STUDENT_GRADE_OR_CLASS_IS_EMPTY);
+        }
+        if (classDept.getParentId().equals(gradeDept.getId())){
+            throw exception(ErrorCodeConstants.STUDENT_GRADE_OR_CLASS_NOT_MATCH);
+        }
+        //插入用户表
+        AdminUserDO adminUserDO = new AdminUserDO();
+        adminUserDO.setUsername(student.getStudentNo());
+        adminUserDO.setDeptId(classDept.getId());
+        adminUserDO.setNickname(student.getName());
+        adminUserDO.setSex(SexEnum.getName(student.getSex()));
+        adminUserDO.setMobile(student.getMobile());
+        adminUserDO.setStatus(CommonStatusEnum.ENABLE.getStatus());
+        String initPassword = configApi.getConfigValueByKey(USER_INIT_PASSWORD_KEY);
+        adminUserDO.setPassword(encodePassword(initPassword));
+        adminUserMapper.insert(adminUserDO);
+        // 插入学生档案表
+        StudentProfileDO studentProfile = BeanUtils.toBean(student, StudentProfileDO.class);
+        studentProfile.setUserId(adminUserDO.getId());
+        studentProfile.setGraduationStatus(0);
+        studentProfile.setGraduationStatus(1);
+        studentProfileMapper.insert(studentProfile);
+        //设置学生角色
+        Set<Long> roles = new HashSet<>();
+        roles.add(roleMapper.selectOne(RoleDO::getName, "学生").getId());
+        permissionService.assignUserRole(adminUserDO.getId(), roles);
+        //插入学生历史记录表
+        String schoolYear = configApi.getConfigValueByKey(SCHOOL_YEAR);
+        StudentProfileRecordDO studentProfileRecordDO = new StudentProfileRecordDO();
+        studentProfileRecordDO.setStudentNo(student.getStudentNo());
+        studentProfileRecordDO.setStudyYear(schoolYear);
+        studentProfileRecordDO.setGradeDeptId(gradeDept.getId());
+        studentProfileRecordDO.setClassDeptId(classDept.getId());
+        studentProfileRecordMapper.insert(studentProfileRecordDO);
     }
 
 }
