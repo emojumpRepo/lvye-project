@@ -1,7 +1,12 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentParticipantDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentParticipantMapper;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
+import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +25,12 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Resource
     private AssessmentTaskService assessmentTaskService;
+
+    @Resource
+    private StudentProfileService studentProfileService;
+
+    @Resource
+    private AssessmentParticipantMapper participantMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)

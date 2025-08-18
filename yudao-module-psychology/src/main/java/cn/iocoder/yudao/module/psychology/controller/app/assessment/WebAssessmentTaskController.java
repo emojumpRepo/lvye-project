@@ -32,7 +32,7 @@ public class WebAssessmentTaskController {
     @Operation(summary = "获得我的测评任务列表")
     @DataPermission(enable = false)
     public CommonResult<List<WebAssessmentTaskRespVO>> getMyAssessmentTasks() {
-        List<cn.iocoder.yudao.module.psychology.service.assessment.vo.WebAssessmentTaskVO> list = assessmentTaskService.selectListByUserId(SecurityFrameworkUtils.getLoginUserId());
+        List<WebAssessmentTaskVO> list = assessmentTaskService.selectListByUserId();
         return success(BeanUtils.toBean(list, WebAssessmentTaskRespVO.class));
     }
 
