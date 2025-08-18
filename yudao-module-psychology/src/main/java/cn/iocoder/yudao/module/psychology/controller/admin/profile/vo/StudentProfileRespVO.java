@@ -26,5 +26,7 @@ public class StudentProfileRespVO extends StudentProfileBaseVO {
     @Schema(description = "班级", requiredMode = Schema.RequiredMode.REQUIRED)
     private String className;
 
+    @Schema(description = "特殊标记名称", example = "家庭困难, 心理风险")
+    private String specialMarkNames;
 
 }

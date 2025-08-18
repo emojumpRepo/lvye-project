@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
+import java.time.LocalDate;
+
 /**
  * 学生档案 Base VO，提供给添加、修改、详细的子 VO 使用
  * 如果子 VO 存在差异的字段，请不要添加到这里，影响 Swagger 文档生成
@@ -26,8 +28,14 @@ public class StudentProfileBaseVO {
     @Length(max = 120, message = "姓名不能超过 120")
     private String name;
 
+    @Schema(description = "出生日期", example = "2008-05-20")
+    private LocalDate birthDate;
+
+    @Schema(description = "家庭住址", example = "北京市朝阳区某某街道123号")
+    @Length(max = 500, message = "家庭住址不能超过 500 字符")
+    private String homeAddress;
+
     @Schema(description = "性别", example = "1")
-    @Length(max = 1, message = "性别不能超过 1")
     private Integer sex;
 
     @Schema(description = "手机号", example = "13800138000")
@@ -43,16 +51,17 @@ public class StudentProfileBaseVO {
     private Long classDeptId;
 
     @Schema(description = "毕业状态", example = "0")
-    @Length(max = 1, message = "毕业状态不能超过 1")
     private Integer graduationStatus;
 
     @Schema(description = "心理状态", example = "1")
-    @Length(max = 1, message = "心理状态不能超过 1")
     private Integer psychologicalStatus;
 
     @Schema(description = "风险等级", example = "1")
-    @Length(max = 1, message = "风险等级不能超过 1")
     private Integer riskLevel;
+
+    @Schema(description = "特殊标记", example = "2,3")
+    @Length(max = 500, message = "特殊标记不能超过 500 字符")
+    private String specialMarks;
 
     @Schema(description = "备注", example = "这是一个备注")
     private String remark;
