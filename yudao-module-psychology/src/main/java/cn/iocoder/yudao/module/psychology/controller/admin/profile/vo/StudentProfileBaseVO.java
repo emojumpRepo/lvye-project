@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 学生档案 Base VO，提供给添加、修改、详细的子 VO 使用
@@ -28,8 +28,8 @@ public class StudentProfileBaseVO {
     @Length(max = 120, message = "姓名不能超过 120")
     private String name;
 
-    @Schema(description = "出生日期", example = "2008-05-20")
-    private LocalDate birthDate;
+    @Schema(description = "出生日期", example = "2008-05-20 00:00:00")
+    private LocalDateTime birthDate;
 
     @Schema(description = "家庭住址", example = "北京市朝阳区某某街道123号")
     @Length(max = 500, message = "家庭住址不能超过 500 字符")
