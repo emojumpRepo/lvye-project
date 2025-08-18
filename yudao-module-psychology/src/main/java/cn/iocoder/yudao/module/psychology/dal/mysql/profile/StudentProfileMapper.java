@@ -29,13 +29,15 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
         return selectOne(StudentProfileDO::getStudentNo, studentNo);
     }
 
-    default StudentProfileDO selectByMemberUserId(Long userId) {
+    default StudentProfileDO selectByUserId(Long userId) {
         return selectOne(StudentProfileDO::getUserId, userId);
     }
 
     IPage<StudentProfileVO> selectPageList(IPage<StudentProfileVO> page, @Param("pageReqVO") StudentProfilePageReqVO pageReqVO);
 
-    StudentProfileVO selectInfoById(Long studentProfileId);
+    StudentProfileVO selectInfoByStudentProfileId(Long studentProfileId);
+
+    StudentProfileVO selectInfoByUserId(Long userId);
 
 }
 

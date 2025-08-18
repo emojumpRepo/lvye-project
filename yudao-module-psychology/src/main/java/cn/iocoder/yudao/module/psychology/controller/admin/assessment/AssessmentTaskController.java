@@ -51,10 +51,10 @@ public class AssessmentTaskController {
 
     @GetMapping("/get-exam-template")
     @Operation(summary = "获得测评任务")
-    public CommonResult<List<Object>> getAssessmentTemplate() {
-        // 简化实现：返回空列表
-        log.info("获得测评任务模板（简化实现）");
-        return success(java.util.Collections.emptyList());
+    @DataPermission(enable = false)
+    public CommonResult<List<AssessmentTemplateDO>> getAssessmentTemplate() {
+        List<AssessmentTemplateDO> result = templateMapper.selectTempalteList();
+        return success(result);
     }
 
     @PostMapping("/create")
@@ -160,14 +160,13 @@ public class AssessmentTaskController {
         return success(true);
     }
 
-    @GetMapping("/statistics/{taskNo}")
+    @GetMapping("/statistics")
     @Operation(summary = "获取任务统计信息")
     @Parameter(name = "taskNo", description = "任务编号", required = true)
-    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:statistics')")
-    public CommonResult<Object> getTaskStatistics(@PathVariable("taskNo") String taskNo) {
-        log.info("获取任务统计信息（简化实现），任务编号: {}", taskNo);
-        // TODO: 实现具体的统计信息获取逻辑
-        return success(java.util.Collections.emptyMap());
+//    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:statistics')")
+    @DataPermission(enable = false)
+    public CommonResult<AssessmentTaskStatisticsRespVO> getTaskStatistics(@RequestParam("taskNo") String taskNo) {
+        return success(assessmentTaskService.getTaskStatistics(taskNo));
     }
 
     @GetMapping("/participants-list")

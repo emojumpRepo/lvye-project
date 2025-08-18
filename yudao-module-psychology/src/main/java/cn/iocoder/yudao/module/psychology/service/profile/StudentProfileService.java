@@ -68,12 +68,12 @@ public interface StudentProfileService {
     StudentProfileDO getStudentProfileByNo(String studentNo);
 
     /**
-     * 根据学号获取学生档案
+     * 根据用户ID获取学生档案
      *
-     * @param memberUserId 会员用户编号
+     * @param userId 用户编号
      * @return 学生档案
      */
-    StudentProfileDO getStudentProfileByMemberUserId(Long memberUserId);
+    StudentProfileDO getStudentProfileByUserId(Long userId);
 
     /**
      * 批量导入学生档案
@@ -98,5 +98,13 @@ public interface StudentProfileService {
      * @param id 学生档案编号
      */
     void graduateStudent(Long id);
+
+    /**
+     * 根据用户ID获取学生档案信息详情
+     *
+     * @param userId 用户编号
+     * @return 学生档案
+     */
+    StudentProfileVO getStudentProfileDetailByUserId(Long userId);
 
 }

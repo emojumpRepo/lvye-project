@@ -15,7 +15,7 @@
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
         <where>
-            1 = 1
+            a.deleted = 0
             <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
                 AND a.student_no = #{pageReqVO.studentNo}
             </if>
@@ -44,7 +44,7 @@
         </where>
     </select>
 
-    <select id="selectInfoById"
+    <select id="selectInfoByStudentProfileId"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
         SELECT a.id, a.user_id, a.student_no, a.name,
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
@@ -57,7 +57,18 @@
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
         <where>
-            a.id = #{studentProfileId}
+            a.deleted = 0 and a.id = #{studentProfileId}
+        </where>
+    </select>
+
+    <select id="selectInfoByUserId"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
+        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0 and a.user_id = #{userId}
         </where>
     </select>
 

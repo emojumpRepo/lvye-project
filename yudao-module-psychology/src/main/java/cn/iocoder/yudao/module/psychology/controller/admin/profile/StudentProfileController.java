@@ -128,7 +128,6 @@ public class StudentProfileController {
 
     @PutMapping("/psychological-status/{studentProfileId}")
     @Operation(summary = "更新学生心理状态")
-    @Parameter(name = "id", description = "编号", required = true)
     @DataPermission(enable = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
     public CommonResult<Boolean> updatePsychologicalStatus(@PathVariable("studentProfileId") Long studentProfileId,

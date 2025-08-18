@@ -4,6 +4,10 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptTaskDO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * @Author: MinGoo
@@ -18,5 +22,9 @@ public interface AssessmentDeptTaskMapper extends BaseMapperX<AssessmentDeptTask
         delete(new LambdaQueryWrapperX<AssessmentDeptTaskDO>()
                 .eq(AssessmentDeptTaskDO::getTaskNo, taskNo));
     }
+
+    List<Long> selectTaskListByDeptIds(@Param("deptIds") Set<Long> deptIds);
+
+
 
 }
