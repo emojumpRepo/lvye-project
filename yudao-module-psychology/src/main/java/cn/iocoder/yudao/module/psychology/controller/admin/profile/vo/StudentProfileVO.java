@@ -30,6 +30,12 @@ public class StudentProfileVO {
     @NotBlank(message = "姓名不能为空")
     private String name;
 
+    @Schema(description = "出生日期", example = "2008-05-20")
+    private LocalDateTime birthDate;
+
+    @Schema(description = "家庭住址", example = "北京市朝阳区某某街道123号")
+    private String homeAddress;
+
     @Schema(description = "性别", example = "1")
     private Integer sex;
 
@@ -52,6 +58,9 @@ public class StudentProfileVO {
 
     @Schema(description = "风险等级", example = "1")
     private Integer riskLevel;
+
+    @Schema(description = "特殊标记", example = "2,3")
+    private String specialMarks;
 
     @Schema(description = "备注", example = "这是一个备注")
     private String remark;

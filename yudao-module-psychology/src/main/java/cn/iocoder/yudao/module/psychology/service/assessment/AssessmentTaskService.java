@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
-import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
+import cn.iocoder.yudao.module.psychology.service.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import jakarta.validation.Valid;
 
@@ -120,8 +119,9 @@ public interface AssessmentTaskService {
 
     /**
      * 根据userId查询测评任务列表(学生家长端使用)
+     * @param userId 用户ID
      * @return
      */
-    List<WebAssessmentTaskVO> selectListByUserId();
+    List<WebAssessmentTaskVO> selectListByUserId(Long userId);
 
 }

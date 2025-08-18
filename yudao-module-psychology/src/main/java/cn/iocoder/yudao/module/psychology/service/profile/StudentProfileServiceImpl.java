@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -193,6 +194,14 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         IPage<StudentProfileVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
         studentProfileMapper.selectPageList(page, pageReqVO);
         return new PageResult<>(page.getRecords(), page.getTotal());
+    }
+
+    @Override
+    public List<StudentProfileVO> getStudentProfileList(StudentProfilePageReqVO reqVO) {
+        // 设置不分页，获取所有数据
+        IPage<StudentProfileVO> page = new Page<>(1, Integer.MAX_VALUE);
+        studentProfileMapper.selectPageList(page, reqVO);
+        return page.getRecords();
     }
 
     @Override

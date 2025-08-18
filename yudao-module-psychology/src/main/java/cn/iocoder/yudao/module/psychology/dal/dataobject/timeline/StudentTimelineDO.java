@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.timeline;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -9,8 +8,7 @@ import lombok.*;
 /**
  * 学生综合时间线事件 DO
  */
-@TableName(value = "psy_student_timeline", autoResultMap = true)
-@KeySequence("psy_student_timeline_seq")
+@TableName(value = "lvye_student_timeline", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -41,3 +39,4 @@ public class StudentTimelineDO extends TenantBaseDO {
 
 
 
+

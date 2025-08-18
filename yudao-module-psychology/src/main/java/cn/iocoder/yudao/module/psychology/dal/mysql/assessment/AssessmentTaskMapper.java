@@ -3,9 +3,9 @@ package cn.iocoder.yudao.module.psychology.dal.mysql.assessment;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
-import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskPageReqVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskVO;
-import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
+import cn.iocoder.yudao.module.psychology.service.assessment.vo.AssessmentTaskPageReqVO;
+import cn.iocoder.yudao.module.psychology.service.assessment.vo.AssessmentTaskVO;
+import cn.iocoder.yudao.module.psychology.service.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -24,9 +24,6 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
                 .eqIfPresent(AssessmentTaskDO::getScaleCode, reqVO.getScaleCode())
                 .eqIfPresent(AssessmentTaskDO::getTargetAudience, reqVO.getTargetAudience())
                 .eqIfPresent(AssessmentTaskDO::getStatus, reqVO.getStatus())
-                .eqIfPresent(AssessmentTaskDO::getPublishUserId, reqVO.getPublishUserId())
-                .betweenIfPresent(AssessmentTaskDO::getDeadline, reqVO.getDeadline())
-                .betweenIfPresent(AssessmentTaskDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(AssessmentTaskDO::getId));
     }
 

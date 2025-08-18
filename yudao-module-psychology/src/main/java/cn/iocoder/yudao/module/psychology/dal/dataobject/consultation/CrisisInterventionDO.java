@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.consultation;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -9,8 +8,7 @@ import lombok.*;
 /**
  * 危机干预事件 DO
  */
-@TableName(value = "psy_crisis_intervention", autoResultMap = true)
-@KeySequence("psy_crisis_intervention_seq")
+@TableName(value = "lvye_crisis_intervention", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)

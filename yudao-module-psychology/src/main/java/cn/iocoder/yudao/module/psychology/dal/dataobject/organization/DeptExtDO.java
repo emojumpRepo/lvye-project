@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.organization;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -9,8 +8,7 @@ import lombok.*;
 /**
  * 组织架构扩展 DO（用于标识部门为学校/学部/年级/班级，并存储班级信息）
  */
-@TableName(value = "psy_dept_ext", autoResultMap = true)
-@KeySequence("psy_dept_ext_seq")
+@TableName(value = "lvye_dept_ext", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)

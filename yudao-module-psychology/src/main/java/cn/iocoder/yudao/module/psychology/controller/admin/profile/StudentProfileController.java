@@ -70,6 +70,16 @@ public class StudentProfileController {
         return success(BeanUtils.toBean(studentProfile, StudentProfileVO.class));
     }
 
+    @GetMapping("/get")
+    @Operation(summary = "获得学生档案")
+    @Parameter(name = "id", description = "学生编号", required = true, example = "1024")
+    @DataPermission(enable = false)
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    public CommonResult<StudentProfileVO> getStudentProfileById(@RequestParam("id") Long id) {
+        StudentProfileVO studentProfile = studentProfileService.getStudentProfile(id);
+        return success(BeanUtils.toBean(studentProfile, StudentProfileVO.class));
+    }
+
     @GetMapping("/page")
     @Operation(summary = "获得学生档案分页")
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
@@ -77,6 +87,15 @@ public class StudentProfileController {
     public CommonResult<PageResult<StudentProfileVO>> getStudentProfilePage(@Valid StudentProfilePageReqVO pageReqVO) {
         PageResult<StudentProfileVO> pageResult = studentProfileService.getStudentProfilePage(pageReqVO);
         return success(BeanUtils.toBean(pageResult, StudentProfileVO.class));
+    }
+
+    @GetMapping("/simple-list")
+    @Operation(summary = "获得学生档案精简列表", description = "不分页，主要用于前端的下拉选项")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<StudentProfileVO>> getStudentProfileSimpleList(StudentProfilePageReqVO reqVO) {
+        List<StudentProfileVO> list = studentProfileService.getStudentProfileList(reqVO);
+        return success(list);
     }
 
     @GetMapping("/export-excel")

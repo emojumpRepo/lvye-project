@@ -5,6 +5,8 @@ import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import jakarta.validation.Valid;
 
+import java.util.List;
+
 
 /**
  * 学生档案 Service 接口
@@ -48,6 +50,14 @@ public interface StudentProfileService {
      * @return 学生档案分页
      */
     PageResult<StudentProfileVO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO);
+
+    /**
+     * 获得学生档案列表（不分页）
+     *
+     * @param reqVO 查询条件
+     * @return 学生档案列表
+     */
+    List<StudentProfileVO> getStudentProfileList(StudentProfilePageReqVO reqVO);
 
     /**
      * 根据学号获取学生档案

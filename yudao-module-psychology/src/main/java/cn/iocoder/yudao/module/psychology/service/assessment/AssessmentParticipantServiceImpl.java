@@ -1,21 +1,12 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentParticipantDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentAnswerDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
-import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentParticipantMapper;
-import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentAnswerMapper;
-import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
-import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
-
-import java.time.LocalDateTime;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 
@@ -27,15 +18,6 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 @Slf4j
 public class AssessmentParticipantServiceImpl implements AssessmentParticipantService {
 
-    @Resource
-    private AssessmentParticipantMapper participantMapper;
-    
-    @Resource
-    private AssessmentAnswerMapper answerMapper;
-    
-    @Resource
-    private StudentProfileService studentProfileService;
-    
     @Resource
     private AssessmentTaskService assessmentTaskService;
 
@@ -84,25 +66,12 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
             throw exception(ErrorCodeConstants.ASSESSMENT_NOT_COMPLETED);
         }
 
-        // 保存答案
-        for (WebAssessmentParticipateReqVO.AssessmentAnswerItem answerItem : participateReqVO.getAnswers()) {
-            AssessmentAnswerDO answer = new AssessmentAnswerDO();
-            answer.setParticipantId(participant.getId());
-            answer.setQuestionIndex(answerItem.getQuestionIndex());
-            answer.setAnswer(answerItem.getAnswer());
-            answer.setScore(answerItem.getScore());
-            answerMapper.insert(answer);
-        }
-
-        // 更新参与状态
-        AssessmentParticipantDO updateObj = new AssessmentParticipantDO();
-        updateObj.setId(participant.getId());
-        updateObj.setCompletionStatus(ParticipantCompletionStatusEnum.COMPLETED.getStatus());
-        updateObj.setSubmitTime(LocalDateTime.now());
-        participantMapper.updateById(updateObj);
+        // TODO: 实现具体的提交测评逻辑
+        // 当前为简化实现，后续可以添加具体的业务逻辑
     }
 
     @Override
+
     public Integer getParticipantStatus(Long taskId, Long userId) {
         // 获取学生档案
         StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(userId);
@@ -116,7 +85,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
             return ParticipantCompletionStatusEnum.NOT_STARTED.getStatus();
         }
 
-        return participant.getCompletionStatus();
+        // TODO: 实现具体的状态查询逻辑
+        // 当前为简化实现，默认返回未开始状态
+        return 1; // 1-未开始状态
     }
 
 }

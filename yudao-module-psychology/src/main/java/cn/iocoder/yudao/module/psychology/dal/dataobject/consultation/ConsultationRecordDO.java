@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.consultation;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -11,8 +10,7 @@ import java.time.LocalDateTime;
 /**
  * 心理咨询记录 DO
  */
-@TableName(value = "psy_consultation_record", autoResultMap = true)
-@KeySequence("psy_consultation_record_seq")
+@TableName(value = "lvye_consultation_record", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)

@@ -4,7 +4,13 @@
 
     <select id="selectPageList"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
-        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className FROM lvye_student_profile a
+        SELECT a.id, a.user_id, a.student_no, a.name,
+               CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
+               a.home_address, a.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.psychological_status, a.risk_level, a.special_marks, a.remark,
+               a.create_time, a.update_time,
+               b.mobile, c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
@@ -17,7 +23,7 @@
                 AND a.name = #{pageReqVO.name}
             </if>
             <if test="pageReqVO.sex != null">
-                AND a.sex = #{pageReqVO.sex}
+                AND b.sex = #{pageReqVO.sex}
             </if>
             <if test="pageReqVO.gradeDeptId != null">
                 AND a.grade_dept_id = #{pageReqVO.gradeDeptId}
@@ -34,13 +40,19 @@
             <if test="pageReqVO.riskLevel != null">
                 AND a.risk_level = #{pageReqVO.riskLevel}
             </if>
-            ORDER BY id DESC
+            ORDER BY a.id DESC
         </where>
     </select>
 
     <select id="selectInfoByStudentProfileId"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
-        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className FROM lvye_student_profile a
+        SELECT a.id, a.user_id, a.student_no, a.name,
+               CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
+               a.home_address, a.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.psychological_status, a.risk_level, a.special_marks, a.remark,
+               a.create_time, a.update_time,
+               b.mobile, c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id

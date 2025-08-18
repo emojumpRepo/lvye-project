@@ -7,6 +7,7 @@ public interface DictTypeConstants {
 
     String PSYCHOLOGICAL_STATUS = "psychological_status"; // 心理状态
     String RISK_LEVEL = "risk_level"; // 风险等级
+    String STUDENT_SPECIAL_MARK = "student_special_mark"; // 学生特殊标记
     String ASSESSMENT_SCALE_TYPE = "assessment_scale_type"; // 测评量表类型
     String TARGET_AUDIENCE = "target_audience"; // 目标对象
     String CONSULTATION_TYPE = "consultation_type"; // 咨询类型

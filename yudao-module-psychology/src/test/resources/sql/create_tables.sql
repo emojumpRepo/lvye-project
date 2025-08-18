@@ -22,17 +22,17 @@ CREATE TABLE IF NOT EXISTS psy_student_profile (
 );
 
 -- Indexes
-CREATE UNIQUE INDEX IF NOT EXISTS uk_psy_assessment_task_no ON psy_assessment_task(task_no);
-CREATE INDEX IF NOT EXISTS idx_psy_participant_task ON psy_assessment_participant(task_id);
-CREATE INDEX IF NOT EXISTS idx_psy_participant_student ON psy_assessment_participant(student_profile_id);
-CREATE INDEX IF NOT EXISTS idx_psy_answer_participant ON psy_assessment_answer(participant_id);
-CREATE INDEX IF NOT EXISTS idx_psy_result_participant ON psy_assessment_result(participant_id);
-CREATE INDEX IF NOT EXISTS idx_psy_timeline_student ON psy_student_timeline(student_profile_id);
-CREATE INDEX IF NOT EXISTS idx_psy_timeline_event ON psy_student_timeline(event_type);
-CREATE INDEX IF NOT EXISTS idx_psy_crisis_student ON psy_crisis_intervention(student_profile_id);
-CREATE INDEX IF NOT EXISTS idx_psy_crisis_source ON psy_crisis_intervention(source_type);
-CREATE INDEX IF NOT EXISTS idx_psy_crisis_reporter_source ON psy_crisis_intervention(reporter_user_id, source_type);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_psy_dept_ext_dept ON psy_dept_ext(dept_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_lvye_assessment_task_no ON lvye_assessment_task(task_no);
+CREATE INDEX IF NOT EXISTS idx_psy_participant_task ON lvye_assessment_participant(task_id);
+CREATE INDEX IF NOT EXISTS idx_psy_participant_student ON lvye_assessment_participant(student_profile_id);
+CREATE INDEX IF NOT EXISTS idx_psy_answer_participant ON lvye_assessment_answer(participant_id);
+CREATE INDEX IF NOT EXISTS idx_psy_result_participant ON lvye_assessment_result(participant_id);
+CREATE INDEX IF NOT EXISTS idx_psy_timeline_student ON lvye_student_timeline(student_profile_id);
+CREATE INDEX IF NOT EXISTS idx_psy_timeline_event ON lvye_student_timeline(event_type);
+CREATE INDEX IF NOT EXISTS idx_psy_crisis_student ON lvye_crisis_intervention(student_profile_id);
+CREATE INDEX IF NOT EXISTS idx_psy_crisis_source ON lvye_crisis_intervention(source_type);
+CREATE INDEX IF NOT EXISTS idx_psy_crisis_reporter_source ON lvye_crisis_intervention(reporter_user_id, source_type);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_psy_dept_ext_dept ON lvye_dept_ext(dept_id);
 
 CREATE TABLE IF NOT EXISTS lvye_assessment_task (
     id                BIGINT PRIMARY KEY,
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS lvye_assessment_dept_task (
     deleted           BIT
 );
 
-CREATE TABLE IF NOT EXISTS psy_assessment_participant (
+CREATE TABLE IF NOT EXISTS lvye_assessment_participant (
     id                   BIGINT PRIMARY KEY,
     tenant_id            BIGINT,
     task_id              BIGINT NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS psy_assessment_participant (
     deleted           BIT
 );
 
-CREATE TABLE IF NOT EXISTS psy_assessment_answer (
+CREATE TABLE IF NOT EXISTS lvye_assessment_answer (
     id                BIGINT PRIMARY KEY,
     tenant_id         BIGINT,
     participant_id    BIGINT NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS psy_assessment_answer (
     deleted           BIT
 );
 
-CREATE TABLE IF NOT EXISTS psy_assessment_result (
+CREATE TABLE IF NOT EXISTS lvye_assessment_result (
     id                BIGINT PRIMARY KEY,
     tenant_id         BIGINT,
     participant_id    BIGINT NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS psy_assessment_result (
     deleted           BIT
 );
 
-CREATE TABLE IF NOT EXISTS psy_student_timeline (
+CREATE TABLE IF NOT EXISTS lvye_student_timeline (
     id                  BIGINT PRIMARY KEY,
     tenant_id           BIGINT,
     student_profile_id  BIGINT NOT NULL,
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS psy_student_timeline (
 
 -- Removed: psy_quick_report folded into crisis_intervention via sourceType/reporterUserId/reportedAt/urgencyLevel
 
-CREATE TABLE IF NOT EXISTS psy_consultation_record (
+CREATE TABLE IF NOT EXISTS lvye_consultation_record (
     id                  BIGINT PRIMARY KEY,
     tenant_id           BIGINT,
     student_profile_id  BIGINT NOT NULL,
@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS psy_consultation_record (
     deleted           BIT
 );
 
-CREATE TABLE IF NOT EXISTS psy_crisis_intervention (
+CREATE TABLE IF NOT EXISTS lvye_crisis_intervention (
     id                  BIGINT PRIMARY KEY,
     tenant_id           BIGINT,
     student_profile_id  BIGINT NOT NULL,
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS psy_crisis_intervention (
     deleted           BIT
 );
 
-CREATE TABLE IF NOT EXISTS psy_dept_ext (
+CREATE TABLE IF NOT EXISTS lvye_dept_ext (
     id                  BIGINT PRIMARY KEY,
     tenant_id           BIGINT,
     dept_id             BIGINT,

@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.assessment;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -9,8 +8,7 @@ import lombok.*;
 /**
  * 测评结果 DO（维度级别与总分）
  */
-@TableName(value = "psy_assessment_result", autoResultMap = true)
-@KeySequence("psy_assessment_result_seq")
+@TableName(value = "lvye_assessment_result", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -37,6 +35,21 @@ public class AssessmentResultDO extends TenantBaseDO {
 
     /** 建议/结论摘要 */
     private String suggestion;
+
+    /** 关联的问卷结果汇总 (JSON格式存储) */
+    private String questionnaireResults;
+
+    /** 综合风险等级 */
+    private Integer combinedRiskLevel;
+
+    /** 风险因素分析 (JSON格式存储) */
+    private String riskFactors;
+
+    /** 干预建议 */
+    private String interventionSuggestions;
+
+    /** 生成规则版本 */
+    private String generationConfigVersion;
 }
 
 
