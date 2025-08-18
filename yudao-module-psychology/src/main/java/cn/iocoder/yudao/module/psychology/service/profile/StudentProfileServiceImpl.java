@@ -182,7 +182,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Override
     public StudentProfileVO getStudentProfile(Long studentProfileId) {
-        return studentProfileMapper.selectInfoById(studentProfileId);
+        return studentProfileMapper.selectInfoByStudentProfileId(studentProfileId);
     }
 
     @Override
@@ -201,8 +201,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     }
 
     @Override
-    public StudentProfileDO getStudentProfileByMemberUserId(Long memberUserId) {
-        return studentProfileMapper.selectByMemberUserId(memberUserId);
+    public StudentProfileDO getStudentProfileByUserId(Long userId) {
+        return studentProfileMapper.selectByUserId(userId);
     }
 
     @Override
@@ -259,6 +259,11 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         updateObj.setId(id);
         updateObj.setGraduationStatus(1); // 1-已毕业
         studentProfileMapper.updateById(updateObj);
+    }
+
+    @Override
+    public StudentProfileVO getStudentProfileDetailByUserId(Long userId) {
+        return studentProfileMapper.selectInfoByUserId(userId);
     }
 
     /**

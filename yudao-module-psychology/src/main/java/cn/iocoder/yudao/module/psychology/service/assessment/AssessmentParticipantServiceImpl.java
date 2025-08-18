@@ -41,14 +41,14 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void startAssessment(String taskNo, Long memberUserId, Boolean isParent) {
+    public void startAssessment(String taskNo, Long userId, Boolean isParent) {
         // 校验任务存在
         if (assessmentTaskService.getAssessmentTask(taskNo) == null) {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
         }
 
         // 获取学生档案
-        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByMemberUserId(memberUserId);
+        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(userId);
         if (studentProfile == null) {
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
@@ -71,9 +71,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void submitAssessment(Long taskId, Long memberUserId, WebAssessmentParticipateReqVO participateReqVO) {
+    public void submitAssessment(Long taskId, Long userId, WebAssessmentParticipateReqVO participateReqVO) {
         // 获取学生档案
-        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByMemberUserId(memberUserId);
+        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(userId);
         if (studentProfile == null) {
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
@@ -103,9 +103,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
     }
 
     @Override
-    public Integer getParticipantStatus(Long taskId, Long memberUserId) {
+    public Integer getParticipantStatus(Long taskId, Long userId) {
         // 获取学生档案
-        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByMemberUserId(memberUserId);
+        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(userId);
         if (studentProfile == null) {
             return ParticipantCompletionStatusEnum.NOT_STARTED.getStatus();
         }

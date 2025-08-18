@@ -38,7 +38,7 @@
         </where>
     </select>
 
-    <select id="selectInfoById"
+    <select id="selectInfoByStudentProfileId"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
         SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
@@ -46,6 +46,17 @@
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
         <where>
             a.deleted = 0 and a.id = #{studentProfileId}
+        </where>
+    </select>
+
+    <select id="selectInfoByUserId"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
+        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0 and a.user_id = #{userId}
         </where>
     </select>
 
