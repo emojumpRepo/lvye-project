@@ -18,7 +18,7 @@ import java.util.List;
 @Mapper
 public interface QuestionnaireConvert {
 
-    QuestionnaireConvert INSTANCE = Mappers.getMapper(QuestionnaireConvert.class);
+    QuestionnaireConvert INSTANCE = new QuestionnaireConvertImpl();
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)

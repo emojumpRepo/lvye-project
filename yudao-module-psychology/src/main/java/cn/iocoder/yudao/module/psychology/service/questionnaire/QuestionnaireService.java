@@ -60,6 +60,13 @@ public interface QuestionnaireService {
     List<QuestionnaireRespVO> getAllQuestionnaireList();
 
     /**
+     * 获得问卷精简信息列表
+     *
+     * @return 问卷精简列表
+     */
+    List<QuestionnaireSimpleRespVO> getSimpleQuestionnaireList();
+
+    /**
      * 发布问卷到外部系统
      *
      * @param id 问卷编号

@@ -20,5 +20,6 @@ public interface DictTypeConstants {
     String TIMELINE_EVENT_TYPE = "timeline_event_type"; // 时间线事件类型
     String CRISIS_SOURCE_TYPE = "crisis_source_type"; // 危机来源类型
     String URGENCY_LEVEL = "urgency_level"; // 紧急程度
+    String QUESTIONNAIRE_ASSESSMENT_DIMENSION = "questionnaire_assessment_dimension"; // 问卷测评维度
 
 }

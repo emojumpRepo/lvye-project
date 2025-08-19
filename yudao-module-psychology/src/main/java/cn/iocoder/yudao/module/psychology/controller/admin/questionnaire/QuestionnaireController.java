@@ -99,19 +99,8 @@ public class QuestionnaireController {
     @GetMapping("/list-all-simple")
     @Operation(summary = "获取问卷精简信息列表", description = "只包含被开启的问卷，主要用于前端的下拉选项")
     public CommonResult<List<QuestionnaireSimpleRespVO>> getSimpleQuestionnaireList() {
-        List<QuestionnaireRespVO> list = questionnaireService.getAllQuestionnaireList();
-        // 将QuestionnaireRespVO转换为QuestionnaireSimpleRespVO
-        List<QuestionnaireSimpleRespVO> simpleList = list.stream()
-                .map(item -> {
-                    QuestionnaireSimpleRespVO simple = new QuestionnaireSimpleRespVO();
-                    simple.setId(item.getId());
-                    simple.setTitle(item.getTitle());
-                    simple.setQuestionnaireType(item.getQuestionnaireType());
-                    simple.setStatus(item.getStatus());
-                    return simple;
-                })
-                .collect(java.util.stream.Collectors.toList());
-        return success(simpleList);
+        List<QuestionnaireSimpleRespVO> list = questionnaireService.getSimpleQuestionnaireList();
+        return success(list);
     }
 
     @GetMapping("/available")

@@ -45,6 +45,11 @@ public class QuestionnaireDO extends TenantBaseDO {
     private Integer targetAudience;
 
     /**
+     * 测评维度（多选，逗号分隔字典键值）
+     */
+    private String assessmentDimension;
+
+    /**
      * 外部系统问卷ID
      */
     private String externalId;

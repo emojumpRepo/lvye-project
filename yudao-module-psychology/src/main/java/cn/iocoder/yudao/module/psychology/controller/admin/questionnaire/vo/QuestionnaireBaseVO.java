@@ -28,6 +28,9 @@ public class QuestionnaireBaseVO {
     @NotNull(message = "目标对象不能为空")
     private Integer targetAudience;
 
+    @Schema(description = "测评维度（多选，逗号分隔）", example = "emotional_state,stress_level")
+    private String assessmentDimension;
+
     @Schema(description = "外部系统问卷ID", example = "EXT_001")
     private String externalId;
 
