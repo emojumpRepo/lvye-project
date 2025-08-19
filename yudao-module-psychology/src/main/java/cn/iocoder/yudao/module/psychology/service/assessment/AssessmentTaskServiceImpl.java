@@ -91,48 +91,66 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         assessmentTaskMapper.insert(assessmentTask);
 
         // 插入部门测评关联信息
-        List<DeptDO> deptList = deptService.getChildDeptList(createReqVO.getDeptIdList());
         List<AssessmentDeptTaskDO> deptTaskList = new ArrayList<>();
         List<Long> deptIds = new ArrayList<>();
-        //父部门
-        for(Long deptId : createReqVO.getDeptIdList()){
-            AssessmentDeptTaskDO assessmentDeptTaskDO = new AssessmentDeptTaskDO();
-            assessmentDeptTaskDO.setTaskNo(createReqVO.getTaskNo());
-            assessmentDeptTaskDO.setDeptId(deptId);
-            deptTaskList.add(assessmentDeptTaskDO);
-            deptIds.add(deptId);
+        
+        if (createReqVO.getDeptIdList() != null && !createReqVO.getDeptIdList().isEmpty()) {
+            List<DeptDO> deptList = deptService.getChildDeptList(createReqVO.getDeptIdList());
+            //父部门
+            for(Long deptId : createReqVO.getDeptIdList()){
+                AssessmentDeptTaskDO assessmentDeptTaskDO = new AssessmentDeptTaskDO();
+                assessmentDeptTaskDO.setTaskNo(createReqVO.getTaskNo());
+                assessmentDeptTaskDO.setDeptId(deptId);
+                deptTaskList.add(assessmentDeptTaskDO);
+                deptIds.add(deptId);
+            }
+            //子部门
+            if (deptList != null) {
+                for(DeptDO deptDO : deptList){
+                    AssessmentDeptTaskDO assessmentDeptTaskDO = new AssessmentDeptTaskDO();
+                    assessmentDeptTaskDO.setTaskNo(createReqVO.getTaskNo());
+                    assessmentDeptTaskDO.setDeptId(deptDO.getId());
+                    deptTaskList.add(assessmentDeptTaskDO);
+                    deptIds.add(deptDO.getId());
+                }
+            }
         }
-        //子部门
-        for(DeptDO deptDO : deptList){
-            AssessmentDeptTaskDO assessmentDeptTaskDO = new AssessmentDeptTaskDO();
-            assessmentDeptTaskDO.setTaskNo(createReqVO.getTaskNo());
-            assessmentDeptTaskDO.setDeptId(deptDO.getId());
-            deptTaskList.add(assessmentDeptTaskDO);
-            deptIds.add(deptDO.getId());
+        if (!deptTaskList.isEmpty()) {
+            deptTaskMapper.insertBatch(deptTaskList);
         }
-        deptTaskMapper.insertBatch(deptTaskList);
+        
         // 插入用户测评关联信息
-        List<AdminUserDO> userList = adminUserService.getUserListByDeptIds(deptIds);
         List<AssessmentUserTaskDO> userTaskList = new ArrayList<>();
-        //遍历部门用户
-        for(AdminUserDO userDO : userList){
-            AssessmentUserTaskDO assessmentUserTaskDO = new AssessmentUserTaskDO();
-            assessmentUserTaskDO.setTaskNo(createReqVO.getTaskNo());
-            assessmentUserTaskDO.setUserId(userDO.getId());
-            assessmentUserTaskDO.setParentFlag(createReqVO.getTargetAudience());
-            assessmentUserTaskDO.setStatus(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus());
-            userTaskList.add(assessmentUserTaskDO);
+        
+        // 遍历部门用户
+        if (!deptIds.isEmpty()) {
+            List<AdminUserDO> userList = adminUserService.getUserListByDeptIds(deptIds);
+            if (userList != null) {
+                for(AdminUserDO userDO : userList){
+                    AssessmentUserTaskDO assessmentUserTaskDO = new AssessmentUserTaskDO();
+                    assessmentUserTaskDO.setTaskNo(createReqVO.getTaskNo());
+                    assessmentUserTaskDO.setUserId(userDO.getId());
+                    assessmentUserTaskDO.setParentFlag(createReqVO.getTargetAudience());
+                    assessmentUserTaskDO.setStatus(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus());
+                    userTaskList.add(assessmentUserTaskDO);
+                }
+            }
         }
+        
         //请求报文的用户
-        for(Long userId: createReqVO.getUserIdList()){
-            AssessmentUserTaskDO assessmentUserTaskDO = new AssessmentUserTaskDO();
-            assessmentUserTaskDO.setTaskNo(createReqVO.getTaskNo());
-            assessmentUserTaskDO.setUserId(userId);
-            assessmentUserTaskDO.setParentFlag(createReqVO.getTargetAudience());
-            assessmentUserTaskDO.setStatus(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus());
-            userTaskList.add(assessmentUserTaskDO);
+        if (createReqVO.getUserIdList() != null && !createReqVO.getUserIdList().isEmpty()) {
+            for(Long userId: createReqVO.getUserIdList()){
+                AssessmentUserTaskDO assessmentUserTaskDO = new AssessmentUserTaskDO();
+                assessmentUserTaskDO.setTaskNo(createReqVO.getTaskNo());
+                assessmentUserTaskDO.setUserId(userId);
+                assessmentUserTaskDO.setParentFlag(createReqVO.getTargetAudience());
+                assessmentUserTaskDO.setStatus(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus());
+                userTaskList.add(assessmentUserTaskDO);
+            }
         }
-        userTaskMapper.insertBatch(userTaskList);
+        if (!userTaskList.isEmpty()) {
+            userTaskMapper.insertBatch(userTaskList);
+        }
 
         // 如果需要立即发布，则发布任务
         if (isPublish) {
