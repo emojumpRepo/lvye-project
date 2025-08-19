@@ -43,7 +43,7 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
     IPage<AssessmentTaskVO> selectPageList(IPage<AssessmentTaskVO> page, @Param("pageReqVO") AssessmentTaskPageReqVO pageReqVO
             , @Param("taskNos") List<Long> taskNos);
 
-    List<WebAssessmentTaskVO> selectListByUserId(@Param("userId") Long userId);
+    List<WebAssessmentTaskVO> selectListByUserId(@Param("userId") Long userId, @Param("isParent")Integer isParent);
 
 }
 
