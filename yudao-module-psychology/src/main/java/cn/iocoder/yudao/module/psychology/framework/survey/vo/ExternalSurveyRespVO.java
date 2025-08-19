@@ -114,6 +114,12 @@ public class ExternalSurveyRespVO {
     private LocalDateTime updatedAt;
 
     /**
+     * 问卷题目数量
+     */
+    @JsonProperty("questionCount")
+    private Integer questionCount;
+
+    /**
      * 问卷状态内部类
      */
     @Data

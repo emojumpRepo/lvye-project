@@ -150,6 +150,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
 
             // 设置其他字段，使用转换工具类
             questionnaire.setQuestionnaireType(SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType()));
+            questionnaire.setQuestionCount(externalSurvey.getQuestionCount());
             questionnaire.setStatus(SurveyDataConverter.convertStatus(externalSurvey));
             questionnaire.setTargetAudience(SurveyDataConverter.generateTargetAudience(externalSurvey));
             questionnaire.setEstimatedDuration(SurveyDataConverter.estimateDuration(externalSurvey.getSurveyType()));
@@ -225,6 +226,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             Integer newEstimatedDuration = SurveyDataConverter.estimateDuration(externalSurvey.getSurveyType());
             Integer newCompletionCount = externalSurvey.getSubmitCount() != null ? externalSurvey.getSubmitCount() : 0;
             Integer newIsOpen = SurveyDataConverter.isOpen(externalSurvey);
+            Integer newQuestionCount = externalSurvey.getQuestionCount() != null ? externalSurvey.getQuestionCount() : 0;
 
             // 使用状态比较工具检查状态变化
             SurveyStatusComparator.StatusChangeResult statusChangeResult =
@@ -239,7 +241,9 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
                 !Objects.equals(localQuestionnaire.getTargetAudience(), newTargetAudience) ||
                 !Objects.equals(localQuestionnaire.getEstimatedDuration(), newEstimatedDuration) ||
                 !Objects.equals(localQuestionnaire.getCompletionCount(), newCompletionCount) ||
-                !Objects.equals(localQuestionnaire.getIsOpen(), newIsOpen)) {
+                !Objects.equals(localQuestionnaire.getIsOpen(), newIsOpen) ||
+                !Objects.equals(localQuestionnaire.getQuestionCount(), newQuestionCount)
+            ) {
 
                 needUpdate = true;
             }
@@ -258,6 +262,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
                 localQuestionnaire.setUpdateTime(LocalDateTime.now());
                 localQuestionnaire.setSyncStatus(1); // 更新同步状态
                 localQuestionnaire.setLastSyncTime(LocalDateTime.now());
+                localQuestionnaire.setQuestionCount(newQuestionCount);
 
                 questionnaireMapper.updateById(localQuestionnaire);
 
