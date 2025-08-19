@@ -11,7 +11,9 @@ import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.system.api.logger.dto.LoginLogCreateReqDTO;
 import cn.iocoder.yudao.module.system.api.social.dto.SocialUserBindReqDTO;
+import cn.iocoder.yudao.module.system.controller.admin.auth.vo.AuthLoginRespVO;
 import cn.iocoder.yudao.module.system.controller.admin.auth.vo.CaptchaVerificationReqVO;
+import cn.iocoder.yudao.module.system.convert.auth.AuthConvert;
 import cn.iocoder.yudao.module.system.dal.dataobject.oauth2.OAuth2AccessTokenDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
@@ -99,7 +101,7 @@ public class WebAuthServiceImpl implements WebAuthService {
                     reqVO.getSocialType(), reqVO.getSocialCode(), reqVO.getSocialState()));
         }
         // 创建 Token 令牌，记录登录日志
-        return createTokenAfterLoginSuccess(user.getId(), reqVO.getUsername(), LoginLogTypeEnum.LOGIN_USERNAME);
+        return createTokenAfterLoginSuccess(user.getId(), reqVO.getUsername(), LoginLogTypeEnum.LOGIN_USERNAME, reqVO.getIsParent());
     }
 
     @Override
@@ -111,6 +113,18 @@ public class WebAuthServiceImpl implements WebAuthService {
         }
         // 删除成功，则记录登出日志
         createLogoutLog(accessTokenDO.getUserId(), accessTokenDO.getUserType(), logType);
+    }
+
+    @Override
+    public WebAuthLoginRespVO refreshToken(String refreshToken){
+        OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.refreshAccessToken(refreshToken, OAuth2ClientConstants.CLIENT_ID_DEFAULT);
+        return WebAuthLoginRespVO.builder()
+                .accessToken(accessTokenDO.getAccessToken())
+                .refreshToken(accessTokenDO.getRefreshToken())
+                .expiresTime(accessTokenDO.getExpiresTime())
+                .userId(accessTokenDO.getUserId())
+                .isParent(accessTokenDO.getIsParent())
+                .build();
     }
 
     void validateCaptcha(WebAuthLoginReqVO reqVO) {
@@ -157,18 +171,19 @@ public class WebAuthServiceImpl implements WebAuthService {
         return UserTypeEnum.MEMBER;
     }
 
-    private WebAuthLoginRespVO createTokenAfterLoginSuccess(Long userId, String username, LoginLogTypeEnum logType) {
+    private WebAuthLoginRespVO createTokenAfterLoginSuccess(Long userId, String username, LoginLogTypeEnum logType, Integer isParent) {
         // 插入登陆日志
         createLoginLog(userId, username, logType, LoginResultEnum.SUCCESS);
         // 创建访问令牌
         OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.createAccessToken(userId, getUserType().getValue(),
-                OAuth2ClientConstants.CLIENT_ID_DEFAULT, null);
+                OAuth2ClientConstants.CLIENT_ID_DEFAULT, null, isParent);
         // 构建返回结果
         WebAuthLoginRespVO.WebAuthLoginRespVOBuilder authLoginRespVO = WebAuthLoginRespVO.builder();
         authLoginRespVO.userId(accessTokenDO.getUserId());
         authLoginRespVO.accessToken(accessTokenDO.getAccessToken());
         authLoginRespVO.refreshToken(accessTokenDO.getRefreshToken());
         authLoginRespVO.expiresTime(accessTokenDO.getExpiresTime());
+        authLoginRespVO.isParent(accessTokenDO.getIsParent());
         return authLoginRespVO.build();
     }
 

@@ -211,7 +211,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         createLoginLog(userId, username, logType, LoginResultEnum.SUCCESS);
         // 创建访问令牌
         OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.createAccessToken(userId, getUserType().getValue(),
-                OAuth2ClientConstants.CLIENT_ID_DEFAULT, null);
+                OAuth2ClientConstants.CLIENT_ID_DEFAULT, null, null);
         // 构建返回结果
         return AuthConvert.INSTANCE.convert(accessTokenDO);
     }

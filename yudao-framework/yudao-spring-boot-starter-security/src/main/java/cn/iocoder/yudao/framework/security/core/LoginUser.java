@@ -60,6 +60,10 @@ public class LoginUser {
      * 访问的租户编号
      */
     private Long visitTenantId;
+    /**
+     * 是否家长登录
+     */
+    private Integer isParent;
 
     public void setContext(String key, Object value) {
         if (context == null) {

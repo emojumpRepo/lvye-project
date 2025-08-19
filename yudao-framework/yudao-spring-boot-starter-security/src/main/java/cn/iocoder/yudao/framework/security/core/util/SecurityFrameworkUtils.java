@@ -129,6 +129,7 @@ public class SecurityFrameworkUtils {
         if (request != null) {
             WebFrameworkUtils.setLoginUserId(request, loginUser.getId());
             WebFrameworkUtils.setLoginUserType(request, loginUser.getUserType());
+            WebFrameworkUtils.setIsParent(request, loginUser.getIsParent());
         }
     }
 

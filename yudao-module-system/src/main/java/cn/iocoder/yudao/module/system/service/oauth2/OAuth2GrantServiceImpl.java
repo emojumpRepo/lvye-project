@@ -34,7 +34,7 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
     @Override
     public OAuth2AccessTokenDO grantImplicit(Long userId, Integer userType,
                                              String clientId, List<String> scopes) {
-        return oauth2TokenService.createAccessToken(userId, userType, clientId, scopes);
+        return oauth2TokenService.createAccessToken(userId, userType, clientId, scopes, null);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
 
         // 创建访问令牌
         return oauth2TokenService.createAccessToken(codeDO.getUserId(), codeDO.getUserType(),
-                codeDO.getClientId(), codeDO.getScopes());
+                codeDO.getClientId(), codeDO.getScopes(), null);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
         Assert.notNull(user, "用户不能为空！"); // 防御性编程
 
         // 创建访问令牌
-        return oauth2TokenService.createAccessToken(user.getId(), UserTypeEnum.ADMIN.getValue(), clientId, scopes);
+        return oauth2TokenService.createAccessToken(user.getId(), UserTypeEnum.ADMIN.getValue(), clientId, scopes, null);
     }
 
     @Override
