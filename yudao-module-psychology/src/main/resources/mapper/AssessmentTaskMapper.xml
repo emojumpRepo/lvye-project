@@ -25,7 +25,7 @@
                 AND a.task_no = #{pageReqVO.taskNo}
             </if>
             <if test="pageReqVO.name != null and pageReqVO.name !=''">
-                AND a.name = #{pageReqVO.name}
+                AND a.task_name LIKE CONCAT('%', #{pageReqVO.name}, '%')
             </if>
             <if test="pageReqVO.questionnaireId != null">
                 AND EXISTS (
