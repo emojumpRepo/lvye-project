@@ -26,4 +26,7 @@ public class WebAuthLoginRespVO {
 
     @Schema(description = "过期时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime expiresTime;
+
+    @Schema(description = "是否家长登录", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer isParent;
 }

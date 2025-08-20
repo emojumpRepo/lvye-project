@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.psychology.controller.app.auth.vo;
 
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.validation.InEnum;
+import cn.iocoder.yudao.module.psychology.enums.LoginTypeEnum;
 import cn.iocoder.yudao.module.system.controller.admin.auth.vo.CaptchaVerificationReqVO;
 import cn.iocoder.yudao.module.system.enums.social.SocialTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,6 +22,10 @@ public class WebAuthLoginReqVO extends CaptchaVerificationReqVO {
     @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "123456")
     @NotBlank(message = "密码不能为空")
     private String password;
+
+    @Schema(description = "是否为家长登录", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
+    @InEnum(LoginTypeEnum.class)
+    private Integer isParent;
 
     // ========== 绑定社交登录时，需要传递如下参数 ==========
 

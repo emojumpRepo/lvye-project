@@ -50,7 +50,9 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskRespVO">
         SELECT a.id, a.task_no, a.task_name, a.status, a.startline, a.deadline, b.nickname AS publishUser
         FROM lvye_assessment_task a LEFT JOIN system_users b ON a.publish_user_id = b.id
-        WHERE a.task_no in (select task_no from lvye_assessment_user_task where user_id = #{userId}) and a.deleted = 0
+        WHERE a.task_no in (
+        select task_no from lvye_assessment_user_task where user_id = #{userId} and parent_flag = #{isParent} and deleted = 0
+        ) and a.deleted = 0
     </select>
 
     <!-- 可根据需求扩展查询任务关联的问卷ID列表 -->
