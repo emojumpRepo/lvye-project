@@ -8,10 +8,13 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.infra.api.config.ConfigApi;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.ParentContactDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileRecordDO;
+import cn.iocoder.yudao.module.psychology.dal.mysql.profile.ParentContactMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileRecordMapper;
+import cn.iocoder.yudao.module.psychology.enums.ContactEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
 import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
@@ -36,10 +39,7 @@ import org.springframework.validation.annotation.Validated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_IMPORT_LIST_IS_EMPTY;
@@ -93,6 +93,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Resource
     private StudentTimelineService studentTimelineService;
+
+    @Resource
+    private ParentContactMapper parentContactMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -247,17 +250,17 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
         for (StudentImportExcelVO student : studentList) {
             StudentProfileDO studentProfileDO = studentProfileMapper.selectByStudentNo(student.getStudentNo());
-            if (Objects.isNull(studentProfileDO)){
+            if (Objects.isNull(studentProfileDO)) {
                 try {
                     this.saveStudentInfoByExcel(student);
-                    successCount = successCount ++;
-                } catch (Exception e){
+                    successCount = successCount++;
+                } catch (Exception e) {
                     logger.error("学生:" + student.getName() + "导入失败");
                     respVO.setFailReason(e.getMessage());
-                    failureCount = failureCount ++;
+                    failureCount = failureCount++;
                 }
             } else {
-                if (isUpdateSupport){
+                if (isUpdateSupport) {
                     //暂不实现
                 }
             }
@@ -309,15 +312,15 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         return passwordEncoder.encode(password);
     }
 
-    private void saveStudentInfoByExcel(StudentImportExcelVO student){
+    private void saveStudentInfoByExcel(StudentImportExcelVO student) {
         // 校验学号唯一性
         validateStudentNoUnique(null, student.getStudentNo());
         DeptRespDTO gradeDept = deptApi.getByDeptName(student.getGradeName());
         DeptRespDTO classDept = deptApi.getByDeptName(student.getClassName());
-        if (gradeDept == null || classDept == null){
+        if (gradeDept == null || classDept == null) {
             throw exception(ErrorCodeConstants.STUDENT_GRADE_OR_CLASS_IS_EMPTY);
         }
-        if (classDept.getParentId().equals(gradeDept.getId())){
+        if (classDept.getParentId().equals(gradeDept.getId())) {
             throw exception(ErrorCodeConstants.STUDENT_GRADE_OR_CLASS_NOT_MATCH);
         }
         //插入用户表
@@ -349,6 +352,13 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         studentProfileRecordDO.setGradeDeptId(gradeDept.getId());
         studentProfileRecordDO.setClassDeptId(classDept.getId());
         studentProfileRecordMapper.insert(studentProfileRecordDO);
+        //插入学生家长信息
+        ParentContactDO parentContactDO = new ParentContactDO();
+        parentContactDO.setStudentProfileId(studentProfile.getId());
+        parentContactDO.setName(student.getParentName());
+        parentContactDO.setMobile(student.getParentMobile());
+        parentContactDO.setRelation(ContactEnum.getCode(student.getRelation()).getCode());
+        parentContactMapper.insert(parentContactDO);
     }
 
 }
