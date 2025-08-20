@@ -9,6 +9,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 测评任务 DO
@@ -35,9 +36,10 @@ public class AssessmentTaskDO extends TenantBaseDO {
     private String taskName;
 
     /**
-     * 量表编号，固定问卷 A/B
+     * 关联问卷 ID 列表（非持久化字段）
      */
-    private String scaleCode;
+    @TableField(exist = false)
+    private List<Long> questionnaireIds;
 
     /**
      *目标对象（字典：target_audience）

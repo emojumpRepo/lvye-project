@@ -31,10 +31,10 @@ public class AssessmentTaskVO {
     private String taskName;
 
     /**
-     * 量表编号，固定问卷 A/B
+     * 关联问卷 ID 列表
      */
-    @Schema(description = "量表编号")
-    private String scaleCode;
+    @Schema(description = "关联问卷 ID 列表")
+    private java.util.List<Long> questionnaireIds;
 
     /**
      *目标对象（字典：target_audience）
@@ -95,6 +95,12 @@ public class AssessmentTaskVO {
      */
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
+
+    /**
+     * 问卷ID字符串（用于数据库查询）
+     */
+    @Schema(hidden = true)
+    private String questionnaireIdsStr;
 
 }
 

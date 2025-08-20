@@ -25,9 +25,8 @@ public class AssessmentTaskBaseVO {
     @NotBlank(message = "任务名称不能为空")
     private String taskName;
 
-    @Schema(description = "量表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "A")
-    @NotBlank(message = "量表编号不能为空")
-    private String scaleCode;
+    @Schema(description = "关联问卷 ID 列表", example = "[1,2,3]")
+    private java.util.List<Long> questionnaireIds;
 
     @Schema(description = "目标对象 1-学生，2-家长", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "目标对象不能为空")

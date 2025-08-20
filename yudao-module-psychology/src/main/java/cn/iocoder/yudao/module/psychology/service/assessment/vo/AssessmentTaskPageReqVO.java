@@ -22,9 +22,9 @@ public class AssessmentTaskPageReqVO extends PageParam {
     private String name;
 
     /**
-     * 量表编号
+     * 按问卷过滤（单个问卷 ID）
      */
-    private String scaleCode;
+    private Long questionnaireId;
 
     /**
      * 目标对象

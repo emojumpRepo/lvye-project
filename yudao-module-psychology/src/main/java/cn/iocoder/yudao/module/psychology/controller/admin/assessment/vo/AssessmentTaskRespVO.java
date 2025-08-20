@@ -37,4 +37,9 @@ public class AssessmentTaskRespVO extends AssessmentTaskBaseVO {
     @Schema(description = "总人数")
     private Integer totalNum;
 
+    /**
+     * 关联问卷 ID 列表
+     */
+    private java.util.List<Long> questionnaireIds;
+
 }

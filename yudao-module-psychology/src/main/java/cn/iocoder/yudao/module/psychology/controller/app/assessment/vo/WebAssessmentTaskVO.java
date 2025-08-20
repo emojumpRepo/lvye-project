@@ -23,8 +23,8 @@ public class WebAssessmentTaskVO {
     @Schema(description = "任务名称")
     private String taskName;
 
-    @Schema(description = "量表编号")
-    private String scaleCode;
+    @Schema(description = "关联问卷 ID 列表")
+    private java.util.List<Long> questionnaireIds;
 
     @Schema(description = "状态")
     private Integer status;

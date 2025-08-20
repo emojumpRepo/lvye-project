@@ -41,6 +41,25 @@ CREATE TABLE `lvye_questionnaire` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='心理问卷表';
 
 -- ----------------------------
+-- Table structure for lvye_assessment_task_questionnaire
+-- ----------------------------
+DROP TABLE IF EXISTS `lvye_assessment_task_questionnaire`;
+CREATE TABLE `lvye_assessment_task_questionnaire` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `task_no` VARCHAR(64) NOT NULL COMMENT '任务编号',
+    `questionnaire_id` BIGINT NOT NULL COMMENT '问卷ID',
+    `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updater` VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` BIT(1) DEFAULT b'0' COMMENT '是否删除',
+    `tenant_id` BIGINT DEFAULT 0 COMMENT '租户编号',
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `idx_task_no` (`task_no`) USING BTREE,
+    KEY `idx_questionnaire_id` (`questionnaire_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评任务-问卷关联表';
+
+-- ----------------------------
 -- Table structure for lvye_questionnaire_result
 -- ----------------------------
 DROP TABLE IF EXISTS `lvye_questionnaire_result`;

@@ -18,8 +18,8 @@ public class WebAssessmentTaskRespVO {
     @Schema(description = "任务名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "2024年春季心理测评")
     private String taskName;
 
-    @Schema(description = "量表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "A")
-    private String scaleCode;
+    @Schema(description = "关联问卷 ID 列表")
+    private java.util.List<Long> questionnaireIds;
 
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;

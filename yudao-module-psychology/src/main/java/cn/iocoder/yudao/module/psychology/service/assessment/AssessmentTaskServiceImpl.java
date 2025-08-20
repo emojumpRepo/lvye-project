@@ -10,8 +10,10 @@ import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentDeptTaskMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskQuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
 import cn.iocoder.yudao.module.psychology.enums.AssessmentTaskStatusEnum;
@@ -19,6 +21,7 @@ import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
+import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
@@ -67,6 +70,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     private AssessmentDeptTaskMapper deptTaskMapper;
 
     @Resource
+    private AssessmentTaskQuestionnaireMapper taskQuestionnaireMapper;
+
+    @Resource
     private PermissionApi permissionApi;
 
     @Override
@@ -89,6 +95,18 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         assessmentTask.setStatus(AssessmentTaskStatusEnum.NOT_STARTED.getStatus());
         assessmentTask.setPublishUserId(SecurityFrameworkUtils.getLoginUserId());
         assessmentTaskMapper.insert(assessmentTask);
+
+        // 维护任务-问卷关联（多选）- 改为一条条插入以确保租户ID正确设置
+        if (createReqVO.getQuestionnaireIds() != null && !createReqVO.getQuestionnaireIds().isEmpty()) {
+            for (Long qid : createReqVO.getQuestionnaireIds()) {
+                AssessmentTaskQuestionnaireDO rel = new AssessmentTaskQuestionnaireDO();
+                rel.setTaskNo(createReqVO.getTaskNo());
+                rel.setQuestionnaireId(qid);
+                // 手动设置租户ID，确保数据隔离
+                rel.setTenantId(TenantContextHolder.getTenantId());
+                taskQuestionnaireMapper.insert(rel);
+            }
+        }
 
         // 插入部门测评关联信息
         List<AssessmentDeptTaskDO> deptTaskList = new ArrayList<>();
@@ -176,6 +194,20 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         // 更新
         AssessmentTaskDO updateObj = BeanUtils.toBean(updateReqVO, AssessmentTaskDO.class);
         assessmentTaskMapper.updateById(updateObj);
+
+        // 重建任务-问卷关联
+        taskQuestionnaireMapper.deleteByTaskNo(updateReqVO.getTaskNo());
+        if (updateReqVO.getQuestionnaireIds() != null && !updateReqVO.getQuestionnaireIds().isEmpty()) {
+            List<AssessmentTaskQuestionnaireDO> relations = new ArrayList<>();
+            for (Long qid : updateReqVO.getQuestionnaireIds()) {
+                AssessmentTaskQuestionnaireDO rel = new AssessmentTaskQuestionnaireDO();
+                rel.setTaskNo(updateReqVO.getTaskNo());
+                rel.setQuestionnaireId(qid);
+                rel.setTenantId(TenantContextHolder.getTenantId());
+                relations.add(rel);
+            }
+            taskQuestionnaireMapper.insertBatch(relations);
+        }
     }
 
     @Override
@@ -190,6 +222,8 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             userTaskMapper.deleteByTaskNo(taskNo);
             // 删除相关年级/班级你
             deptTaskMapper.deleteByTaskNo(taskNo);
+            // 删除任务-问卷关联
+            taskQuestionnaireMapper.deleteByTaskNo(taskNo);
         } else {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
         }
@@ -239,6 +273,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
                 .eq(AssessmentUserTaskDO::getTaskNo,taskNo)));
         assessmentTaskDO.setFinishNum(userTaskMapper.selectCount(new LambdaUpdateWrapper<AssessmentUserTaskDO>()
                 .eq(AssessmentUserTaskDO::getTaskNo,taskNo).eq(AssessmentUserTaskDO::getStatus,2)));
+        // 填充关联问卷 ID 列表
+        List<Long> qids = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(taskNo, TenantContextHolder.getTenantId());
+        assessmentTaskDO.setQuestionnaireIds(qids);
         return assessmentTaskDO;
     }
 
@@ -252,7 +289,49 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         }
         IPage<AssessmentTaskVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
         assessmentTaskMapper.selectPageList(page, pageReqVO, taskNos);
+        // 填充每条记录的问卷ID列表
+        if (page.getRecords() != null && !page.getRecords().isEmpty()) {
+            for (AssessmentTaskVO record : page.getRecords()) {
+                log.info("Processing task: {}, tenantId: {}, raw questionnaireIdsStr: '{}'",
+                    record.getTaskNo(), TenantContextHolder.getTenantId(), record.getQuestionnaireIdsStr());
+
+                // 从数据库查询结果中解析问卷ID列表
+                List<Long> qids = parseQuestionnaireIds(record.getQuestionnaireIdsStr());
+                log.info("Parsed questionnaire IDs from GROUP_CONCAT: {}", qids);
+
+                // 如果从GROUP_CONCAT查询没有结果，尝试使用原来的方法作为备用
+                if (qids.isEmpty()) {
+                    log.info("GROUP_CONCAT result is empty, trying fallback query...");
+                    List<Long> fallbackQids = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(record.getTaskNo(), TenantContextHolder.getTenantId());
+                    log.info("Fallback query result for task {}: {}", record.getTaskNo(), fallbackQids);
+                    qids = fallbackQids != null ? fallbackQids : new ArrayList<>();
+                }
+
+                log.info("Final questionnaire IDs for task {}: {}", record.getTaskNo(), qids);
+                record.setQuestionnaireIds(qids);
+                // 清除临时字段
+                record.setQuestionnaireIdsStr(null);
+            }
+        }
         return new PageResult<>(page.getRecords(), page.getTotal());
+    }
+
+    /**
+     * 解析问卷ID字符串为List
+     */
+    private List<Long> parseQuestionnaireIds(String questionnaireIdsStr) {
+        List<Long> result = new ArrayList<>();
+        if (questionnaireIdsStr != null && !questionnaireIdsStr.trim().isEmpty()) {
+            String[] ids = questionnaireIdsStr.split(",");
+            for (String id : ids) {
+                try {
+                    result.add(Long.parseLong(id.trim()));
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid questionnaire ID: {}", id);
+                }
+            }
+        }
+        return result;
     }
 
     @Override

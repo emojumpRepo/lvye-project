@@ -21,7 +21,6 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
         return selectPage(reqVO, new LambdaQueryWrapperX<AssessmentTaskDO>()
                 .likeIfPresent(AssessmentTaskDO::getTaskNo, reqVO.getTaskNo())
                 .likeIfPresent(AssessmentTaskDO::getTaskName, reqVO.getName())
-                .eqIfPresent(AssessmentTaskDO::getScaleCode, reqVO.getScaleCode())
                 .eqIfPresent(AssessmentTaskDO::getTargetAudience, reqVO.getTargetAudience())
                 .eqIfPresent(AssessmentTaskDO::getStatus, reqVO.getStatus())
                 .orderByDesc(AssessmentTaskDO::getId));
