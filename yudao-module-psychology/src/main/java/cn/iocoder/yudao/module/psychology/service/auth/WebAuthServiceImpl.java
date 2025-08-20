@@ -87,10 +87,13 @@ public class WebAuthServiceImpl implements WebAuthService {
     @Override
     public WebAuthLoginRespVO login(WebAuthLoginReqVO reqVO) {
         // 根据学号查找学生档案
+        log.info("尝试登录，学号: {}, 当前租户ID: {}", reqVO.getUsername(), TenantContextHolder.getTenantId());
         StudentProfileDO studentProfile = studentProfileService.getStudentProfileByNo(reqVO.getUsername());
         if (studentProfile == null) {
+            log.warn("学生档案不存在，学号: {}, 租户ID: {}", reqVO.getUsername(), TenantContextHolder.getTenantId());
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
+        log.info("找到学生档案: {}", studentProfile.getId());
         // 校验验证码
         validateCaptcha(reqVO);
         // 使用账号密码，进行登录
