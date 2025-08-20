@@ -38,7 +38,7 @@ public class AssessmentUserTaskDO extends TenantBaseDO {
 
     /**
      *
-     * 参与人员标识：1 学生；2 家长
+     * 参与人员标识：0 学生；1 家长
      */
     private int parentFlag;
 

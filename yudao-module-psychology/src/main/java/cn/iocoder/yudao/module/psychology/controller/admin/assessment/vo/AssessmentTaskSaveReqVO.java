@@ -31,7 +31,7 @@ public class AssessmentTaskSaveReqVO{
     @Length(max = 120, message = "测评任务名称不能超过 120")
     private String taskName;
 
-    @Schema(description = "目标对象 1-学生，2-家长", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "目标对象 0-学生，1-家长", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
     @NotNull(message = "目标对象不能为空")
     private Integer targetAudience;
 

@@ -120,7 +120,7 @@ public class WebAuthServiceImpl implements WebAuthService {
     }
 
     @Override
-    public WebAuthLoginRespVO refreshToken(String refreshToken){
+    public WebAuthLoginRespVO refreshToken(String refreshToken) {
         OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.refreshAccessToken(refreshToken, OAuth2ClientConstants.CLIENT_ID_DEFAULT);
         return WebAuthLoginRespVO.builder()
                 .accessToken(accessTokenDO.getAccessToken())
@@ -211,7 +211,6 @@ public class WebAuthServiceImpl implements WebAuthService {
         AdminUserDO user = userService.getUser(userId);
         return user != null ? user.getUsername() : null;
     }
-
 
 
 }
