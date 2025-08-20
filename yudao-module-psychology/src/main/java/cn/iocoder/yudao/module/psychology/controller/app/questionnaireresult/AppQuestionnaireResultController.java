@@ -436,6 +436,7 @@ public class AppQuestionnaireResultController {
             return java.util.Collections.emptyList();
         }
         try {
+            @SuppressWarnings("unchecked")
             java.util.Map<String, Object> map = cn.iocoder.yudao.framework.common.util.json.JsonUtils.parseObject(dimensionScoresJson, java.util.Map.class);
             if (map == null || map.isEmpty()) return java.util.Collections.emptyList();
             return map.entrySet().stream().map(e -> {

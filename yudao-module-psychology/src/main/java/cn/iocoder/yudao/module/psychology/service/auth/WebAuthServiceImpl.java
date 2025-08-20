@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
 import cn.iocoder.yudao.framework.common.util.monitor.TracerUtils;
 import cn.iocoder.yudao.framework.common.util.servlet.ServletUtils;
 import cn.iocoder.yudao.framework.common.util.validation.ValidationUtils;
+import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthLoginReqVO;
 import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthLoginRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
