@@ -75,7 +75,7 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
         when(adminUserService.getUser(userId)).thenReturn(user);
 
         // 调用
-        OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.createAccessToken(userId, userType, clientId, scopes);
+        OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.createAccessToken(userId, userType, clientId, scopes, null);
         // 断言访问令牌
         OAuth2AccessTokenDO dbAccessTokenDO = oauth2AccessTokenMapper.selectByAccessToken(accessTokenDO.getAccessToken());
         // TODO @芋艿：expiresTime 被屏蔽，仅 win11 会复现，建议后续修复。
