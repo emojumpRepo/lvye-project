@@ -147,9 +147,8 @@ public class QuestionnaireController {
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire:publish')")
     public CommonResult<QuestionnaireSyncRespVO> pauseQuestionnaire(@Valid @RequestBody QuestionnaireSyncReqVO syncReqVO) {
         try {
-            // TODO: 实现具体的暂停逻辑
-            log.info("暂停外部问卷（简化实现），问卷ID: {}", syncReqVO.getId());
-            
+            questionnaireService.pauseQuestionnaireInExternal(syncReqVO.getId());
+
             QuestionnaireSyncRespVO respVO = new QuestionnaireSyncRespVO();
             respVO.setSuccess(true);
             respVO.setMessage("暂停成功");

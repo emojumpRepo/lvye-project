@@ -185,8 +185,6 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
             throw exception(ErrorCodeConstants.QUESTIONNAIRE_ALREADY_PUBLISHED);
         }
         
-        // TODO: 调用外部系统API发布问卷
-        
         // 更新问卷状态
         questionnaire.setStatus(QuestionnaireStatusEnum.PUBLISHED.getStatus());
         questionnaire.setSyncStatus(1);
@@ -206,8 +204,6 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         if (!QuestionnaireStatusEnum.PUBLISHED.getStatus().equals(questionnaire.getStatus())) {
             throw exception(ErrorCodeConstants.QUESTIONNAIRE_NOT_PUBLISHED);
         }
-        
-        // TODO: 调用外部系统API暂停问卷
         
         // 更新问卷状态
         questionnaire.setStatus(QuestionnaireStatusEnum.PAUSED.getStatus());
