@@ -3,8 +3,10 @@ package cn.iocoder.yudao.module.psychology.service.profile;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import jakarta.validation.Valid;
 
+import java.util.Collection;
 import java.util.List;
 
 
@@ -106,5 +108,13 @@ public interface StudentProfileService {
      * @return 学生档案
      */
     StudentProfileVO getStudentProfileDetailByUserId(Long userId);
+
+    /**
+     * 获得指定班级的学生数组
+     *
+     * @param classIds 班级数组
+     * @return 学生数组
+     */
+    List<StudentProfileDO> getStudentListByClassIds(Collection<Long> classIds);
 
 }

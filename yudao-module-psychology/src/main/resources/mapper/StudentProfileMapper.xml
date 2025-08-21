@@ -72,4 +72,12 @@
         </where>
     </select>
 
+    <select id="selectClassStudentCount" resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO">
+        select class_dept_id AS dept_id, count(*) AS count from lvye_student_profile group by class_dept_id;
+    </select>
+
+    <select id="selectGradeStudentCount" resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO">
+        select grade_dept_id AS dept_id, count(*) AS count from lvye_student_profile group by grade_dept_id;
+    </select>
+
 </mapper>
