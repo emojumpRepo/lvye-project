@@ -52,7 +52,7 @@
         FROM lvye_assessment_task a LEFT JOIN system_users b ON a.publish_user_id = b.id
         WHERE a.task_no in (
         select task_no from lvye_assessment_user_task where user_id = #{userId} and parent_flag = #{isParent} and deleted = 0
-        ) and a.status in (2,3) and a.deleted = 0
+        ) and a.status in (1,2) and a.deleted = 0
     </select>
 
     <!-- 可根据需求扩展查询任务关联的问卷ID列表 -->
