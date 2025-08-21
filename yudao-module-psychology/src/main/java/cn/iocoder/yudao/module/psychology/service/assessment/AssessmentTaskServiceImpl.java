@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.biz.system.permission.dto.DeptDataPermissionRespDTO;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.date.DateUtils;
@@ -13,6 +14,7 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDe
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentDeptTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskQuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
@@ -143,12 +145,12 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         
         // 遍历部门用户
         if (!deptIds.isEmpty()) {
-            List<AdminUserDO> userList = adminUserService.getUserListByDeptIds(deptIds);
-            if (userList != null) {
-                for(AdminUserDO userDO : userList){
+            List<StudentProfileDO> userList = studentProfileService.getStudentListByClassIds(deptIds);
+            if (!CollUtil.isEmpty(userList)) {
+                for(StudentProfileDO studentProfileDO : userList){
                     AssessmentUserTaskDO assessmentUserTaskDO = new AssessmentUserTaskDO();
                     assessmentUserTaskDO.setTaskNo(createReqVO.getTaskNo());
-                    assessmentUserTaskDO.setUserId(userDO.getId());
+                    assessmentUserTaskDO.setUserId(studentProfileDO.getUserId());
                     assessmentUserTaskDO.setParentFlag(createReqVO.getTargetAudience());
                     assessmentUserTaskDO.setStatus(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus());
                     userTaskList.add(assessmentUserTaskDO);

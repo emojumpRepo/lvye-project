@@ -33,5 +33,8 @@ public class WebAssessmentTaskRespVO {
     @Schema(description = "发布人管理员")
     private String publishUser;
 
+    @Schema(description = "测评量表")
+    private String scaleName;
+
 
 }

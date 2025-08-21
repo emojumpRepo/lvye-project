@@ -91,4 +91,8 @@ public interface ErrorCodeConstants {
     ErrorCode DATA_VALIDATION_FAILED = new ErrorCode(1_003_014_001, "数据验证失败");
     ErrorCode DATA_INCONSISTENCY_DETECTED = new ErrorCode(1_003_014_002, "检测到数据不一致");
 
+    // ========== 教师相关 1-003-015-000 ==========
+    ErrorCode TEACHER_NO_DUPLICATE = new ErrorCode(1_003_015_001, "工号已存在");
+    ErrorCode ROLE_NOT_EXISTS = new ErrorCode(1_003_015_002, "角色不存在");
+    ErrorCode TEACHER_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_015_003, "导入用户数据不能为空！");
 }
