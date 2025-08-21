@@ -99,4 +99,8 @@ public interface ErrorCodeConstants {
     ErrorCode ASSESSMENT_SCENARIO_SLOT_NOT_EXISTS = new ErrorCode(1_003_015_004, "场景槽位不存在");
     ErrorCode ASSESSMENT_SCENARIO_SLOT_KEY_DUPLICATE = new ErrorCode(1_003_015_005, "槽位编码在场景内重复");
 
+    // ========== 教师相关 1-003-015-000 ==========
+    ErrorCode TEACHER_NO_DUPLICATE = new ErrorCode(1_003_015_001, "工号已存在");
+    ErrorCode ROLE_NOT_EXISTS = new ErrorCode(1_003_015_002, "角色不存在");
+    ErrorCode TEACHER_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_015_003, "导入用户数据不能为空！");
 }

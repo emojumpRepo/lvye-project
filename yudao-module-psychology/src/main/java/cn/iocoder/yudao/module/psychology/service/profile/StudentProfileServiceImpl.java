@@ -302,6 +302,14 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         return studentProfileMapper.selectInfoByUserId(userId);
     }
 
+    @Override
+    public List<StudentProfileDO> getStudentListByClassIds(Collection<Long> classIds){
+        if (CollUtil.isEmpty(classIds)) {
+            return Collections.emptyList();
+        }
+        return studentProfileMapper.selectListByClassIds(classIds);
+    }
+
     /**
      * 对密码进行加密
      *
