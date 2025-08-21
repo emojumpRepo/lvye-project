@@ -6,6 +6,8 @@
         <id column="id" property="id" />
         <result column="task_no" property="taskNo" />
         <result column="questionnaire_id" property="questionnaireId" />
+        <result column="slot_key" property="slotKey" />
+        <result column="slot_order" property="slotOrder" />
         <result column="creator" property="creator" />
         <result column="create_time" property="createTime" />
         <result column="updater" property="updater" />
@@ -23,12 +25,26 @@
 
     <insert id="insertBatch">
         INSERT INTO lvye_assessment_task_questionnaire
-        (task_no, questionnaire_id, creator, create_time, updater, update_time, deleted, tenant_id)
+        (task_no, questionnaire_id, slot_key, slot_order, creator, create_time, updater, update_time, deleted, tenant_id)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.taskNo}, #{item.questionnaireId}, #{item.creator}, NOW(), #{item.updater}, NOW(), b'0', #{item.tenantId})
+            (#{item.taskNo}, #{item.questionnaireId}, #{item.slotKey}, #{item.slotOrder}, #{item.creator}, NOW(), #{item.updater}, NOW(), b'0', #{item.tenantId})
         </foreach>
     </insert>
+
+    <insert id="insert">
+        INSERT INTO lvye_assessment_task_questionnaire
+        (task_no, questionnaire_id, slot_key, slot_order, creator, create_time, updater, update_time, deleted, tenant_id)
+        VALUES (#{taskNo}, #{questionnaireId}, #{slotKey}, #{slotOrder}, #{creator}, NOW(), #{updater}, NOW(), b'0', #{tenantId})
+    </insert>
+
+    <select id="selectListByTaskNo" resultMap="BaseResultMap">
+        SELECT * FROM lvye_assessment_task_questionnaire
+        WHERE deleted = b'0'
+          AND task_no = #{taskNo}
+          AND tenant_id = #{tenantId}
+        ORDER BY slot_order IS NULL, slot_order, id
+    </select>
 
 </mapper>
 

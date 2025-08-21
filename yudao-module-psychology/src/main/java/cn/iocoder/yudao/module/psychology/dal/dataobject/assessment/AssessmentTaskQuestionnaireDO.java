@@ -29,6 +29,16 @@ public class AssessmentTaskQuestionnaireDO extends TenantBaseDO {
      * 问卷 ID
      */
     private Long questionnaireId;
+
+    /**
+     * 槽位标识（可空）
+     */
+    private String slotKey;
+
+    /**
+     * 槽位内顺序（可空）
+     */
+    private Integer slotOrder;
 }
 
 

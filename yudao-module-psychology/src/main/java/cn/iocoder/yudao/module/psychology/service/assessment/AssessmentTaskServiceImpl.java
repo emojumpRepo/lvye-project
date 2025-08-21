@@ -10,10 +10,13 @@ import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentDeptTaskMapper;
+import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskQuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
@@ -74,6 +77,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     private AssessmentTaskQuestionnaireMapper taskQuestionnaireMapper;
 
     @Resource
+    private AssessmentScenarioService scenarioService;
+
+    @Resource
     private PermissionApi permissionApi;
 
     @Override
@@ -95,16 +101,44 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         //生成任务编号
         assessmentTask.setStatus(AssessmentTaskStatusEnum.NOT_STARTED.getStatus());
         assessmentTask.setPublishUserId(SecurityFrameworkUtils.getLoginUserId());
+        // 校验场景（如选择）并写入任务
+        if (createReqVO.getScenarioId() != null) {
+            AssessmentScenarioDO scenario = scenarioService.validateScenarioActive(createReqVO.getScenarioId());
+            assessmentTask.setScenarioId(createReqVO.getScenarioId());
+
+            // 校验问卷数量限制
+            int questionnaireCount = 0;
+            if (createReqVO.getAssignments() != null) {
+                questionnaireCount = createReqVO.getAssignments().size();
+            } else if (createReqVO.getQuestionnaireIds() != null) {
+                questionnaireCount = createReqVO.getQuestionnaireIds().size();
+            }
+            scenarioService.validateQuestionnaireCount(createReqVO.getScenarioId(), questionnaireCount);
+        }
         assessmentTaskMapper.insert(assessmentTask);
 
-        // 维护任务-问卷关联（多选）- 改为一条条插入以确保租户ID正确设置
-        if (createReqVO.getQuestionnaireIds() != null && !createReqVO.getQuestionnaireIds().isEmpty()) {
+        // 维护任务-问卷关联（多选）
+        if (createReqVO.getAssignments() != null && !createReqVO.getAssignments().isEmpty()) {
+            // 有槽位分配，逐条写入并带 slotKey
+            for (var a : createReqVO.getAssignments()) {
+                AssessmentTaskQuestionnaireDO rel = new AssessmentTaskQuestionnaireDO();
+                rel.setTaskNo(createReqVO.getTaskNo());
+                rel.setQuestionnaireId(a.getQuestionnaireId());
+                rel.setTenantId(TenantContextHolder.getTenantId());
+                rel.setCreator(String.valueOf(SecurityFrameworkUtils.getLoginUserId()));
+                rel.setUpdater(rel.getCreator());
+                rel.setSlotKey(a.getSlotKey());
+                taskQuestionnaireMapper.insert(rel);
+            }
+        } else if (createReqVO.getQuestionnaireIds() != null && !createReqVO.getQuestionnaireIds().isEmpty()) {
+            // 无槽位场景，按 questionnaireIds 简单写入
             for (Long qid : createReqVO.getQuestionnaireIds()) {
                 AssessmentTaskQuestionnaireDO rel = new AssessmentTaskQuestionnaireDO();
                 rel.setTaskNo(createReqVO.getTaskNo());
                 rel.setQuestionnaireId(qid);
-                // 手动设置租户ID，确保数据隔离
                 rel.setTenantId(TenantContextHolder.getTenantId());
+                rel.setCreator(String.valueOf(SecurityFrameworkUtils.getLoginUserId()));
+                rel.setUpdater(rel.getCreator());
                 taskQuestionnaireMapper.insert(rel);
             }
         }
@@ -290,28 +324,25 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         }
         IPage<AssessmentTaskVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
         assessmentTaskMapper.selectPageList(page, pageReqVO, taskNos);
-        // 填充每条记录的问卷ID列表
+        // 填充每条记录的问卷ID列表与槽位映射
         if (page.getRecords() != null && !page.getRecords().isEmpty()) {
             for (AssessmentTaskVO record : page.getRecords()) {
-                log.info("Processing task: {}, tenantId: {}, raw questionnaireIdsStr: '{}'",
-                    record.getTaskNo(), TenantContextHolder.getTenantId(), record.getQuestionnaireIdsStr());
-
-                // 从数据库查询结果中解析问卷ID列表
-                List<Long> qids = parseQuestionnaireIds(record.getQuestionnaireIdsStr());
-                log.info("Parsed questionnaire IDs from GROUP_CONCAT: {}", qids);
-
-                // 如果从GROUP_CONCAT查询没有结果，尝试使用原来的方法作为备用
-                if (qids.isEmpty()) {
-                    log.info("GROUP_CONCAT result is empty, trying fallback query...");
-                    List<Long> fallbackQids = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(record.getTaskNo(), TenantContextHolder.getTenantId());
-                    log.info("Fallback query result for task {}: {}", record.getTaskNo(), fallbackQids);
-                    qids = fallbackQids != null ? fallbackQids : new ArrayList<>();
-                }
-
-                log.info("Final questionnaire IDs for task {}: {}", record.getTaskNo(), qids);
+                List<Long> qids = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(record.getTaskNo(), TenantContextHolder.getTenantId());
                 record.setQuestionnaireIds(qids);
-                // 清除临时字段
-                record.setQuestionnaireIdsStr(null);
+                var items = new java.util.ArrayList<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.SlotAssignmentVO>();
+                var rows = taskQuestionnaireMapper.selectListByTaskNo(record.getTaskNo(), TenantContextHolder.getTenantId());
+                if (rows != null) {
+                    for (var r : rows) {
+                        if (r.getSlotKey() != null) {
+                            var item = new cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.SlotAssignmentVO();
+                            item.setSlotKey(r.getSlotKey());
+                            item.setQuestionnaireId(r.getQuestionnaireId());
+                            item.setSlotOrder(r.getSlotOrder());
+                            items.add(item);
+                        }
+                    }
+                }
+                record.setAssignments(items);
             }
         }
         return new PageResult<>(page.getRecords(), page.getTotal());
@@ -429,7 +460,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         statistics.setNotStartedParticipants(totalParticipants - completedParticipants - inProgressParticipants);
         BigDecimal total = new BigDecimal(statistics.getTotalParticipants());
         BigDecimal completed = new BigDecimal(statistics.getCompletedParticipants());
-        BigDecimal completionRate = completed.divide(total, 2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal completionRate = total.compareTo(BigDecimal.ZERO) == 0
+                ? BigDecimal.ZERO
+                : completed.divide(total, 2, java.math.RoundingMode.HALF_UP);
         statistics.setCompletionRate(totalParticipants > 0 ? completionRate.multiply(new BigDecimal("100")) : new BigDecimal("0.00"));
         return statistics;
     }

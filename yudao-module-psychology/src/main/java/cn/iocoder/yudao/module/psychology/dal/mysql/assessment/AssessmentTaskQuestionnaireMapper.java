@@ -19,6 +19,10 @@ public interface AssessmentTaskQuestionnaireMapper extends BaseMapperX<Assessmen
     List<Long> selectQuestionnaireIdsByTaskNo(@Param("taskNo") String taskNo, @Param("tenantId") Long tenantId);
 
     void insertBatch(@Param("list") List<AssessmentTaskQuestionnaireDO> list);
+
+    int insert(AssessmentTaskQuestionnaireDO entity);
+
+    List<AssessmentTaskQuestionnaireDO> selectListByTaskNo(@Param("taskNo") String taskNo, @Param("tenantId") Long tenantId);
 }
 
 

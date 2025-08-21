@@ -57,4 +57,10 @@ public class AssessmentTaskSaveReqVO{
     @Schema(description = "问卷ID列表", example = "[1,2,3]")
     private List<Long> questionnaireIds;
 
+    @Schema(description = "场景ID，可为空（默认NONE）", example = "1")
+    private Long scenarioId;
+
+    @Schema(description = "场景问卷分配（有槽位时使用）", example = "[{slotKey:'library',questionnaireId:1},{slotKey:'gym',questionnaireId:2}]")
+    private List<SlotAssignmentVO> assignments;
+
 }

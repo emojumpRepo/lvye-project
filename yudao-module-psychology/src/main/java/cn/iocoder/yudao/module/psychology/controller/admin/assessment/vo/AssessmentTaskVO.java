@@ -37,6 +37,12 @@ public class AssessmentTaskVO {
     private java.util.List<Long> questionnaireIds;
 
     /**
+     * 槽位-问卷分配（分页展示用）
+     */
+    @Schema(description = "槽位-问卷分配")
+    private java.util.List<SlotAssignmentVO> assignments;
+
+    /**
      *目标对象（字典：target_audience）
      */
     @Schema(description = "目标对象")

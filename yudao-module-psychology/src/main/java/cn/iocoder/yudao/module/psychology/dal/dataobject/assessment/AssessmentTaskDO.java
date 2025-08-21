@@ -67,6 +67,11 @@ public class AssessmentTaskDO extends TenantBaseDO {
     private Date deadline;
 
     /**
+     * 场景ID
+     */
+    private Long scenarioId;
+
+    /**
      * 发布人管理员
      */
     @TableField(exist = false)

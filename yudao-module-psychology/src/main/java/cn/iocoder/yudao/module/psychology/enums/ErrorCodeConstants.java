@@ -91,4 +91,12 @@ public interface ErrorCodeConstants {
     ErrorCode DATA_VALIDATION_FAILED = new ErrorCode(1_003_014_001, "数据验证失败");
     ErrorCode DATA_INCONSISTENCY_DETECTED = new ErrorCode(1_003_014_002, "检测到数据不一致");
 
+    // ========== 测评场景相关 1-003-015-000 ==========
+    ErrorCode ASSESSMENT_SCENARIO_NOT_EXISTS = new ErrorCode(1_003_015_000, "测评场景不存在");
+    ErrorCode ASSESSMENT_SCENARIO_NOT_ACTIVE = new ErrorCode(1_003_015_001, "测评场景未启用");
+    ErrorCode ASSESSMENT_SCENARIO_CODE_DUPLICATE = new ErrorCode(1_003_015_002, "场景编码已存在");
+    ErrorCode ASSESSMENT_SCENARIO_QUESTIONNAIRE_COUNT_EXCEEDED = new ErrorCode(1_003_015_003, "问卷数量超过场景限制");
+    ErrorCode ASSESSMENT_SCENARIO_SLOT_NOT_EXISTS = new ErrorCode(1_003_015_004, "场景槽位不存在");
+    ErrorCode ASSESSMENT_SCENARIO_SLOT_KEY_DUPLICATE = new ErrorCode(1_003_015_005, "槽位编码在场景内重复");
+
 }

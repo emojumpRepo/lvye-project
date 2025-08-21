@@ -46,4 +46,7 @@ public class AssessmentTaskBaseVO {
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     private Date deadline;
 
+    @Schema(description = "场景ID", example = "1")
+    private Long scenarioId;
+
 }

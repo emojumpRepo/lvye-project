@@ -11,6 +11,9 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTa
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTemplateDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTemplateMapper;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
+import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,6 +40,9 @@ public class AssessmentTaskController {
 
     @Resource
     private AssessmentTaskService assessmentTaskService;
+
+    @Resource
+    private AssessmentScenarioService scenarioService;
 
     @GetMapping("/get-exam-template")
     @Operation(summary = "获得测评任务")
@@ -170,5 +176,71 @@ public class AssessmentTaskController {
         return success(true);
     }
 
+    // ========== 场景管理相关接口 ==========
+
+    @GetMapping("/scenarios")
+    @Operation(summary = "查询启用的测评场景列表")
+    @DataPermission(enable = false)
+    public CommonResult<List<AssessmentScenarioDO>> listScenarios() {
+        List<AssessmentScenarioDO> list = scenarioService.getActiveScenarioList();
+        return success(list);
+    }
+
+    @GetMapping("/scenarios/page")
+    @Operation(summary = "获得测评场景分页")
+    @DataPermission(enable = false)
+    public CommonResult<PageResult<AssessmentScenarioDO>> getScenarioPage(@Valid AssessmentScenarioPageReqVO pageReqVO) {
+        PageResult<AssessmentScenarioDO> pageResult = scenarioService.getScenarioPage(pageReqVO);
+        return success(pageResult);
+    }
+
+    @GetMapping("/scenarios/{id}")
+    @Operation(summary = "获得测评场景")
+    @DataPermission(enable = false)
+    public CommonResult<AssessmentScenarioDO> getScenario(@PathVariable("id") Long id) {
+        AssessmentScenarioDO scenario = scenarioService.getScenario(id);
+        return success(scenario);
+    }
+
+    @GetMapping("/scenarios/{id}/slots")
+    @Operation(summary = "查询场景槽位定义")
+    @DataPermission(enable = false)
+    public CommonResult<List<AssessmentScenarioSlotDO>> listScenarioSlots(@PathVariable("id") Long scenarioId) {
+        return success(scenarioService.getScenarioSlots(scenarioId));
+    }
+
+    @PostMapping("/scenarios")
+    @Operation(summary = "创建场景")
+    @DataPermission(enable = false)
+    public CommonResult<Long> createScenario(@RequestBody @Validated AssessmentScenarioVO reqVO) {
+        Long id = scenarioService.createScenario(reqVO);
+        return success(id);
+    }
+
+    @PutMapping("/scenarios")
+    @Operation(summary = "更新场景")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> updateScenario(@RequestBody @Validated AssessmentScenarioVO reqVO) {
+        scenarioService.updateScenario(reqVO);
+        return success(true);
+    }
+
+    @DeleteMapping("/scenarios/{id}")
+    @Operation(summary = "删除场景")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> deleteScenario(@PathVariable("id") Long id) {
+        scenarioService.deleteScenario(id);
+        return success(true);
+    }
+
+    @PostMapping("/scenarios/{scenarioId}/slots")
+    @Operation(summary = "批量更新场景插槽")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> updateScenarioSlots(
+            @PathVariable("scenarioId") Long scenarioId,
+            @RequestBody @Validated List<AssessmentScenarioVO.ScenarioSlotVO> slots) {
+        scenarioService.updateScenarioSlots(scenarioId, slots);
+        return success(true);
+    }
 
 }
