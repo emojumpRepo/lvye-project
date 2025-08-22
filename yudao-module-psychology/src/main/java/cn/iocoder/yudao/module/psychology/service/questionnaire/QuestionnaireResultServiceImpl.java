@@ -29,7 +29,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createQuestionnaireResult(@Valid Object createReqVO) {
+    public Long createQuestionnaireResult(@Valid cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultCreateReqVO createReqVO) {
         log.info("创建问卷结果（简化实现）");
         // TODO: 实现具体的创建逻辑
         return 1L;
@@ -37,7 +37,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateQuestionnaireResult(@Valid Object updateReqVO) {
+    public void updateQuestionnaireResult(@Valid cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultUpdateReqVO updateReqVO) {
         log.info("更新问卷结果（简化实现）");
         // TODO: 实现具体的更新逻辑
     }
