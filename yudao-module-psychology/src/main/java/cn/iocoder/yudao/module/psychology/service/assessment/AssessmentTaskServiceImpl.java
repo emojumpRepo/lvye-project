@@ -26,6 +26,7 @@ import cn.iocoder.yudao.module.psychology.enums.AssessmentTaskStatusEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
@@ -83,6 +84,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Resource
     private PermissionApi permissionApi;
+
+    @Resource
+    private QuestionnaireService questionnaireService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)

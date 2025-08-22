@@ -12,6 +12,8 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTe
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTemplateMapper;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
+import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -43,6 +46,9 @@ public class AssessmentTaskController {
 
     @Resource
     private AssessmentScenarioService scenarioService;
+
+    @Resource
+    private QuestionnaireService questionnaireService;
 
     @GetMapping("/get-exam-template")
     @Operation(summary = "获得测评任务")
@@ -86,7 +92,30 @@ public class AssessmentTaskController {
     @DataPermission(enable = false)
     public CommonResult<AssessmentTaskRespVO> getAssessmentTask(@RequestParam("taskNo") String taskNo) {
         AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTask(taskNo);
-        return success(BeanUtils.toBean(assessmentTask, AssessmentTaskRespVO.class));
+        AssessmentTaskRespVO respVO = BeanUtils.toBean(assessmentTask, AssessmentTaskRespVO.class);
+        
+        // 填充问卷详细信息
+        if (assessmentTask.getQuestionnaireIds() != null && !assessmentTask.getQuestionnaireIds().isEmpty()) {
+            List<QuestionnaireInfoVO> questionnaires = new ArrayList<>();
+            for (Long questionnaireId : assessmentTask.getQuestionnaireIds()) {
+                QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
+                if (questionnaire != null) {
+                    QuestionnaireInfoVO info = new QuestionnaireInfoVO();
+                    info.setId(questionnaire.getId());
+                    info.setTitle(questionnaire.getTitle());
+                    info.setDescription(questionnaire.getDescription());
+                    info.setQuestionnaireType(questionnaire.getQuestionnaireType());
+                    info.setTargetAudience(questionnaire.getTargetAudience());
+                    info.setQuestionCount(questionnaire.getQuestionCount());
+                    info.setEstimatedDuration(questionnaire.getEstimatedDuration());
+                    info.setStatus(questionnaire.getStatus());
+                    questionnaires.add(info);
+                }
+            }
+            respVO.setQuestionnaires(questionnaires);
+        }
+        
+        return success(respVO);
     }
 
     @GetMapping("/page")

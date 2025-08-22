@@ -42,4 +42,10 @@ public class AssessmentTaskRespVO extends AssessmentTaskBaseVO {
      */
     private java.util.List<Long> questionnaireIds;
 
+    /**
+     * 关联问卷详细信息列表
+     */
+    @Schema(description = "关联问卷详细信息列表")
+    private java.util.List<QuestionnaireInfoVO> questionnaires;
+
 }
