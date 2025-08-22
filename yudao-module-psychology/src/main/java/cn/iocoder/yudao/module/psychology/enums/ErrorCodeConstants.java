@@ -86,10 +86,6 @@ public interface ErrorCodeConstants {
     ErrorCode RESULT_GENERATION_TIMEOUT = new ErrorCode(1_003_013_002, "结果生成超时");
     ErrorCode RESULT_GENERATION_CONFIG_NOT_FOUND = new ErrorCode(1_003_013_003, "结果生成配置未找到");
 
-    // ========== 数据迁移相关 1-003-014-000 ==========
-    ErrorCode DATA_MIGRATION_FAILED = new ErrorCode(1_003_014_000, "数据迁移失败");
-    ErrorCode DATA_VALIDATION_FAILED = new ErrorCode(1_003_014_001, "数据验证失败");
-    ErrorCode DATA_INCONSISTENCY_DETECTED = new ErrorCode(1_003_014_002, "检测到数据不一致");
 
     // ========== 测评场景相关 1-003-015-000 ==========
     ErrorCode ASSESSMENT_SCENARIO_NOT_EXISTS = new ErrorCode(1_003_015_000, "测评场景不存在");
