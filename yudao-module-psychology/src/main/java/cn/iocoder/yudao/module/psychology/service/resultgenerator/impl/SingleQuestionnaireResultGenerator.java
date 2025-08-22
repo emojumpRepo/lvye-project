@@ -87,8 +87,8 @@ public class SingleQuestionnaireResultGenerator implements ResultGeneratorStrate
         if (context.getAnswers() == null || context.getAnswers().isEmpty()) {
             throw new IllegalArgumentException("答题数据不能为空");
         }
-        if (context.getStudentProfileId() == null) {
-            throw new IllegalArgumentException("学生档案ID不能为空");
+        if (context.getUserId() == null) {
+            throw new IllegalArgumentException("用户ID不能为空");
         }
     }
 

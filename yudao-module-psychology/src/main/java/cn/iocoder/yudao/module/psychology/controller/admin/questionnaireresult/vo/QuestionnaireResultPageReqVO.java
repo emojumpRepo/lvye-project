@@ -20,8 +20,8 @@ public class QuestionnaireResultPageReqVO extends PageParam {
     @Schema(description = "问卷ID", example = "1")
     private Long questionnaireId;
 
-    @Schema(description = "学生档案ID", example = "100")
-    private Long studentProfileId;
+    @Schema(description = "用户ID", example = "100")
+    private Long userId;
 
     @Schema(description = "风险等级", example = "2")
     private Integer riskLevel;

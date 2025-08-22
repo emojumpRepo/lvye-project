@@ -109,7 +109,7 @@ public class AppQuestionnaireController {
 
         // 权限检查
         boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(
-                accessReqVO.getQuestionnaireId(), accessReqVO.getStudentProfileId());
+                accessReqVO.getQuestionnaireId(), accessReqVO.getUserId());
         AppQuestionnaireAccessRespVO respVO = new AppQuestionnaireAccessRespVO();
         if (!accessible) {
             respVO.setAccessible(false);
@@ -128,7 +128,7 @@ public class AppQuestionnaireController {
         String clientIp = accessReqVO.getAccessIp() != null ? accessReqVO.getAccessIp() : "127.0.0.1";
         Long accessId = questionnaireAccessService.recordQuestionnaireAccess(
                 accessReqVO.getQuestionnaireId(),
-                accessReqVO.getStudentProfileId(),
+                accessReqVO.getUserId(),
                 clientIp,
                 accessReqVO.getUserAgent(),
                 accessReqVO.getAccessSource()

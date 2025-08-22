@@ -21,8 +21,8 @@ public class QuestionnaireResultExportRespVO {
     @Schema(description = "问卷标题", example = "心理健康测评问卷")
     private String questionnaireTitle;
 
-    @Schema(description = "学生档案编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3072")
-    private Long studentProfileId;
+    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "3072")
+    private Long userId;
 
     @Schema(description = "学生姓名", example = "张三")
     private String studentName;

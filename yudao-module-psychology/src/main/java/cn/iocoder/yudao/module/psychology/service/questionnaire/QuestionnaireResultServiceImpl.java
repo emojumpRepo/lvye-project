@@ -73,8 +73,8 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
     }
 
     @Override
-    public List<QuestionnaireResultDO> getUserQuestionnaireResults(Long studentProfileId, Long questionnaireId) {
-        log.debug("获取用户问卷结果列表（简化实现），学生档案ID: {}, 问卷ID: {}", studentProfileId, questionnaireId);
+    public List<QuestionnaireResultDO> getUserQuestionnaireResults(Long userId, Long questionnaireId) {
+        log.debug("获取用户问卷结果列表（简化实现），用户ID: {}, 问卷ID: {}", userId, questionnaireId);
         // TODO: 实现具体的查询逻辑
         return new ArrayList<>();
     }
@@ -87,8 +87,8 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
     }
 
     @Override
-    public boolean hasUserCompletedQuestionnaire(Long questionnaireId, Long studentProfileId) {
-        log.debug("检查用户是否已完成问卷（简化实现），问卷ID: {}, 学生档案ID: {}", questionnaireId, studentProfileId);
+    public boolean hasUserCompletedQuestionnaire(Long questionnaireId, Long userId) {
+        log.debug("检查用户是否已完成问卷（简化实现），问卷ID: {}, 用户ID: {}", questionnaireId, userId);
         // TODO: 实现具体的检查逻辑
         return false;
     }
@@ -109,8 +109,8 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
     }
 
     @Override
-    public QuestionnaireResultDO getLatestUserQuestionnaireResult(Long questionnaireId, Long studentProfileId) {
-        log.debug("获取用户最新的问卷结果（简化实现），问卷ID: {}, 学生档案ID: {}", questionnaireId, studentProfileId);
+    public QuestionnaireResultDO getLatestUserQuestionnaireResult(Long questionnaireId, Long userId) {
+        log.debug("获取用户最新的问卷结果（简化实现），问卷ID: {}, 用户ID: {}", questionnaireId, userId);
         // TODO: 实现具体的查询逻辑
         return null;
     }

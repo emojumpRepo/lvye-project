@@ -20,9 +20,9 @@ public class QuestionnaireResultBaseVO {
     @NotNull(message = "问卷ID不能为空")
     private Long questionnaireId;
 
-    @Schema(description = "学生档案ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "100")
-    @NotNull(message = "学生档案ID不能为空")
-    private Long studentProfileId;
+    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "100")
+    @NotNull(message = "用户ID不能为空")
+    private Long userId;
 
     @Schema(description = "答案数据", example = "{\"q1\":\"A\",\"q2\":\"B\"}")
     private String answerData;

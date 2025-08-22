@@ -118,7 +118,7 @@ DROP TABLE IF EXISTS `lvye_questionnaire_result`;
 CREATE TABLE `lvye_questionnaire_result` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '结果ID',
     `questionnaire_id` BIGINT NOT NULL COMMENT '问卷ID',
-    `student_profile_id` BIGINT NOT NULL COMMENT '学生档案ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `assessment_task_id` BIGINT COMMENT '关联的测评任务ID（如果是测评任务的一部分）',
     `assessment_result_id` BIGINT COMMENT '关联的测评结果ID',
     `participant_type` TINYINT DEFAULT 1 COMMENT '参与者类型：1-学生本人，2-家长代答',
@@ -145,7 +145,7 @@ CREATE TABLE `lvye_questionnaire_result` (
     
     PRIMARY KEY (`id`) USING BTREE,
     KEY `idx_questionnaire_id` (`questionnaire_id`) USING BTREE,
-    KEY `idx_student_profile_id` (`student_profile_id`) USING BTREE,
+    KEY `idx_user_id` (`user_id`) USING BTREE,
     KEY `idx_assessment_task_id` (`assessment_task_id`) USING BTREE,
     KEY `idx_assessment_result_id` (`assessment_result_id`) USING BTREE,
     KEY `idx_participant_type` (`participant_type`) USING BTREE,
@@ -195,7 +195,7 @@ DROP TABLE IF EXISTS `lvye_questionnaire_access`;
 CREATE TABLE `lvye_questionnaire_access` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '访问记录ID',
     `questionnaire_id` BIGINT NOT NULL COMMENT '问卷ID',
-    `student_profile_id` BIGINT NOT NULL COMMENT '学生档案ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `access_time` DATETIME NOT NULL COMMENT '访问时间',
     `access_ip` VARCHAR(50) COMMENT '访问IP',
     `user_agent` TEXT COMMENT '用户代理',
@@ -207,7 +207,7 @@ CREATE TABLE `lvye_questionnaire_access` (
     
     PRIMARY KEY (`id`) USING BTREE,
     KEY `idx_questionnaire_id` (`questionnaire_id`) USING BTREE,
-    KEY `idx_student_profile_id` (`student_profile_id`) USING BTREE,
+    KEY `idx_user_id` (`user_id`) USING BTREE,
     KEY `idx_access_time` (`access_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='问卷访问记录表';
 

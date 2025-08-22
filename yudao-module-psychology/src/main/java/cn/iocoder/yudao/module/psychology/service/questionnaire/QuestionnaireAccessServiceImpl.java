@@ -51,9 +51,9 @@ public class QuestionnaireAccessServiceImpl implements QuestionnaireAccessServic
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long recordQuestionnaireAccess(Long questionnaireId, Long studentProfileId,
+    public Long recordQuestionnaireAccess(Long questionnaireId, Long userId,
                                          String accessIp, String userAgent, Integer accessSource) {
-        log.info("记录问卷访问（简化实现），问卷ID: {}, 学生档案ID: {}, IP: {}", questionnaireId, studentProfileId, accessIp);
+        log.info("记录问卷访问（简化实现），问卷ID: {}, 用户ID: {}, IP: {}", questionnaireId, userId, accessIp);
         
         // 验证问卷存在
         QuestionnaireDO questionnaire = validateQuestionnaireExists(questionnaireId);
@@ -66,7 +66,7 @@ public class QuestionnaireAccessServiceImpl implements QuestionnaireAccessServic
         // 创建访问记录
         QuestionnaireAccessDO accessRecord = new QuestionnaireAccessDO();
         accessRecord.setQuestionnaireId(questionnaireId);
-        accessRecord.setStudentProfileId(studentProfileId);
+        accessRecord.setUserId(userId);
         accessRecord.setAccessIp(accessIp);
         accessRecord.setUserAgent(userAgent);
         accessRecord.setAccessSource(accessSource);
@@ -93,8 +93,8 @@ public class QuestionnaireAccessServiceImpl implements QuestionnaireAccessServic
     }
 
     @Override
-    public boolean checkQuestionnaireAccess(Long questionnaireId, Long studentProfileId) {
-        log.info("检查访问权限（简化实现），问卷ID: {} 学生档案ID: {}", questionnaireId, studentProfileId);
+    public boolean checkQuestionnaireAccess(Long questionnaireId, Long userId) {
+        log.info("检查访问权限（简化实现），问卷ID: {} 用户ID: {}", questionnaireId, userId);
         try {
             QuestionnaireDO questionnaire = validateQuestionnaireExists(questionnaireId);
             // 简化策略：仅当问卷已发布才允许访问
@@ -222,13 +222,13 @@ public class QuestionnaireAccessServiceImpl implements QuestionnaireAccessServic
     }
 
     @Override
-    public List<QuestionnaireAccessDO> getQuestionnaireAccessList(Long questionnaireId, Long studentProfileId) {
-        log.info("获取问卷访问记录列表（简化实现），问卷ID: {}, 学生档案ID: {}", questionnaireId, studentProfileId);
+    public List<QuestionnaireAccessDO> getQuestionnaireAccessList(Long questionnaireId, Long userId) {
+        log.info("获取问卷访问记录列表（简化实现），问卷ID: {}, 用户ID: {}", questionnaireId, userId);
 
         return questionnaireAccessMapper.selectList(
             new LambdaQueryWrapperX<QuestionnaireAccessDO>()
                 .eq(QuestionnaireAccessDO::getQuestionnaireId, questionnaireId)
-                .eqIfPresent(QuestionnaireAccessDO::getStudentProfileId, studentProfileId)
+                .eqIfPresent(QuestionnaireAccessDO::getUserId, userId)
                 .orderByDesc(QuestionnaireAccessDO::getAccessTime)
         );
     }

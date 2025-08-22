@@ -105,9 +105,19 @@ public class QuestionnaireResultController {
         try {
             byte[] excelData = questionnaireResultService.exportQuestionnaireResultsToExcel(exportReqVO);
             
+            if (excelData == null || excelData.length == 0) {
+                log.warn("导出的Excel数据为空");
+                return ResponseEntity.noContent().build();
+            }
+            
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            headers.setContentDispositionFormData("attachment", "questionnaire_results.xlsx");
+            headers.setContentLength(excelData.length);
+            headers.setContentDispositionFormData("attachment", 
+                    "questionnaire_results_" + System.currentTimeMillis() + ".xlsx");
+            headers.setCacheControl("no-cache, no-store, must-revalidate");
+            headers.setPragma("no-cache");
+            headers.setExpires(0);
             
             return ResponseEntity.ok()
                     .headers(headers)
@@ -115,7 +125,8 @@ public class QuestionnaireResultController {
                     
         } catch (Exception e) {
             log.error("导出问卷结果失败", e);
-            throw new RuntimeException("导出失败: " + e.getMessage());
+            throw new cn.iocoder.yudao.framework.common.exception.ServiceException(
+                    cn.iocoder.yudao.module.psychology.enums.QuestionnaireResultErrorCodeConstants.QUESTIONNAIRE_RESULT_GENERATION_FAILED);
         }
     }
 

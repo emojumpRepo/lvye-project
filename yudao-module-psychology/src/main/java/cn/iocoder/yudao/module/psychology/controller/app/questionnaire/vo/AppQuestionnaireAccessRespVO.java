@@ -18,8 +18,8 @@ public class AppQuestionnaireAccessRespVO {
     @Schema(description = "问卷编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "2048")
     private Long questionnaireId;
 
-    @Schema(description = "学生档案编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3072")
-    private Long studentProfileId;
+    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "3072")
+    private Long userId;
 
     @Schema(description = "访问时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime accessTime;

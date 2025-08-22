@@ -34,9 +34,9 @@ public class ResultGenerationContext {
     private Long assessmentId;
 
     /**
-     * 学生档案ID
+     * 用户ID
      */
-    private Long studentProfileId;
+    private Long userId;
 
     /**
      * 答题数据（单问卷）

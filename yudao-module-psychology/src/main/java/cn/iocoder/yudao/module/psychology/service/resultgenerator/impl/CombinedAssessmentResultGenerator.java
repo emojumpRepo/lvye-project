@@ -83,8 +83,8 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
         if (context.getQuestionnaireResults() == null || context.getQuestionnaireResults().isEmpty()) {
             throw new IllegalArgumentException("问卷结果数据不能为空");
         }
-        if (context.getStudentProfileId() == null) {
-            throw new IllegalArgumentException("学生档案ID不能为空");
+        if (context.getUserId() == null) {
+            throw new IllegalArgumentException("用户ID不能为空");
         }
     }
 

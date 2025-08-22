@@ -63,7 +63,7 @@ public class AsyncResultGenerationServiceImpl implements AsyncResultGenerationSe
             ResultGenerationContext context = ResultGenerationContext.builder()
                     .generationType(ResultGeneratorTypeEnum.SINGLE_QUESTIONNAIRE)
                     .questionnaireId(result.getQuestionnaireId())
-                    .studentProfileId(result.getStudentProfileId())
+                    .userId(result.getUserId())
                     .answers(JsonUtils.parseArray(result.getAnswers(), AnswerVO.class))
                     .participantType(result.getParticipantType())
                     .build();

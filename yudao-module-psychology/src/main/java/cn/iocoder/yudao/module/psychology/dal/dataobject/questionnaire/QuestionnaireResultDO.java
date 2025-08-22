@@ -31,9 +31,9 @@ public class QuestionnaireResultDO extends TenantBaseDO {
     private Long questionnaireId;
 
     /**
-     * 学生档案ID
+     * 用户ID
      */
-    private Long studentProfileId;
+    private Long userId;
 
     /**
      * 关联的测评任务ID（如果是测评任务的一部分）

@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -47,73 +48,96 @@ public class AppQuestionnaireResultController {
             HttpServletRequest request) {
         
         try {
-            // 验证问卷访问权限
-            boolean hasAccess = questionnaireAccessService.checkQuestionnaireAccess(
-                    submitReqVO.getQuestionnaireId(), submitReqVO.getStudentProfileId());
-            
-            if (!hasAccess) {
-                AppQuestionnaireAnswerSubmitRespVO respVO = new AppQuestionnaireAnswerSubmitRespVO();
-                respVO.setResultStatus(3); // 生成失败
-                respVO.setStatusMessage("无权限提交该问卷答案");
-                respVO.setNeedWaitResult(false);
-                return success(respVO);
-            }
-            
-            // 检查是否已经提交过
-            boolean hasCompleted = questionnaireResultService.hasUserCompletedQuestionnaire(
-                    submitReqVO.getQuestionnaireId(), submitReqVO.getStudentProfileId());
-            
-            if (hasCompleted) {
-                AppQuestionnaireAnswerSubmitRespVO respVO = new AppQuestionnaireAnswerSubmitRespVO();
-                respVO.setResultStatus(2); // 已完成
-                respVO.setStatusMessage("您已经完成过该问卷，无需重复提交");
-                respVO.setNeedWaitResult(false);
-                return success(respVO);
+            // 验证提交前置条件
+            AppQuestionnaireAnswerSubmitRespVO validationResult = validateSubmissionPreconditions(submitReqVO);
+            if (validationResult != null) {
+                return success(validationResult);
             }
             
             // 获取问卷信息
-            QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(submitReqVO.getQuestionnaireId());
+            QuestionnaireRespVO questionnaire = getAndValidateQuestionnaire(submitReqVO.getQuestionnaireId());
             if (questionnaire == null) {
-                AppQuestionnaireAnswerSubmitRespVO respVO = new AppQuestionnaireAnswerSubmitRespVO();
-                respVO.setResultStatus(3); // 生成失败
-                respVO.setStatusMessage("问卷不存在");
-                respVO.setNeedWaitResult(false);
-                return success(respVO);
+                return success(createErrorResponse("问卷不存在"));
             }
             
-            // 构建答案数据
-            String clientIp = getClientIpAddress(request);
-            String userAgent = submitReqVO.getUserAgent() != null ? 
-                    submitReqVO.getUserAgent() : request.getHeader("User-Agent");
-            
-            // 提交答案并生成结果（委托服务统一处理）
+            // 提交答案并生成结果
             Long resultId = questionnaireResultService.submitQuestionnaireAnswers(submitReqVO);
             
-            // 构建响应
-            AppQuestionnaireAnswerSubmitRespVO respVO = new AppQuestionnaireAnswerSubmitRespVO();
-            respVO.setResultId(resultId);
-            respVO.setQuestionnaireId(questionnaire.getId());
-            respVO.setQuestionnaireTitle(questionnaire.getTitle());
-            respVO.setSubmitTime(LocalDateTime.now());
-            respVO.setResultStatus(1); // 生成中
-            respVO.setResultProgress(0);
-            respVO.setStatusMessage("答案提交成功，正在生成结果...");
-            respVO.setNeedWaitResult(true);
-            respVO.setEstimatedCompleteTime(LocalDateTime.now().plusMinutes(5));
-            respVO.setResultViewUrl("/psychology/app/questionnaire-result/" + resultId);
-            
-            return success(respVO);
+            // 构建成功响应
+            return success(createSuccessResponse(resultId, questionnaire));
             
         } catch (Exception e) {
             log.error("提交问卷答案失败", e);
-            
-            AppQuestionnaireAnswerSubmitRespVO respVO = new AppQuestionnaireAnswerSubmitRespVO();
-            respVO.setResultStatus(3); // 生成失败
-            respVO.setStatusMessage("提交失败: " + e.getMessage());
-            respVO.setNeedWaitResult(false);
-            
-            return success(respVO);
+            return success(createErrorResponse("提交失败: " + e.getMessage()));
         }
+    }
+
+    /**
+     * 验证提交前置条件
+     */
+    private AppQuestionnaireAnswerSubmitRespVO validateSubmissionPreconditions(AppQuestionnaireAnswerSubmitReqVO submitReqVO) {
+        // 验证问卷访问权限
+        boolean hasAccess = questionnaireAccessService.checkQuestionnaireAccess(
+                submitReqVO.getQuestionnaireId(), submitReqVO.getUserId());
+        
+        if (!hasAccess) {
+            return createErrorResponse("无权限提交该问卷答案");
+        }
+        
+        // 检查是否已经提交过
+        boolean hasCompleted = questionnaireResultService.hasUserCompletedQuestionnaire(
+                submitReqVO.getQuestionnaireId(), submitReqVO.getUserId());
+        
+        if (hasCompleted) {
+            AppQuestionnaireAnswerSubmitRespVO respVO = new AppQuestionnaireAnswerSubmitRespVO();
+            respVO.setResultStatus(2); // 已完成
+            respVO.setStatusMessage("您已经完成过该问卷，无需重复提交");
+            respVO.setNeedWaitResult(false);
+            return respVO;
+        }
+        
+        return null; // 验证通过
+    }
+
+    /**
+     * 获取并验证问卷信息
+     * TODO: 考虑添加缓存以提高性能
+     */
+    private QuestionnaireRespVO getAndValidateQuestionnaire(Long questionnaireId) {
+        QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
+        if (questionnaire == null) {
+            log.warn("问卷不存在，ID: {}", questionnaireId);
+        }
+        return questionnaire;
+    }
+
+    /**
+     * 创建成功响应
+     */
+    private AppQuestionnaireAnswerSubmitRespVO createSuccessResponse(Long resultId, QuestionnaireRespVO questionnaire) {
+        AppQuestionnaireAnswerSubmitRespVO respVO = new AppQuestionnaireAnswerSubmitRespVO();
+        respVO.setResultId(resultId);
+        respVO.setQuestionnaireId(questionnaire.getId());
+        respVO.setQuestionnaireTitle(questionnaire.getTitle());
+        respVO.setSubmitTime(LocalDateTime.now());
+        respVO.setResultStatus(1); // 生成中
+        respVO.setResultProgress(0);
+        respVO.setStatusMessage("答案提交成功，正在生成结果...");
+        respVO.setNeedWaitResult(true);
+        respVO.setEstimatedCompleteTime(LocalDateTime.now().plusMinutes(5));
+        respVO.setResultViewUrl("/psychology/app/questionnaire-result/" + resultId);
+        return respVO;
+    }
+
+    /**
+     * 创建错误响应
+     */
+    private AppQuestionnaireAnswerSubmitRespVO createErrorResponse(String message) {
+        AppQuestionnaireAnswerSubmitRespVO respVO = new AppQuestionnaireAnswerSubmitRespVO();
+        respVO.setResultStatus(3); // 生成失败
+        respVO.setStatusMessage(message);
+        respVO.setNeedWaitResult(false);
+        return respVO;
     }
 
     @GetMapping("/get/{id}")
@@ -121,7 +145,7 @@ public class AppQuestionnaireResultController {
     @Parameter(name = "id", description = "结果编号", required = true, example = "2001")
     public CommonResult<AppQuestionnaireResultRespVO> getQuestionnaireResult(
             @PathVariable("id") Long id,
-            @RequestParam("studentProfileId") Long studentProfileId) {
+            @RequestParam("userId") Long userId) {
         
         try {
             // 获取问卷结果
@@ -131,8 +155,8 @@ public class AppQuestionnaireResultController {
             }
             
             // 验证数据权限
-            if (!result.getStudentProfileId().equals(studentProfileId)) {
-                log.warn("学生尝试访问非本人的问卷结果，学生ID: {}, 结果ID: {}", studentProfileId, id);
+            if (!result.getUserId().equals(userId)) {
+                log.warn("用户尝试访问非本人的问卷结果，用户ID: {}, 结果ID: {}", userId, id);
                 return success(null);
             }
             
@@ -165,7 +189,7 @@ public class AppQuestionnaireResultController {
             }
             
             // 验证数据权限
-            if (!result.getStudentProfileId().equals(studentProfileId)) {
+            if (!result.getUserId().equals(studentProfileId)) {
                 return success(null);
             }
             
@@ -213,7 +237,7 @@ public class AppQuestionnaireResultController {
             // 构建查询条件
             cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultPageReqVO pageReqVO =
                     new cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultPageReqVO();
-            pageReqVO.setStudentProfileId(studentProfileId);
+            pageReqVO.setUserId(studentProfileId);
             pageReqVO.setQuestionnaireId(questionnaireId);
             // 注意：QuestionnaireResultPageReqVO 没有 resultStatus 字段，这里注释掉
             // pageReqVO.setResultStatus(resultStatus);
@@ -223,12 +247,22 @@ public class AppQuestionnaireResultController {
             // 查询结果
             PageResult<QuestionnaireResultDO> pageResult = questionnaireResultService.getQuestionnaireResultPage(pageReqVO);
             
+            // 批量获取问卷信息以避免N+1查询问题
+            List<Long> questionnaireIds = pageResult.getList().stream()
+                    .map(QuestionnaireResultDO::getQuestionnaireId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            
+            Map<Long, QuestionnaireRespVO> questionnaireMap = questionnaireIds.stream()
+                    .collect(Collectors.toMap(
+                            id -> id,
+                            id -> questionnaireService.getQuestionnaire(id),
+                            (existing, replacement) -> existing
+                    ));
+            
             // 转换为响应VO
             List<AppQuestionnaireResultRespVO> results = pageResult.getList().stream()
-                    .map(result -> {
-                        QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(result.getQuestionnaireId());
-                        return convertToResultRespVO(result, questionnaire);
-                    })
+                    .map(result -> convertToResultRespVO(result, questionnaireMap.get(result.getQuestionnaireId())))
                     .collect(Collectors.toList());
             
             return success(results);
@@ -250,7 +284,7 @@ public class AppQuestionnaireResultController {
             // 构建查询条件
             cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultPageReqVO pageReqVO = 
                     new cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultPageReqVO();
-            pageReqVO.setStudentProfileId(studentProfileId);
+            pageReqVO.setUserId(studentProfileId);
             pageReqVO.setPageNo(1);
             pageReqVO.setPageSize(1000); // 获取所有结果用于统计
             
@@ -316,7 +350,7 @@ public class AppQuestionnaireResultController {
             }
             
             // 验证数据权限
-            if (!result.getStudentProfileId().equals(studentProfileId)) {
+            if (!result.getUserId().equals(studentProfileId)) {
                 return success(false);
             }
             
@@ -396,7 +430,7 @@ public class AppQuestionnaireResultController {
         respVO.setQuestionnaireId(result.getQuestionnaireId());
         respVO.setQuestionnaireTitle(questionnaire != null ? questionnaire.getTitle() : "");
         respVO.setQuestionnaireDescription(questionnaire != null ? questionnaire.getDescription() : "");
-        respVO.setStudentProfileId(result.getStudentProfileId());
+        respVO.setUserId(result.getUserId());
         Integer totalScoreInt = result.getRawScore() != null ? result.getRawScore().intValue() : null;
         respVO.setTotalScore(totalScoreInt);
         respVO.setMaxScore(null);

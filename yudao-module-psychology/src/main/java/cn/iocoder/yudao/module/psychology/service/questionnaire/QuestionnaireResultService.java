@@ -23,14 +23,14 @@ public interface QuestionnaireResultService {
      * @param createReqVO 创建信息
      * @return 编号
      */
-    Long createQuestionnaireResult(@Valid Object createReqVO);
+    Long createQuestionnaireResult(@Valid cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultCreateReqVO createReqVO);
 
     /**
      * 更新问卷结果
      *
      * @param updateReqVO 更新信息
      */
-    void updateQuestionnaireResult(@Valid Object updateReqVO);
+    void updateQuestionnaireResult(@Valid cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultUpdateReqVO updateReqVO);
 
     /**
      * 删除问卷结果
@@ -65,11 +65,11 @@ public interface QuestionnaireResultService {
     /**
      * 获取用户问卷结果列表
      *
-     * @param studentProfileId 学生档案ID
+     * @param userId 用户ID
      * @param questionnaireId 问卷ID（可选）
      * @return 问卷结果列表
      */
-    List<QuestionnaireResultDO> getUserQuestionnaireResults(Long studentProfileId, Long questionnaireId);
+    List<QuestionnaireResultDO> getUserQuestionnaireResults(Long userId, Long questionnaireId);
 
     /**
      * 获取问卷的所有结果
@@ -83,10 +83,10 @@ public interface QuestionnaireResultService {
      * 检查用户是否已完成问卷
      *
      * @param questionnaireId 问卷ID
-     * @param studentProfileId 学生档案ID
+     * @param userId 用户ID
      * @return 是否已完成
      */
-    boolean hasUserCompletedQuestionnaire(Long questionnaireId, Long studentProfileId);
+    boolean hasUserCompletedQuestionnaire(Long questionnaireId, Long userId);
 
     /**
      * 获取问卷完成统计
@@ -100,10 +100,10 @@ public interface QuestionnaireResultService {
      * 获取用户最新的问卷结果
      *
      * @param questionnaireId 问卷ID
-     * @param studentProfileId 学生档案ID
+     * @param userId 用户ID
      * @return 最新问卷结果
      */
-    QuestionnaireResultDO getLatestUserQuestionnaireResult(Long questionnaireId, Long studentProfileId);
+    QuestionnaireResultDO getLatestUserQuestionnaireResult(Long questionnaireId, Long userId);
 
     /**
      * 提交问卷答案并生成结果

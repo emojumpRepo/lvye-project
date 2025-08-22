@@ -477,8 +477,8 @@ public class DataValidationServiceImpl implements DataValidationService {
                 isValid = false;
             }
             
-            if (resultDO.getStudentProfileId() == null) {
-                errors.add(new ValidationError(resultDO.getId().toString(), "studentProfileId", "NULL_VALUE", "学生档案ID不能为空"));
+            if (resultDO.getUserId() == null) {
+                errors.add(new ValidationError(resultDO.getId().toString(), "userId", "NULL_VALUE", "用户ID不能为空"));
                 isValid = false;
             }
             

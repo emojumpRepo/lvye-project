@@ -23,8 +23,8 @@ public class AppQuestionnaireResultRespVO {
     @Schema(description = "问卷描述", example = "用于评估学生心理健康状况")
     private String questionnaireDescription;
 
-    @Schema(description = "学生档案ID", example = "100")
-    private Long studentProfileId;
+    @Schema(description = "用户ID", example = "100")
+    private Long userId;
 
     @Schema(description = "总分", example = "85")
     private Integer totalScore;
