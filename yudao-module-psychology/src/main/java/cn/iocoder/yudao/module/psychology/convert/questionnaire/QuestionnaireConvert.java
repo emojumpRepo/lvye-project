@@ -57,6 +57,7 @@ public interface QuestionnaireConvert {
 
     PageResult<QuestionnaireRespVO> convertPage(PageResult<QuestionnaireDO> page);
 
+    @Mapping(target = "assessmentDimensionLabels", ignore = true)
     QuestionnaireSimpleRespVO convertSimple(QuestionnaireDO bean);
 
     List<QuestionnaireSimpleRespVO> convertSimpleList(List<QuestionnaireDO> list);

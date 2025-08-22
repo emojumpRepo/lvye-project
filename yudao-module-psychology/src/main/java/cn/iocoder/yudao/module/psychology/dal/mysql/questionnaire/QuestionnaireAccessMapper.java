@@ -28,12 +28,12 @@ public interface QuestionnaireAccessMapper extends BaseMapperX<QuestionnaireAcce
     }
 
     /**
-     * 根据问卷ID和学生档案ID查询访问记录
+     * 根据问卷ID和用户ID查询访问记录
      */
-    default List<QuestionnaireAccessDO> selectListByQuestionnaireAndStudent(Long questionnaireId, Long studentProfileId) {
+    default List<QuestionnaireAccessDO> selectListByQuestionnaireAndUser(Long questionnaireId, Long userId) {
         return selectList(new LambdaQueryWrapperX<QuestionnaireAccessDO>()
                 .eq(QuestionnaireAccessDO::getQuestionnaireId, questionnaireId)
-                .eq(QuestionnaireAccessDO::getStudentProfileId, studentProfileId)
+                .eq(QuestionnaireAccessDO::getUserId, userId)
                 .orderByDesc(QuestionnaireAccessDO::getAccessTime));
     }
 
@@ -45,10 +45,10 @@ public interface QuestionnaireAccessMapper extends BaseMapperX<QuestionnaireAcce
     }
 
     /**
-     * 统计学生访问次数
+     * 统计用户访问次数
      */
-    default Long countByStudentProfileId(Long studentProfileId) {
-        return selectCount(QuestionnaireAccessDO::getStudentProfileId, studentProfileId);
+    default Long countByUserId(Long userId) {
+        return selectCount(QuestionnaireAccessDO::getUserId, userId);
     }
 
     /**
@@ -63,10 +63,10 @@ public interface QuestionnaireAccessMapper extends BaseMapperX<QuestionnaireAcce
     /**
      * 查询最近的访问记录
      */
-    default QuestionnaireAccessDO selectLatestByQuestionnaireAndStudent(Long questionnaireId, Long studentProfileId) {
+    default QuestionnaireAccessDO selectLatestByQuestionnaireAndUser(Long questionnaireId, Long userId) {
         return selectOne(new LambdaQueryWrapperX<QuestionnaireAccessDO>()
                 .eq(QuestionnaireAccessDO::getQuestionnaireId, questionnaireId)
-                .eq(QuestionnaireAccessDO::getStudentProfileId, studentProfileId)
+                .eq(QuestionnaireAccessDO::getUserId, userId)
                 .orderByDesc(QuestionnaireAccessDO::getAccessTime)
                 .last("LIMIT 1"));
     }

@@ -346,7 +346,7 @@ public class AssessmentResultExtensionController {
                 new cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO();
         result.setId(id);
         result.setQuestionnaireId(id);
-        result.setStudentProfileId(100L);
+        result.setUserId(100L);
         result.setAnswers("{\"q1\":\"A\",\"q2\":\"B\"}");
         result.setStandardScore(java.math.BigDecimal.valueOf(85.0));
         result.setDimensionScores("{\"anxiety\":80,\"depression\":90}");

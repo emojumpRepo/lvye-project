@@ -20,9 +20,19 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public abstract class StudentProfileConvert {
 
+    @Mapping(target = "createTime", ignore = true)
+    @Mapping(target = "updateTime", ignore = true)
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "updater", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
+    @Mapping(target = "transMap", ignore = true)
     public abstract StudentProfileDO convert(StudentProfileSaveReqVO bean);
 
     @Mapping(target = "specialMarkNames", expression = "java(getSpecialMarkNames(bean.getSpecialMarks()))")
+    @Mapping(target = "mobile", ignore = true)
+    @Mapping(target = "gradeName", ignore = true)
+    @Mapping(target = "className", ignore = true)
     public abstract StudentProfileRespVO convert(StudentProfileDO bean);
 
     public abstract List<StudentProfileRespVO> convertList(List<StudentProfileDO> list);

@@ -27,11 +27,11 @@ public interface QuestionnaireResultMapper extends BaseMapperX<QuestionnaireResu
     }
 
     /**
-     * 根据学生档案ID查询问卷结果列表
+     * 根据用户ID查询问卷结果列表
      */
-    default List<QuestionnaireResultDO> selectListByStudentProfileId(Long studentProfileId) {
+    default List<QuestionnaireResultDO> selectListByUserId(Long userId) {
         return selectList(new LambdaQueryWrapperX<QuestionnaireResultDO>()
-                .eq(QuestionnaireResultDO::getStudentProfileId, studentProfileId)
+                .eq(QuestionnaireResultDO::getUserId, userId)
                 .orderByDesc(QuestionnaireResultDO::getCompletedTime));
     }
 
@@ -54,12 +54,12 @@ public interface QuestionnaireResultMapper extends BaseMapperX<QuestionnaireResu
     }
 
     /**
-     * 根据问卷ID和学生档案ID查询结果
+     * 根据问卷ID和用户ID查询结果
      */
-    default QuestionnaireResultDO selectByQuestionnaireAndStudent(Long questionnaireId, Long studentProfileId, Long assessmentTaskId) {
+    default QuestionnaireResultDO selectByQuestionnaireAndUser(Long questionnaireId, Long userId, Long assessmentTaskId) {
         return selectOne(new LambdaQueryWrapperX<QuestionnaireResultDO>()
                 .eq(QuestionnaireResultDO::getQuestionnaireId, questionnaireId)
-                .eq(QuestionnaireResultDO::getStudentProfileId, studentProfileId)
+                .eq(QuestionnaireResultDO::getUserId, userId)
                 .eqIfPresent(QuestionnaireResultDO::getAssessmentTaskId, assessmentTaskId));
     }
 
