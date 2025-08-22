@@ -240,7 +240,7 @@ yudao:
   tencent-lbs-key: TVDBZ-TDILD-4ON4B-PFDZA-RNLKH-VVF6E # QQ 地图的密钥 https://lbs.qq.com/service/staticV2/staticGuide/staticDoc
   survey-system: # 外部问卷系统配置
     enabled: true # 是否启用外部问卷系统同步
-    base-url: http://192.168.5.204:8080 # 外部问卷系统基础URL
+    base-url: http://119.29.105.88:8080 # 外部问卷系统基础URL
     survey-list-path: /api/survey/getSurveyList # 获取问卷列表的API路径
     update-config-path: /api/survey/updateSimpleConf # 更新问卷配置的API路径
     publish-survey-path: /api/survey/publishSurvey # 发布问卷的API路径
