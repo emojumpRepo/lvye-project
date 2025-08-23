@@ -1,14 +1,15 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentParticipantDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
-import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentParticipantMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -30,51 +31,41 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
     private StudentProfileService studentProfileService;
 
     @Resource
-    private AssessmentParticipantMapper participantMapper;
+    private AssessmentUserTaskMapper userTaskMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void startAssessment(String taskNo, Long userId, Boolean isParent) {
+    public void startAssessment(String taskNo, Long userId) {
         // 校验任务存在
         if (assessmentTaskService.getAssessmentTask(taskNo) == null) {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
         }
-
         // 获取学生档案
         StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(userId);
         if (studentProfile == null) {
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
-
-        // 检查是否已经参与
-//        AssessmentParticipantDO existingParticipant = participantMapper.selectByTaskIdAndStudentId(taskNo, studentProfile.getId());
-//        if (existingParticipant != null) {
-//            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_PARTICIPANT_EXISTS);
-//        }
-//
-//        // 创建参与记录
-//        AssessmentParticipantDO participant = new AssessmentParticipantDO();
-//        participant.setTaskId(taskNo);
-//        participant.setStudentProfileId(studentProfile.getId());
-//        participant.setIsParent(isParent);
-//        participant.setCompletionStatus(ParticipantCompletionStatusEnum.IN_PROGRESS.getStatus());
-//        participant.setStartTime(LocalDateTime.now());
-//        participantMapper.insert(participant);
+        // 检查是否已经参与(即状态为进行中或已完成)
+        AssessmentUserTaskDO assessmentUserTaskDO = userTaskMapper.selectByTaskNoAndUserId(taskNo, userId);
+        if (assessmentUserTaskDO != null && !assessmentUserTaskDO.getStatus().equals(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus())) {
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_PARTICIPANT_EXISTS);
+        }
+        //更新参与测评状态
+        userTaskMapper.updateStatusById(assessmentUserTaskDO.getId(), ParticipantCompletionStatusEnum.IN_PROGRESS.getStatus());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void submitAssessment(Long taskId, Long userId, WebAssessmentParticipateReqVO participateReqVO) {
+    public void submitAssessment(String taskNo, Long userId, WebAssessmentParticipateReqVO participateReqVO) {
         // 获取学生档案
         StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(userId);
         if (studentProfile == null) {
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
-
         // 获取参与记录
-        AssessmentParticipantDO participant = participantMapper.selectByTaskIdAndStudentId(taskId, studentProfile.getId());
-        if (participant == null) {
-            throw exception(ErrorCodeConstants.ASSESSMENT_NOT_COMPLETED);
+        AssessmentUserTaskDO assessmentUserTaskDO = userTaskMapper.selectByTaskNoAndUserId(taskNo, studentProfile.getId());
+        if (ParticipantCompletionStatusEnum.COMPLETED.getStatus().equals(assessmentUserTaskDO.getStatus())) {
+            throw exception(ErrorCodeConstants.ASSESSMENT_ALREADY_COMPLETED);
         }
 
         // TODO: 实现具体的提交测评逻辑
@@ -82,23 +73,19 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
     }
 
     @Override
-
-    public Integer getParticipantStatus(Long taskId, Long userId) {
+    public Integer getParticipantStatus(String taskNo, Long userId) {
         // 获取学生档案
         StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(userId);
         if (studentProfile == null) {
             return ParticipantCompletionStatusEnum.NOT_STARTED.getStatus();
         }
-
         // 获取参与记录
-        AssessmentParticipantDO participant = participantMapper.selectByTaskIdAndStudentId(taskId, studentProfile.getId());
-        if (participant == null) {
+        AssessmentUserTaskDO assessmentUserTaskDO = userTaskMapper.selectByTaskNoAndUserId(taskNo, userId);
+        if (assessmentUserTaskDO == null) {
             return ParticipantCompletionStatusEnum.NOT_STARTED.getStatus();
         }
+        return assessmentUserTaskDO.getStatus();
 
-        // TODO: 实现具体的状态查询逻辑
-        // 当前为简化实现，默认返回未开始状态
-        return 1; // 1-未开始状态
     }
 
 }

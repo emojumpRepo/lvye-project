@@ -16,6 +16,7 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileRecordMapper;
 import cn.iocoder.yudao.module.psychology.enums.ContactEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
+import cn.iocoder.yudao.module.psychology.service.common.DataImportService;
 import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
 import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
@@ -96,6 +97,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Resource
     private ParentContactMapper parentContactMapper;
+
+    @Resource
+    private DataImportService dataImportService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -247,16 +251,17 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         }
         int successCount = 0;
         int failureCount = 0;
+        StringBuilder failReason = new StringBuilder();
 
         for (StudentImportExcelVO student : studentList) {
             StudentProfileDO studentProfileDO = studentProfileMapper.selectByStudentNo(student.getStudentNo());
             if (Objects.isNull(studentProfileDO)) {
                 try {
-                    this.saveStudentInfoByExcel(student);
+                    dataImportService.saveStudentInfoByExcel(student);
                     successCount = successCount++;
                 } catch (Exception e) {
-                    logger.error("学生:" + student.getName() + "导入失败");
-                    respVO.setFailReason(e.getMessage());
+                    logger.error("学生:" + student.getName() + "导入失败" + "\n");
+                    failReason.append("教师:" + student.getName() + "导入失败" + "\n");
                     failureCount = failureCount++;
                 }
             } else {
@@ -267,6 +272,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         }
         respVO.setSuccessCount(successCount);
         respVO.setFailureCount(failureCount);
+        respVO.setFailReason(failReason.toString());
         return respVO;
     }
 
@@ -318,55 +324,6 @@ public class StudentProfileServiceImpl implements StudentProfileService {
      */
     private String encodePassword(String password) {
         return passwordEncoder.encode(password);
-    }
-
-    private void saveStudentInfoByExcel(StudentImportExcelVO student) {
-        // 校验学号唯一性
-        validateStudentNoUnique(null, student.getStudentNo());
-        DeptRespDTO gradeDept = deptApi.getByDeptName(student.getGradeName());
-        DeptRespDTO classDept = deptApi.getByDeptName(student.getClassName());
-        if (gradeDept == null || classDept == null) {
-            throw exception(ErrorCodeConstants.STUDENT_GRADE_OR_CLASS_IS_EMPTY);
-        }
-        if (classDept.getParentId().equals(gradeDept.getId())) {
-            throw exception(ErrorCodeConstants.STUDENT_GRADE_OR_CLASS_NOT_MATCH);
-        }
-        //插入用户表
-        AdminUserDO adminUserDO = new AdminUserDO();
-        adminUserDO.setUsername(student.getStudentNo());
-        adminUserDO.setDeptId(classDept.getId());
-        adminUserDO.setNickname(student.getName());
-        adminUserDO.setSex(SexEnum.getName(student.getSex()));
-        adminUserDO.setMobile(student.getMobile());
-        adminUserDO.setStatus(CommonStatusEnum.ENABLE.getStatus());
-        String initPassword = configApi.getConfigValueByKey(USER_INIT_PASSWORD_KEY);
-        adminUserDO.setPassword(encodePassword(initPassword));
-        adminUserMapper.insert(adminUserDO);
-        // 插入学生档案表
-        StudentProfileDO studentProfile = BeanUtils.toBean(student, StudentProfileDO.class);
-        studentProfile.setUserId(adminUserDO.getId());
-        studentProfile.setGraduationStatus(0);
-        studentProfile.setGraduationStatus(1);
-        studentProfileMapper.insert(studentProfile);
-        //设置学生角色
-        Set<Long> roles = new HashSet<>();
-        roles.add(roleMapper.selectOne(RoleDO::getName, "学生").getId());
-        permissionService.assignUserRole(adminUserDO.getId(), roles);
-        //插入学生历史记录表
-        String schoolYear = configApi.getConfigValueByKey(SCHOOL_YEAR);
-        StudentProfileRecordDO studentProfileRecordDO = new StudentProfileRecordDO();
-        studentProfileRecordDO.setStudentNo(student.getStudentNo());
-        studentProfileRecordDO.setStudyYear(schoolYear);
-        studentProfileRecordDO.setGradeDeptId(gradeDept.getId());
-        studentProfileRecordDO.setClassDeptId(classDept.getId());
-        studentProfileRecordMapper.insert(studentProfileRecordDO);
-        //插入学生家长信息
-        ParentContactDO parentContactDO = new ParentContactDO();
-        parentContactDO.setStudentProfileId(studentProfile.getId());
-        parentContactDO.setName(student.getParentName());
-        parentContactDO.setMobile(student.getParentMobile());
-        parentContactDO.setRelation(ContactEnum.getCode(student.getRelation()).getCode());
-        parentContactMapper.insert(parentContactDO);
     }
 
 }

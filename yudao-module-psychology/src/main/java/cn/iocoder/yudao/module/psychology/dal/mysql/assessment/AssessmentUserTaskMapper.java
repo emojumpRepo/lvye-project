@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskUserVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -33,6 +34,12 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
     default void deleteByTaskNo(String taskNo) {
         delete(new LambdaQueryWrapperX<AssessmentUserTaskDO>()
                 .eq(AssessmentUserTaskDO::getTaskNo, taskNo));
+    }
+
+    default int updateStatusById(Long id, Integer status) {
+        return update(new LambdaUpdateWrapper<AssessmentUserTaskDO>()
+                .eq(AssessmentUserTaskDO::getId, id)
+                .set(AssessmentUserTaskDO::getStatus, status));
     }
 
     List<AssessmentTaskUserVO> selectListByTaskNo(@Param("taskNo") String taskNo);

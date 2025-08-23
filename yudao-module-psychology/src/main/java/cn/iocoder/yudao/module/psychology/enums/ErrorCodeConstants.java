@@ -37,6 +37,7 @@ public interface ErrorCodeConstants {
     ErrorCode ASSESSMENT_RESULT_NOT_EXISTS = new ErrorCode(1_003_004_000, "测评结果不存在");
     ErrorCode ASSESSMENT_RESULT_ALREADY_EXISTS = new ErrorCode(1_003_004_001, "测评结果已存在");
     ErrorCode ASSESSMENT_NOT_COMPLETED = new ErrorCode(1_003_004_002, "测评未完成");
+    ErrorCode ASSESSMENT_ALREADY_COMPLETED = new ErrorCode(1_003_004_003, "测评已完成");
 
     // ========== 心理咨询相关 1-003-005-000 ==========
     ErrorCode CONSULTATION_RECORD_NOT_EXISTS = new ErrorCode(1_003_005_000, "咨询记录不存在");
@@ -99,4 +100,6 @@ public interface ErrorCodeConstants {
     ErrorCode TEACHER_NO_DUPLICATE = new ErrorCode(1_003_015_001, "工号已存在");
     ErrorCode ROLE_NOT_EXISTS = new ErrorCode(1_003_015_002, "角色不存在");
     ErrorCode TEACHER_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_015_003, "导入用户数据不能为空！");
+    ErrorCode MOBILE_NO_DUPLICATE = new ErrorCode(1_003_015_004, "手机号已存在");
+    ErrorCode DEPT_NOT_EXISTS = new ErrorCode(1_003_015_005, "班级/年级不存在");
 }
