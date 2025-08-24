@@ -4,6 +4,8 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentParticipantService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultCalculateService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,17 +15,22 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.util.List;
+
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 
 @Tag(name = "学生家长端 - 测评参与")
 @RestController
-@RequestMapping("/app-api/psychology/assessment-participant")
+@RequestMapping("/psychology/assessment-participant")
 @Validated
 public class WebAssessmentParticipantController {
 
     @Resource
     private AssessmentParticipantService assessmentParticipantService;
+
+    @Resource
+    private QuestionnaireResultCalculateService calculateService;
 
     @PostMapping("/start")
     @Operation(summary = "开始参与测评")
@@ -34,13 +41,11 @@ public class WebAssessmentParticipantController {
         return success(true);
     }
 
-    @PostMapping("/submit/{taskNo}")
+    @PostMapping("/submit")
     @Operation(summary = "提交测评答案")
-    @Parameter(name = "taskNo", description = "任务编号", required = true)
-    public CommonResult<Boolean> submitAssessment(@PathVariable("taskNo") String taskNo,
-                                                  @Valid @RequestBody WebAssessmentParticipateReqVO participateReqVO) {
+    public CommonResult<Boolean> submitAssessment(@Valid @RequestBody WebAssessmentParticipateReqVO participateReqVO) {
         Long userId = WebFrameworkUtils.getLoginUserId();
-        assessmentParticipantService.submitAssessment(taskNo, userId, participateReqVO);
+        assessmentParticipantService.submitAssessment(participateReqVO.getTaskNo(), userId, participateReqVO);
         return success(true);
     }
 
@@ -52,5 +57,15 @@ public class WebAssessmentParticipantController {
         Integer status = assessmentParticipantService.getParticipantStatus(taskNo, userId);
         return success(status);
     }
+
+    @PostMapping("/test")
+    @Operation(summary = "提交测评答案")
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
+    public CommonResult<Object> test(@Valid @RequestBody WebAssessmentParticipateReqVO participateReqVO) {
+        Long userId = WebFrameworkUtils.getLoginUserId();
+        List<QuestionnaireResultVO> result =  calculateService.resultCalculate(participateReqVO.getQuestionnaireId(), userId, participateReqVO.getAnswers());
+        return success(result);
+    }
+
 
 }

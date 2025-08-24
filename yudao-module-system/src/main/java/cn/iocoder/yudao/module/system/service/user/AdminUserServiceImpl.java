@@ -520,6 +520,11 @@ public class AdminUserServiceImpl implements AdminUserService {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 
+    @Override
+    public AdminUserDO getUserByMobileAndNickName(String mobile, String nickName) {
+        return userMapper.selectByMobileAndNickName(mobile, nickName);
+    }
+
     /**
      * 对密码进行加密
      *

@@ -26,6 +26,7 @@ public interface ErrorCodeConstants {
     ErrorCode ASSESSMENT_TASK_NOT_STARTED = new ErrorCode(1_003_002_003, "测评任务未开始");
     ErrorCode ASSESSMENT_TASK_NAME_DUPLICATE = new ErrorCode(1_003_002_004, "任务名称已存在");
     ErrorCode ASSESSMENT_TASK_PARTICIPANT_EXISTS = new ErrorCode(1_003_002_005, "该学生已参与此测评任务");
+    ErrorCode ASSESSMENT_TASK_PARTICIPANT_CANNOT_START = new ErrorCode(1_003_002_006, "身份不符，无法参与测评任务");
 
     // ========== 测评量表相关 1-003-003-000 ==========
     ErrorCode ASSESSMENT_SCALE_NOT_EXISTS = new ErrorCode(1_003_003_000, "测评量表不存在");

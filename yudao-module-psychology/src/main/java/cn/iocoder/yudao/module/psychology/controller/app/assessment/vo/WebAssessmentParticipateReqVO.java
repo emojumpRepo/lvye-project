@@ -10,8 +10,11 @@ import java.util.List;
 @Data
 public class WebAssessmentParticipateReqVO {
 
-    @Schema(description = "是否家长参与", example = "false")
-    private Boolean isParent = false;
+    @Schema(description = "任务编号", example = "123")
+    private String taskNo;
+
+    @Schema(description = "问卷ID", example = "123")
+    private Long questionnaireId;
 
     @Schema(description = "答案列表", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotEmpty(message = "答案列表不能为空")
@@ -22,7 +25,10 @@ public class WebAssessmentParticipateReqVO {
     public static class AssessmentAnswerItem {
 
         @Schema(description = "题目索引", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-        private Integer questionIndex;
+        private String title;
+
+        @Schema(description = "题目索引", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+        private Integer index;
 
         @Schema(description = "答案内容", requiredMode = Schema.RequiredMode.REQUIRED, example = "A")
         private String answer;

@@ -214,4 +214,12 @@ public interface AdminUserService {
      */
     boolean isPasswordMatch(String rawPassword, String encodedPassword);
 
+    /**
+     * 通过手机号和用户中文名获取用户
+     *
+     * @param mobile 手机号
+     * @return 用户对象信息
+     */
+    AdminUserDO getUserByMobileAndNickName(String mobile, String nickName);
+
 }

@@ -18,21 +18,6 @@ import java.util.Map;
 public interface QuestionnaireResultService {
 
     /**
-     * 创建问卷结果
-     *
-     * @param createReqVO 创建信息
-     * @return 编号
-     */
-    Long createQuestionnaireResult(@Valid cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultCreateReqVO createReqVO);
-
-    /**
-     * 更新问卷结果
-     *
-     * @param updateReqVO 更新信息
-     */
-    void updateQuestionnaireResult(@Valid cn.iocoder.yudao.module.psychology.controller.admin.questionnaireresult.vo.QuestionnaireResultUpdateReqVO updateReqVO);
-
-    /**
      * 删除问卷结果
      *
      * @param id 编号

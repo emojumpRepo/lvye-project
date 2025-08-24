@@ -315,7 +315,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         validateCaptcha(reqVO);
 
         // 使用账号密码，进行登录
-        AdminUserDO user = authenticateByMobile(reqVO.getUsername(), reqVO.getPassword());
+        AdminUserDO user = authenticateByMobile(reqVO.getUsername(), reqVO.getPassword(), reqVO.getNickName());
 
         // 如果 socialType 非空，说明需要绑定社交用户
         if (reqVO.getSocialType() != null) {
@@ -326,10 +326,10 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         return createTokenAfterLoginSuccess(user.getId(), reqVO.getUsername(), LoginLogTypeEnum.LOGIN_USERNAME);
     }
 
-    public AdminUserDO authenticateByMobile(String mobile, String password) {
+    public AdminUserDO authenticateByMobile(String mobile, String password, String nickName) {
         final LoginLogTypeEnum logTypeEnum = LoginLogTypeEnum.LOGIN_USERNAME;
         // 校验账号是否存在
-        AdminUserDO user = userService.getUserByMobile(mobile);
+        AdminUserDO user = userService.getUserByMobileAndNickName(mobile, nickName);
         if (user == null) {
             createLoginLog(null, mobile, logTypeEnum, LoginResultEnum.BAD_CREDENTIALS);
             throw exception(AUTH_LOGIN_BAD_CREDENTIALS);

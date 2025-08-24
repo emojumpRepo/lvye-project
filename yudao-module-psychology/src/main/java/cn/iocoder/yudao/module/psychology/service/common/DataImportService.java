@@ -93,17 +93,20 @@ public class DataImportService {
         //检查角色
         RoleDO roleDO = validateRoleExists(teacher.getRole());
         String[] classNames = teacher.getClassName().split(",");
-        String[] headTeacherClassName = teacher.getHeadTeacherClassName().split(",");
+        String[] headTeacherClassNames = teacher.getHeadTeacherClassName().split(",");
         String[] managerClassNames = teacher.getManageGradeName().split(",");
         List<Long> classList = new ArrayList<>();
         switch (teacher.getRole()){
-            case normalTeacher -> {
-
-            }
-            case psychologyTeacher -> {
+            case normalTeacher,psychologyTeacher -> {
                 for (String className : classNames){
                     DeptDO deptDO = validateClassOrGradeExists(className);
                     classList.add(deptDO.getId());
+                }
+                if (!teacher.getHeadTeacherClassName().isEmpty()){
+                    for (String className : headTeacherClassNames){
+                        DeptDO deptDO = validateClassOrGradeExists(className);
+                        classList.add(deptDO.getId());
+                    }
                 }
             }
             case gradeManager -> {
