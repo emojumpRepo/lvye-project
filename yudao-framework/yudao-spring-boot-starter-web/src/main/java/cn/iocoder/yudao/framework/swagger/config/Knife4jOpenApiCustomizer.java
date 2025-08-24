@@ -1,17 +1,18 @@
 package cn.iocoder.yudao.framework.swagger.config;
 
-import com.github.xiaoymin.knife4j.annotations.ApiSupport;
-import com.github.xiaoymin.knife4j.core.conf.ExtensionsConstants;
-import com.github.xiaoymin.knife4j.core.conf.GlobalConstants;
-import com.github.xiaoymin.knife4j.spring.configuration.Knife4jProperties;
-import com.github.xiaoymin.knife4j.spring.configuration.Knife4jSetting;
-import com.github.xiaoymin.knife4j.spring.extension.OpenApiExtensionResolver;
+
+import com.github.xingfudeshi.knife4j.annotations.ApiSupport;
+import com.github.xingfudeshi.knife4j.core.conf.ExtensionsConstants;
+import com.github.xingfudeshi.knife4j.core.conf.GlobalConstants;
+import com.github.xingfudeshi.knife4j.spring.configuration.Knife4jProperties;
+import com.github.xingfudeshi.knife4j.spring.configuration.Knife4jSetting;
+import com.github.xingfudeshi.knife4j.spring.extension.OpenApiExtensionResolver;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.OpenAPI;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
-import org.springdoc.core.SpringDocConfigProperties;
 import org.springdoc.core.customizers.GlobalOpenApiCustomizer;
+import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 @Primary
 @Configuration
 @Slf4j
-public class Knife4jOpenApiCustomizer extends com.github.xiaoymin.knife4j.spring.extension.Knife4jOpenApiCustomizer
+public class Knife4jOpenApiCustomizer extends com.github.xingfudeshi.knife4j.spring.extension.Knife4jOpenApiCustomizer
         implements GlobalOpenApiCustomizer {
 
     final Knife4jProperties knife4jProperties;

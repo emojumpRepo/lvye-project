@@ -19,7 +19,6 @@ import org.dromara.hutool.extra.mail.*;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
