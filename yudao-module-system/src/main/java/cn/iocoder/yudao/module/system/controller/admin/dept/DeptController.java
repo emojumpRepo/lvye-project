@@ -16,8 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.Valid;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -88,6 +88,14 @@ public class DeptController {
     public CommonResult<DeptRespVO> getDept(@RequestParam("id") Long id) {
         DeptDO dept = deptService.getDept(id);
         return success(BeanUtils.toBean(dept, DeptRespVO.class));
+    }
+
+    @GetMapping("/childList")
+    @Operation(summary = "获取部门列表")
+    @PreAuthorize("@ss.hasPermission('system:dept:query')")
+    public CommonResult<List<DeptRespVO>> getDeptChildList(Long parentDeptId) {
+        List<DeptDO> list = deptService.getChildDeptList(parentDeptId);
+        return success(BeanUtils.toBean(list, DeptRespVO.class));
     }
 
 }

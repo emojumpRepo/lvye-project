@@ -58,4 +58,10 @@ public interface DeptApi {
      */
     List<DeptRespDTO> getChildDeptList(Long id);
 
+    /**
+     * 获得部门信息
+     * @param name
+     * @return
+     */
+    DeptRespDTO getByDeptName(String name);
 }

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper">
+
+    <select id="selectPageList"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
+        SELECT a.id, a.user_id, a.student_no, a.name,
+               CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
+               a.home_address, b.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.psychological_status, a.risk_level, a.special_marks, a.remark,
+               a.create_time, a.update_time,
+               b.mobile, c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0
+            <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
+                AND a.student_no = #{pageReqVO.studentNo}
+            </if>
+            <if test="pageReqVO.name != null and pageReqVO.name !=''">
+                AND a.name = #{pageReqVO.name}
+            </if>
+            <if test="pageReqVO.sex != null">
+                AND b.sex = #{pageReqVO.sex}
+            </if>
+            <if test="pageReqVO.gradeDeptId != null">
+                AND a.grade_dept_id = #{pageReqVO.gradeDeptId}
+            </if>
+            <if test="pageReqVO.classDeptId != null">
+                AND a.class_dept_id = #{pageReqVO.classDeptId}
+            </if>
+            <if test="pageReqVO.graduationStatus != null">
+                AND a.graduation_status = #{pageReqVO.graduationStatus}
+            </if>
+            <if test="pageReqVO.psychologicalStatus != null">
+                AND a.psychological_status = #{pageReqVO.psychologicalStatus}
+            </if>
+            <if test="pageReqVO.riskLevel != null">
+                AND a.risk_level = #{pageReqVO.riskLevel}
+            </if>
+            ORDER BY a.id DESC
+        </where>
+    </select>
+
+    <select id="selectInfoByStudentProfileId"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
+        SELECT a.id, a.user_id, a.student_no, a.name,
+               CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
+               a.home_address, b.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.psychological_status, a.risk_level, a.special_marks, a.remark,
+               a.create_time, a.update_time,
+               b.mobile, c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0 and a.id = #{studentProfileId}
+        </where>
+    </select>
+
+    <select id="selectInfoByUserId"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
+        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0 and a.user_id = #{userId}
+        </where>
+    </select>
+
+    <select id="selectClassStudentCount" resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO">
+        select class_dept_id AS dept_id, count(*) AS count from lvye_student_profile group by class_dept_id;
+    </select>
+
+    <select id="selectGradeStudentCount" resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO">
+        select grade_dept_id AS dept_id, count(*) AS count from lvye_student_profile group by grade_dept_id;
+    </select>
+
+</mapper>

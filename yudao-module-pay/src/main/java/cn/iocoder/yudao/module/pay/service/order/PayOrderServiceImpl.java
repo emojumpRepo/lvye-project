@@ -36,7 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
@@ -585,7 +585,7 @@ public class PayOrderServiceImpl implements PayOrderService {
                 log.error("[expireOrder][order({}) 更新为支付关闭失败]", order.getId());
                 return false;
             }
-            log.info("[expireOrder][order({}) 更新为支付关闭成功]", order.getId());
+            log.info("[expireOrder][order({}) 更新为支付关闭失败]", order.getId());
             return true;
         } catch (Throwable e) {
             log.error("[expireOrder][order({}) 过期订单异常]", order.getId(), e);

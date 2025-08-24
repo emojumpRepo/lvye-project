@@ -21,14 +21,13 @@ import cn.iocoder.yudao.module.system.service.social.SocialUserService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import com.anji.captcha.model.common.ResponseModel;
 import com.anji.captcha.service.CaptchaService;
+import jakarta.annotation.Resource;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
-
-import javax.annotation.Resource;
-import javax.validation.Validation;
-import javax.validation.Validator;
 
 import static cn.hutool.core.util.RandomUtil.randomEle;
 import static cn.iocoder.yudao.framework.test.core.util.AssertUtils.assertPojoEquals;
@@ -46,21 +45,21 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
     @Resource
     private AdminAuthServiceImpl authService;
 
-    @MockBean
+    @MockitoBean
     private AdminUserService userService;
-    @MockBean
+    @MockitoBean
     private CaptchaService captchaService;
-    @MockBean
+    @MockitoBean
     private LoginLogService loginLogService;
-    @MockBean
+    @MockitoBean
     private SocialUserService socialUserService;
-    @MockBean
+    @MockitoBean
     private SmsCodeApi smsCodeApi;
-    @MockBean
+    @MockitoBean
     private OAuth2TokenService oauth2TokenService;
-    @MockBean
+    @MockitoBean
     private MemberService memberService;
-    @MockBean
+    @MockitoBean
     private Validator validator;
 
     @BeforeEach
@@ -165,7 +164,7 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
         // mock 缓存登录用户到 Redis
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o -> o.setUserId(1L)
                 .setUserType(UserTypeEnum.ADMIN.getValue()));
-        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull()))
+        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull(), isNull()))
                 .thenReturn(accessTokenDO);
 
         // 调用，并校验
@@ -221,7 +220,7 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
         // mock 缓存登录用户到 Redis
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o -> o.setUserId(1L)
                 .setUserType(UserTypeEnum.ADMIN.getValue()));
-        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull()))
+        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull(), isNull()))
                 .thenReturn(accessTokenDO);
 
         // 调用，并断言
@@ -249,7 +248,7 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
         // mock 缓存登录用户到 Redis
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o -> o.setUserId(1L)
                 .setUserType(UserTypeEnum.ADMIN.getValue()));
-        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull()))
+        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull(), isNull()))
                 .thenReturn(accessTokenDO);
 
         // 调用，并断言

@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Random;
 
 /**
  * 数字的工具类，补全 {@link cn.hutool.core.util.NumberUtil} 的功能
@@ -73,6 +74,17 @@ public class NumberUtils {
             }
         }
         return NumberUtil.mul(values);
+    }
+
+    /**
+     * 随机生成6位整数
+     * @return
+     */
+    public static int randomNumber(){
+        Random random = new Random();
+        // 生成一个6位随机整数，范围是100000到999999
+        int randomNumber = random.nextInt(900000) + 100000;
+        return randomNumber;
     }
 
 }

@@ -8,11 +8,9 @@ import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.common.biz.system.permission.dto.DeptDataPermissionRespDTO;
-import cn.iocoder.yudao.module.system.dal.dataobject.permission.MenuDO;
-import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
-import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleMenuDO;
-import cn.iocoder.yudao.module.system.dal.dataobject.permission.UserRoleDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.*;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMenuMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.UserDeptMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.UserRoleMapper;
 import cn.iocoder.yudao.module.system.dal.redis.RedisKeyConstants;
 import cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum;
@@ -29,7 +27,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -58,6 +56,9 @@ public class PermissionServiceImpl implements PermissionService {
     private DeptService deptService;
     @Resource
     private AdminUserService userService;
+
+    @Resource
+    private UserDeptMapper userDeptMapper;
 
     @Override
     public boolean hasAnyPermissions(Long userId, String... permissions) {
@@ -313,9 +314,10 @@ public class PermissionServiceImpl implements PermissionService {
             }
             // 情况四，DEPT_DEPT_AND_CHILD
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_AND_CHILD.getScope())) {
-                CollUtil.addAll(result.getDeptIds(), deptService.getChildDeptIdListFromCache(userDeptId.get()));
+//                CollUtil.addAll(result.getDeptIds(), deptService.getChildDeptIdListFromCache(userDeptId.get()));
+                CollUtil.addAll(result.getDeptIds(), getUserRoleIdListByDeptIdFromCache(userId));
                 // 添加本身部门编号
-                CollUtil.addAll(result.getDeptIds(), userDeptId.get());
+                CollectionUtils.addIfNotNull(result.getDeptIds(), userDeptId.get());
                 continue;
             }
             // 情况五，SELF
@@ -336,6 +338,42 @@ public class PermissionServiceImpl implements PermissionService {
      */
     private PermissionServiceImpl getSelf() {
         return SpringUtil.getBean(getClass());
+    }
+
+    @Override
+    @DSTransactional // 多数据源，使用 @DSTransactional 保证本地事务，以及数据源的切换
+    @CacheEvict(value = RedisKeyConstants.USER_DEPT_ID_LIST, key = "#userId")
+    public void assignUserDept(Long userId, Set<Long> deptIds) {
+        // 获得角色拥有角色编号
+        Set<Long> dbDeptIds = convertSet(userDeptMapper.selectListByUserId(userId),
+                UserDeptDO::getDeptId);
+        // 计算新增和删除的角色编号
+        Set<Long> deptIdList = CollUtil.emptyIfNull(deptIds);
+        Collection<Long> createDeptIds = CollUtil.subtract(deptIdList, dbDeptIds);
+        Collection<Long> deleteDeptIds = CollUtil.subtract(dbDeptIds, deptIdList);
+        // 执行新增和删除。对于已经授权的角色，不用做任何处理
+        if (!CollectionUtil.isEmpty(createDeptIds)) {
+            userDeptMapper.insertBatch(CollectionUtils.convertList(createDeptIds, deptId -> {
+                UserDeptDO entity = new UserDeptDO();
+                entity.setUserId(userId);
+                entity.setDeptId(deptId);
+                return entity;
+            }));
+        }
+        if (!CollectionUtil.isEmpty(deleteDeptIds)) {
+            userDeptMapper.deleteListByUserIdAndDeptIdIds(userId, deleteDeptIds);
+        }
+    }
+
+    @Override
+    public Set<Long> getUserDeptIdListByUserId(Long userId) {
+        return convertSet(userDeptMapper.selectListByUserId(userId), UserDeptDO::getDeptId);
+    }
+
+    @Override
+    @Cacheable(value = RedisKeyConstants.USER_DEPT_ID_LIST, key = "#userId")
+    public Set<Long> getUserRoleIdListByDeptIdFromCache(Long userId) {
+        return getUserDeptIdListByUserId(userId);
     }
 
 }

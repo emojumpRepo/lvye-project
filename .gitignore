@@ -52,3 +52,15 @@ application-my.yaml
 
 /yudao-ui-app/unpackage/
 **/.DS_Store
+
+######################################################################
+# Project specific
+
+# Ignore frontend UI project contents
+/yudao-ui/
+
+# Ignore Claude config/state
+.claude
+
+# Ignore environment files (e.g., .env, .env.local, .env.production)
+.env*

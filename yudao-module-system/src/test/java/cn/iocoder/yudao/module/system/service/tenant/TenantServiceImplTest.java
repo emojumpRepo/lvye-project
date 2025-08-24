@@ -23,10 +23,10 @@ import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,17 +62,17 @@ public class TenantServiceImplTest extends BaseDbUnitTest {
     @Resource
     private TenantMapper tenantMapper;
 
-    @MockBean
+    @MockitoBean
     private TenantProperties tenantProperties;
-    @MockBean
+    @MockitoBean
     private TenantPackageService tenantPackageService;
-    @MockBean
+    @MockitoBean
     private AdminUserService userService;
-    @MockBean
+    @MockitoBean
     private RoleService roleService;
-    @MockBean
+    @MockitoBean
     private MenuService menuService;
-    @MockBean
+    @MockitoBean
     private PermissionService permissionService;
 
     @BeforeEach

@@ -36,7 +36,7 @@ public interface RedisKeyConstants {
     /**
      * 拥有指定菜单的角色编号的缓存
      * <p>
-     * KEY 格式：menu_role_ids:{menuId}
+     * KEY 格式：user_role_ids:{menuId}
      * VALUE 数据类型：String 角色编号集合
      */
     String MENU_ROLE_ID_LIST = "menu_role_ids";
@@ -106,5 +106,13 @@ public interface RedisKeyConstants {
      * VALUE 数据格式 String, 模版信息
      */
     String WXA_SUBSCRIBE_TEMPLATE = "wxa_subscribe_template";
+
+    /**
+     * 用户拥有的部门编号的缓存
+     * <p>
+     * KEY 格式：user_dept_ids:{userId}
+     * VALUE 数据类型：String 角色编号集合
+     */
+    String USER_DEPT_ID_LIST = "user_dept_ids";
 
 }

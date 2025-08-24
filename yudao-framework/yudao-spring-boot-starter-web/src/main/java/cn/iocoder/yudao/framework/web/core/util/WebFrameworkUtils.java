@@ -5,12 +5,11 @@ import cn.iocoder.yudao.framework.common.enums.TerminalEnum;
 import cn.iocoder.yudao.framework.common.enums.UserTypeEnum;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.web.config.WebProperties;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import javax.servlet.ServletRequest;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * 专属于 web 包的工具类
@@ -21,6 +20,7 @@ public class WebFrameworkUtils {
 
     private static final String REQUEST_ATTRIBUTE_LOGIN_USER_ID = "login_user_id";
     private static final String REQUEST_ATTRIBUTE_LOGIN_USER_TYPE = "login_user_type";
+    private static final String REQUEST_ATTRIBUTE_IS_PARENT = "is_parent";
 
     private static final String REQUEST_ATTRIBUTE_COMMON_RESULT = "common_result";
 
@@ -152,6 +152,22 @@ public class WebFrameworkUtils {
         }
         ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) requestAttributes;
         return servletRequestAttributes.getRequest();
+    }
+
+    public static void setIsParent(ServletRequest request, Integer isParent) {
+        request.setAttribute(REQUEST_ATTRIBUTE_IS_PARENT, isParent);
+    }
+
+    public static Integer getIsParent(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return (Integer) request.getAttribute(REQUEST_ATTRIBUTE_IS_PARENT);
+    }
+
+    public static Integer getIsParent() {
+        HttpServletRequest request = getRequest();
+        return getIsParent(request);
     }
 
 }

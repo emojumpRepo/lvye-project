@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Code Quality Analyzer",
+  "description": "Monitors source code files for changes and provides automated code quality analysis including code smells, design patterns, and best practices suggestions",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.java",
+      "**/*.xml",
+      "**/*.yml",
+      "**/*.yaml",
+      "**/*.properties",
+      "**/*.sql"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the modified code files for potential improvements. Focus on:\n\n1. **Code Smells Detection**: Identify long methods, large classes, duplicate code, complex conditionals, and other code smells\n2. **Design Patterns**: Suggest appropriate design patterns that could improve the code structure\n3. **Best Practices**: Check adherence to Java/Spring Boot best practices, including:\n   - Proper exception handling\n   - Resource management (try-with-resources)\n   - Null safety and validation\n   - Proper use of annotations (@Transactional, @Cacheable, etc.)\n   - Security considerations\n4. **Performance Optimizations**: Identify potential performance issues like:\n   - N+1 query problems\n   - Inefficient loops or collections usage\n   - Memory leaks\n   - Database query optimization opportunities\n5. **Maintainability**: Suggest improvements for:\n   - Code readability and clarity\n   - Method and variable naming\n   - Code organization and structure\n   - Documentation and comments\n6. **Spring Boot Specific**: Check for proper use of:\n   - Dependency injection patterns\n   - Configuration management\n   - Service layer design\n   - Controller best practices\n   - Data access patterns with MyBatis Plus\n \nFor each suggestion, provide:\n- Clear explanation of the issue\n- Specific code examples showing the problem\n- Recommended solution with example code\n- Rationale for why the change improves quality\n\nMaintain existing functionality while focusing on code quality improvements."
+  }
+}

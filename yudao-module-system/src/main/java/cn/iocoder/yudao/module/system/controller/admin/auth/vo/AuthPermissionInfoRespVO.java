@@ -28,6 +28,9 @@ public class AuthPermissionInfoRespVO {
     @Schema(description = "菜单树", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<MenuVO> menus;
 
+    @Schema(description = "是否为家长登录", example = "yudao@iocoder.cn")
+    private Integer isParent;
+
     @Schema(description = "用户信息 VO")
     @Data
     @NoArgsConstructor

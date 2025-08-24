@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper">
+
+    <select id="selectListByTaskNo"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskUserVO">
+        select
+        a.id,
+        b.id as student_profile_id,
+        a.task_no,
+        b.name as name,
+        c.name as grade_name,
+        d.name as class_name,
+        a.status,
+        a.submit_time,
+        a.risk_level
+        from lvye_assessment_user_task a
+        left join lvye_student_profile b on a.user_id = b.user_id
+        left join system_dept c on b.grade_dept_id = c.id
+        left join system_dept d on b.class_dept_id = d.id
+        where a.task_no = #{taskNo} and a.deleted = 0
+    </select>
+
+    <select id="selectCountByTaskNo" resultType="java.lang.Long">
+        select count(*) from lvye_assessment_user_task where task_no = #{taskNo} and deleted = 0
+    </select>
+
+    <select id="selectCountByTaskNoAndStatus" resultType="java.lang.Long">
+        select count(*) from lvye_assessment_user_task where task_no = #{taskNo} and status = #{status} and deleted = 0
+    </select>
+
+</mapper>

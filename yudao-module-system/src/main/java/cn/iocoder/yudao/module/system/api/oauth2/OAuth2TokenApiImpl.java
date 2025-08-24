@@ -9,7 +9,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.oauth2.OAuth2AccessTokenDO;
 import cn.iocoder.yudao.module.system.service.oauth2.OAuth2TokenService;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * OAuth2.0 Token API 实现类
@@ -25,7 +25,7 @@ public class OAuth2TokenApiImpl implements OAuth2TokenCommonApi {
     @Override
     public OAuth2AccessTokenRespDTO createAccessToken(OAuth2AccessTokenCreateReqDTO reqDTO) {
         OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.createAccessToken(
-                reqDTO.getUserId(), reqDTO.getUserType(), reqDTO.getClientId(), reqDTO.getScopes());
+                reqDTO.getUserId(), reqDTO.getUserType(), reqDTO.getClientId(), reqDTO.getScopes(), null);
         return BeanUtils.toBean(accessTokenDO, OAuth2AccessTokenRespDTO.class);
     }
 

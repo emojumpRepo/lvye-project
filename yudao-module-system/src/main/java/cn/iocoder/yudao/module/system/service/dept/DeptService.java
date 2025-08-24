@@ -121,4 +121,11 @@ public interface DeptService {
      */
     void validateDeptList(Collection<Long> ids);
 
+    /**
+     * 获得部门信息
+     *
+     * @param name 部门名称
+     * @return 部门信息
+     */
+    DeptDO getDeptByName(String name);
 }

@@ -143,4 +143,28 @@ public interface PermissionService {
      */
     DeptDataPermissionRespDTO getDeptDataPermission(Long userId);
 
+    /**
+     * 设置用户部门
+     *
+     * @param userId  用户编号
+     * @param deptIds 部门编号集合
+     */
+    void assignUserDept(Long userId, Set<Long> deptIds);
+
+    /**
+     * 获得用户拥有的部门编号集合
+     *
+     * @param userId 用户编号
+     * @return 部门编号集合
+     */
+    Set<Long> getUserDeptIdListByUserId(Long userId);
+
+    /**
+     * 获得用户拥有的部门编号集合，从缓存中获取
+     *
+     * @param userId 用户编号
+     * @return 部门编号集合
+     */
+    Set<Long> getUserRoleIdListByDeptIdFromCache(Long userId);
+
 }

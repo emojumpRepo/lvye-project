@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Collection;
 import java.util.List;
 
@@ -42,6 +42,12 @@ public class DeptApiImpl implements DeptApi {
     public List<DeptRespDTO> getChildDeptList(Long id) {
         List<DeptDO> childDeptList = deptService.getChildDeptList(id);
         return BeanUtils.toBean(childDeptList, DeptRespDTO.class);
+    }
+
+    @Override
+    public DeptRespDTO getByDeptName(String name){
+        DeptDO deptDO = deptService.getDeptByName(name);
+        return BeanUtils.toBean(deptDO, DeptRespDTO.class);
     }
 
 }

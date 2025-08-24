@@ -11,7 +11,7 @@ import cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserImportRe
 import cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserPageReqVO;
 import cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserSaveReqVO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -213,5 +213,13 @@ public interface AdminUserService {
      * @return 是否匹配
      */
     boolean isPasswordMatch(String rawPassword, String encodedPassword);
+
+    /**
+     * 通过手机号和用户中文名获取用户
+     *
+     * @param mobile 手机号
+     * @return 用户对象信息
+     */
+    AdminUserDO getUserByMobileAndNickName(String mobile, String nickName);
 
 }

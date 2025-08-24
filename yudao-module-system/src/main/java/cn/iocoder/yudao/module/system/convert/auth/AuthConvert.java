@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.system.convert.auth;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
 import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeSendReqDTO;
 import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeUseReqDTO;
 import cn.iocoder.yudao.module.system.api.social.dto.SocialUserBindReqDTO;
@@ -36,6 +37,8 @@ public interface AuthConvert {
                 .permissions(convertSet(menuList, MenuDO::getPermission))
                 // 菜单树
                 .menus(buildMenuTree(menuList))
+                //是否为家长登录
+                .isParent(WebFrameworkUtils.getIsParent())
                 .build();
     }
 
