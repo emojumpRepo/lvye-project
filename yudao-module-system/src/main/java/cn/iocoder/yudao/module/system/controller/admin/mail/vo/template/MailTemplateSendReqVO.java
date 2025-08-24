@@ -5,6 +5,8 @@ import lombok.Data;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+
+import java.util.List;
 import java.util.Map;
 
 @Schema(description = "管理后台 - 邮件发送 Req VO")
