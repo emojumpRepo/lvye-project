@@ -11,9 +11,15 @@ import java.util.Map;
 @Data
 public class MailTemplateSendReqVO {
 
-    @Schema(description = "接收邮箱", requiredMode = Schema.RequiredMode.REQUIRED, example = "7685413@qq.com")
+    @Schema(description = "接收邮箱", requiredMode = Schema.RequiredMode.REQUIRED, example = "[user1@example.com, user2@example.com]")
     @NotEmpty(message = "接收邮箱不能为空")
-    private String mail;
+    private List<String> toMails;
+
+    @Schema(description = "抄送邮箱", requiredMode = Schema.RequiredMode.REQUIRED, example = "[user3@example.com, user4@example.com]")
+    private List<String> ccMails;
+
+    @Schema(description = "密送邮箱", requiredMode = Schema.RequiredMode.REQUIRED, example = "[user5@example.com, user6@example.com]")
+    private List<String> bccMails;
 
     @Schema(description = "模板编码", requiredMode = Schema.RequiredMode.REQUIRED, example = "test_01")
     @NotNull(message = "模板编码不能为空")
