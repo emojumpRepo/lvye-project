@@ -48,4 +48,10 @@ public class AssessmentTaskRespVO extends AssessmentTaskBaseVO {
     @Schema(description = "关联问卷详细信息列表")
     private java.util.List<QuestionnaireInfoVO> questionnaires;
 
+    /**
+     * 场景信息（当有场景ID时返回）
+     */
+    @Schema(description = "场景信息")
+    private ScenarioInfoVO scenario;
+
 }

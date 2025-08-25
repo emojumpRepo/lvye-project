@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -123,5 +124,13 @@ public interface AssessmentTaskService {
      * @return
      */
     List<WebAssessmentTaskVO> selectListByUserId();
+
+    /**
+     * 获取任务的问卷关联列表
+     *
+     * @param taskNo 任务编号
+     * @return 问卷关联列表
+     */
+    List<AssessmentTaskQuestionnaireDO> getTaskQuestionnairesByTaskNo(String taskNo);
 
 }

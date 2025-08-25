@@ -236,18 +236,21 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         AssessmentTaskDO updateObj = BeanUtils.toBean(updateReqVO, AssessmentTaskDO.class);
         assessmentTaskMapper.updateById(updateObj);
 
-        // 重建任务-问卷关联
-        taskQuestionnaireMapper.deleteByTaskNo(updateReqVO.getTaskNo());
-        if (updateReqVO.getQuestionnaireIds() != null && !updateReqVO.getQuestionnaireIds().isEmpty()) {
-            List<AssessmentTaskQuestionnaireDO> relations = new ArrayList<>();
-            for (Long qid : updateReqVO.getQuestionnaireIds()) {
-                AssessmentTaskQuestionnaireDO rel = new AssessmentTaskQuestionnaireDO();
-                rel.setTaskNo(updateReqVO.getTaskNo());
-                rel.setQuestionnaireId(qid);
-                rel.setTenantId(TenantContextHolder.getTenantId());
-                relations.add(rel);
+        // 只有在明确传入问卷ID列表时才重建问卷关联
+        if (updateReqVO.getQuestionnaireIds() != null) {
+            // 重建任务-问卷关联
+            taskQuestionnaireMapper.deleteByTaskNo(updateReqVO.getTaskNo());
+            if (!updateReqVO.getQuestionnaireIds().isEmpty()) {
+                List<AssessmentTaskQuestionnaireDO> relations = new ArrayList<>();
+                for (Long qid : updateReqVO.getQuestionnaireIds()) {
+                    AssessmentTaskQuestionnaireDO rel = new AssessmentTaskQuestionnaireDO();
+                    rel.setTaskNo(updateReqVO.getTaskNo());
+                    rel.setQuestionnaireId(qid);
+                    rel.setTenantId(TenantContextHolder.getTenantId());
+                    relations.add(rel);
+                }
+                taskQuestionnaireMapper.insertBatch(relations);
             }
-            taskQuestionnaireMapper.insertBatch(relations);
         }
     }
 
@@ -292,16 +295,16 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     }
 
     private void validateTaskNoUnique(Long id, String taskNo) {
-        AssessmentTaskDO task = assessmentTaskMapper.selectByTaskNo(taskNo);
+        AssessmentTaskDO task = assessmentTaskMapper.selectByTaskName(taskNo);
         if (task == null) {
             return;
         }
         // 如果 id 为空，说明不用比较是否为相同 id 的任务
         if (id == null) {
-            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NO_DUPLICATE);
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NAME_DUPLICATE);
         }
         if (!Objects.equals(task.getId(), id)) {
-            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NO_DUPLICATE);
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NAME_DUPLICATE);
         }
     }
 
@@ -488,6 +491,11 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         Long userId = WebFrameworkUtils.getLoginUserId();
         Integer isParent = WebFrameworkUtils.getIsParent();
         return assessmentTaskMapper.selectListByUserId(userId, isParent);
+    }
+
+    @Override
+    public List<AssessmentTaskQuestionnaireDO> getTaskQuestionnairesByTaskNo(String taskNo) {
+        return taskQuestionnaireMapper.selectListByTaskNo(taskNo, TenantContextHolder.getTenantId());
     }
 
 }

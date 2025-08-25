@@ -49,4 +49,7 @@ public class AssessmentTaskBaseVO {
     @Schema(description = "场景ID", example = "1")
     private Long scenarioId;
 
+    @Schema(description = "任务描述", example = "这是一个心理健康测评任务")
+    private String description;
+
 }

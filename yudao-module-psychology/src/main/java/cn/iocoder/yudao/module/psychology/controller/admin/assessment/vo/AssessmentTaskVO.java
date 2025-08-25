@@ -103,6 +103,18 @@ public class AssessmentTaskVO {
     private LocalDateTime updateTime;
 
     /**
+     * 场景ID
+     */
+    @Schema(description = "场景ID")
+    private Long scenarioId;
+
+    /**
+     * 任务描述
+     */
+    @Schema(description = "任务描述")
+    private String description;
+
+    /**
      * 问卷ID字符串（用于数据库查询）
      */
     @Schema(hidden = true)
