@@ -48,18 +48,18 @@ spring:
       datasource:
         master:
           url: jdbc:mysql://127.0.0.1:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
-          username: root
-          password: 123456
+          username: emojump
+          password: emojump.888
         slave: # 模拟从库，可根据自己需要修改 # 模拟从库，可根据自己需要修改
           lazy: true # 开启懒加载，保证启动速度
           url: jdbc:mysql://127.0.0.1:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
-          username: root
-          password: 123456
+          username: emojump
+          password: emojump.888
 
   # Redis 配置。Redisson 默认的配置足够使用，一般不需要进行调优
   data:
     redis:
-      host: 400-infra.server.iocoder.cn # 地址
+      host: 127.0.0.1 # 地址
       port: 6379 # 端口
       database: 1 # 数据库索引
 #    password: 123456 # 密码，建议生产环境开启
@@ -175,6 +175,17 @@ yudao:
     transfer-notify-url: https://yunai.natapp1.cc/admin-api/pay/notify/transfer # 支付渠道的【转账】回调地址
   demo: false # 开启演示模式
   tencent-lbs-key: TVDBZ-TDILD-4ON4B-PFDZA-RNLKH-VVF6E # QQ 地图的密钥 https://lbs.qq.com/service/staticV2/staticGuide/staticDoc
+  survey-system: # 外部问卷系统配置
+    enabled: true # 是否启用外部问卷系统同步
+    base-url: http://192.168.5.204:8080 # 外部问卷系统基础URL
+    survey-list-path: /api/survey/getSurveyList # 获取问卷列表的API路径
+    update-config-path: /api/survey/updateSimpleConf # 更新问卷配置的API路径
+    publish-survey-path: /api/survey/publishSurvey # 发布问卷的API路径
+    pause-survey-path: /api/survey/pausingSurvey # 暂停问卷的API路径
+    connect-timeout: 5000 # 连接超时时间（毫秒）
+    read-timeout: 10000 # 读取超时时间（毫秒）
+    retry-count: 3 # 重试次数
+    api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODkwNmJjZTY3MmI2NzNkZjY1NDM5NDQiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU0Mjk4MDg2fQ.AkBtLMg_mT-pztLkaW8UlGxLhYCDdq3j696Sd2LtRZw # 外部问卷系统的API Key
 
 justauth:
   enabled: true
