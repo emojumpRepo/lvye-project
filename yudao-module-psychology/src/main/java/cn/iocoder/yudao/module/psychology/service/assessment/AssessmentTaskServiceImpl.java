@@ -292,16 +292,16 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     }
 
     private void validateTaskNoUnique(Long id, String taskNo) {
-        AssessmentTaskDO task = assessmentTaskMapper.selectByTaskName(taskNo);
+        AssessmentTaskDO task = assessmentTaskMapper.selectByTaskNo(taskNo);
         if (task == null) {
             return;
         }
         // 如果 id 为空，说明不用比较是否为相同 id 的任务
         if (id == null) {
-            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NAME_DUPLICATE);
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NO_DUPLICATE);
         }
         if (!Objects.equals(task.getId(), id)) {
-            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NAME_DUPLICATE);
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NO_DUPLICATE);
         }
     }
 

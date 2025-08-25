@@ -63,4 +63,8 @@ public class AssessmentTaskSaveReqVO{
     @Schema(description = "场景问卷分配（有槽位时使用）", example = "[{slotKey:'library',questionnaireId:1},{slotKey:'gym',questionnaireId:2}]")
     private List<SlotAssignmentVO> assignments;
 
+    @Schema(description = "任务描述", example = "这是一个心理健康测评任务")
+    @Length(max = 2000, message = "任务描述不能超过 2000 字符")
+    private String description;
+
 }

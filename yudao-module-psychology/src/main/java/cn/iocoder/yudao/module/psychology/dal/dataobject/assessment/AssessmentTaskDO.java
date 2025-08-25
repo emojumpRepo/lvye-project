@@ -72,6 +72,11 @@ public class AssessmentTaskDO extends TenantBaseDO {
     private Long scenarioId;
 
     /**
+     * 任务描述
+     */
+    private String description;
+
+    /**
      * 发布人管理员
      */
     @TableField(exist = false)
