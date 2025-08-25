@@ -4,12 +4,15 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskRespVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +38,9 @@ public class WebAssessmentTaskController {
     @Resource
     private QuestionnaireService questionnaireService;
 
+    @Resource
+    private QuestionnaireResultService questionnaireResultService;
+
     @GetMapping("/my-tasks")
     @Operation(summary = "获得我的测评任务列表")
     @DataPermission(enable = false)
@@ -48,9 +54,10 @@ public class WebAssessmentTaskController {
     @Parameter(name = "taskNo", description = "任务编号", required = true, example = "1024")
     @DataPermission(enable = false)
     public CommonResult<WebAssessmentTaskRespVO> getAssessmentTask(@RequestParam String taskNo) {
+        Long userId = WebFrameworkUtils.getLoginUserId();
         AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTask(taskNo);
         WebAssessmentTaskRespVO respVO = BeanUtils.toBean(assessmentTask, WebAssessmentTaskRespVO.class);
-        
+
         // 填充问卷详细信息
         if (assessmentTask.getQuestionnaireIds() != null && !assessmentTask.getQuestionnaireIds().isEmpty()) {
             List<QuestionnaireInfoVO> questionnaireInfos = assessmentTask.getQuestionnaireIds().stream()
@@ -74,7 +81,9 @@ public class WebAssessmentTaskController {
                     .collect(Collectors.toList());
             respVO.setQuestionnaires(questionnaireInfos);
         }
-        
+        //补充问卷答案
+        List<StudentAssessmentQuestionnaireDetailVO> resultList = questionnaireResultService.selectQuestionnaireResultByTaskNoAndUserId(taskNo, userId);
+        respVO.setQuestionnaireDetailList(resultList);
         return success(respVO);
     }
 

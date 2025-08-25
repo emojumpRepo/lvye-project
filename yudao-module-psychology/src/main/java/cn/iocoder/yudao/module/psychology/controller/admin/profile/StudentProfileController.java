@@ -8,6 +8,7 @@ import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.timeline.StudentTimelineDO;
+import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.system.enums.common.SexEnum;
@@ -39,6 +40,9 @@ public class StudentProfileController {
 
     @Resource
     private StudentTimelineService studentTimelineService;
+
+    @Resource
+    private AssessmentTaskService assessmentTaskService;
 
     @PostMapping("/create")
     @Operation(summary = "创建学生档案")
@@ -165,6 +169,22 @@ public class StudentProfileController {
     public CommonResult<List<StudentTimelineDO>> getStudentTimeListList(@RequestParam String studentProfileId) {
         List<StudentTimelineDO> list = studentTimelineService.selectListByStudentProfileId(studentProfileId);
         return success(list);
+    }
+
+    @GetMapping("/student-task-list")
+    @Operation(summary = "获得学生测评任务历史")
+    @DataPermission(enable = false)
+    public CommonResult<List<StudentAssessmentTaskHisVO>> getStudentAssessmentTaskList(@RequestParam Long studentProfileId) {
+        List<StudentAssessmentTaskHisVO> result = assessmentTaskService.selectStudentAssessmentTaskList(studentProfileId);
+        return success(result);
+    }
+
+    @GetMapping("/student-task-detail")
+    @Operation(summary = "获得学生测评任务详情")
+    @DataPermission(enable = false)
+    public CommonResult<StudentAssessmentTaskDetailVO> getStudentAssessmentDetail(@RequestParam String taskNo, @RequestParam Long studentProfileId) {
+        StudentAssessmentTaskDetailVO result = assessmentTaskService.selectStudentAssessmentTaskDetail(taskNo, studentProfileId);
+        return success(result);
     }
 
 
