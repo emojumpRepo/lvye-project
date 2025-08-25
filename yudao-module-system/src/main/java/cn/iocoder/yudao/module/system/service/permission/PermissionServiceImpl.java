@@ -314,8 +314,7 @@ public class PermissionServiceImpl implements PermissionService {
             }
             // 情况四，DEPT_DEPT_AND_CHILD
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_AND_CHILD.getScope())) {
-//                CollUtil.addAll(result.getDeptIds(), deptService.getChildDeptIdListFromCache(userDeptId.get()));
-                CollUtil.addAll(result.getDeptIds(), getUserRoleIdListByDeptIdFromCache(userId));
+                CollUtil.addAll(result.getDeptIds(), deptService.getChildDeptIdListFromCache(userDeptId.get()));
                 // 添加本身部门编号
                 CollectionUtils.addIfNotNull(result.getDeptIds(), userDeptId.get());
                 continue;

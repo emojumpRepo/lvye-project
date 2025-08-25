@@ -21,6 +21,13 @@ public class AssessmentScenarioSlotMapperTest extends BaseDbUnitTest {
 
     @Test
     public void testDeletePhysicallyByScenarioId() {
+        // 先清理可能存在的数据，确保测试独立性
+        // 使用物理删除清理所有数据
+        List<AssessmentScenarioSlotDO> existingSlots = assessmentScenarioSlotMapper.selectList();
+        for (AssessmentScenarioSlotDO slot : existingSlots) {
+            assessmentScenarioSlotMapper.deletePhysicallyByScenarioId(slot.getScenarioId());
+        }
+        
         // 准备测试数据
         AssessmentScenarioSlotDO slot1 = new AssessmentScenarioSlotDO();
         slot1.setScenarioId(1L);
@@ -63,6 +70,13 @@ public class AssessmentScenarioSlotMapperTest extends BaseDbUnitTest {
 
     @Test
     public void testMultipleDeletesWithSameSlotKey() {
+        // 先清理可能存在的数据，确保测试独立性
+        // 使用物理删除清理所有数据
+        List<AssessmentScenarioSlotDO> existingSlots = assessmentScenarioSlotMapper.selectList();
+        for (AssessmentScenarioSlotDO slot : existingSlots) {
+            assessmentScenarioSlotMapper.deletePhysicallyByScenarioId(slot.getScenarioId());
+        }
+        
         // 测试多次删除和插入相同的 slotKey 不会产生冲突
         Long scenarioId = 1L;
         String slotKey = "library";

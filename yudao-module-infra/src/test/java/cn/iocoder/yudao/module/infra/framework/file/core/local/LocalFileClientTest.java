@@ -1,45 +1,65 @@
 package cn.iocoder.yudao.module.infra.framework.file.core.local;
 
-import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.iocoder.yudao.module.infra.framework.file.core.client.local.LocalFileClient;
 import cn.iocoder.yudao.module.infra.framework.file.core.client.local.LocalFileClientConfig;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 
 import static cn.iocoder.yudao.framework.test.core.util.RandomUtils.randomString;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LocalFileClientTest {
 
     @Test
-    @Disabled
-    public void test() {
+    public void testUploadAndDelete(@TempDir Path tempDir) {
         // 创建客户端
         LocalFileClientConfig config = new LocalFileClientConfig();
         config.setDomain("http://127.0.0.1:48080");
-        config.setBasePath("/Users/yunai/file_test");
-        LocalFileClient client = new LocalFileClient(0L, config);
+        config.setBasePath(tempDir.toString());
+        LocalFileClient client = new LocalFileClient(1L, config);
         client.init();
-        // 上传文件
-        String path = IdUtil.fastSimpleUUID() + ".jpg";
-        byte[] content = ResourceUtil.readBytes("file/erweima.jpg");
-        String fullPath = client.upload(content, path, "image/jpeg");
-        System.out.println("访问地址：" + fullPath);
-        client.delete(path);
+        
+        // 准备测试数据
+        String fileName = IdUtil.fastSimpleUUID() + ".txt";
+        byte[] testContent = "This is test content for file upload".getBytes(StandardCharsets.UTF_8);
+        
+        // 测试上传文件
+        String uploadUrl = client.upload(testContent, fileName, "text/plain");
+        assertNotNull(uploadUrl, "上传应该返回文件URL");
+        assertTrue(uploadUrl.contains(fileName), "返回的URL应该包含文件名");
+        
+        // 测试获取文件内容
+        byte[] downloadedContent = client.getContent(fileName);
+        assertNotNull(downloadedContent, "应该能够获取上传的文件内容");
+        assertArrayEquals(testContent, downloadedContent, "下载的内容应该与上传的内容一致");
+        
+        // 测试删除文件
+        client.delete(fileName);
+        
+        // 验证文件已被删除
+        byte[] deletedContent = client.getContent(fileName);
+        assertNull(deletedContent, "删除后应该无法获取文件内容");
     }
 
     @Test
-    @Disabled
-    public void testGetContent_notFound() {
+    public void testGetContent_notFound(@TempDir Path tempDir) {
         // 创建客户端
         LocalFileClientConfig config = new LocalFileClientConfig();
         config.setDomain("http://127.0.0.1:48080");
-        config.setBasePath("/Users/yunai/file_test");
-        LocalFileClient client = new LocalFileClient(0L, config);
+        config.setBasePath(tempDir.toString());
+        LocalFileClient client = new LocalFileClient(2L, config);
         client.init();
-        // 上传文件
-        byte[] content = client.getContent(randomString());
-        System.out.println();
+        
+        // 测试获取不存在的文件
+        String nonExistentFileName = randomString() + ".txt";
+        byte[] content = client.getContent(nonExistentFileName);
+        
+        // 验证结果
+        assertNull(content, "获取不存在的文件应该返回null");
     }
 
 }

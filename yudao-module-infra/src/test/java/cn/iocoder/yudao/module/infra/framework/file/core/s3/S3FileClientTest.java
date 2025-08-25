@@ -9,9 +9,6 @@ import jakarta.validation.Validation;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-
-import javax.validation.Validation;
-
 @SuppressWarnings("resource")
 public class S3FileClientTest {
 

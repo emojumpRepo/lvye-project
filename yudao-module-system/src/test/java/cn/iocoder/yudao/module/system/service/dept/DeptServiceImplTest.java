@@ -189,7 +189,7 @@ public class DeptServiceImplTest extends BaseDbUnitTest {
     @Test
     public void testGetDept() {
         // mock 数据
-        DeptDO deptDO = randomPojo(DeptDO.class);
+        DeptDO deptDO = randomPojo(DeptDO.class, o -> o.setCount(null)); // count是动态计算字段
         deptMapper.insert(deptDO);
         // 准备参数
         Long id = deptDO.getId();
@@ -197,15 +197,15 @@ public class DeptServiceImplTest extends BaseDbUnitTest {
         // 调用
         DeptDO dbDept = deptService.getDept(id);
         // 断言
-        assertEquals(deptDO, dbDept);
+        assertPojoEquals(deptDO, dbDept);
     }
 
     @Test
     public void testGetDeptList_ids() {
         // mock 数据
-        DeptDO deptDO01 = randomPojo(DeptDO.class);
+        DeptDO deptDO01 = randomPojo(DeptDO.class, o -> o.setCount(null)); // count是动态计算字段
         deptMapper.insert(deptDO01);
-        DeptDO deptDO02 = randomPojo(DeptDO.class);
+        DeptDO deptDO02 = randomPojo(DeptDO.class, o -> o.setCount(null)); // count是动态计算字段
         deptMapper.insert(deptDO02);
         // 准备参数
         List<Long> ids = Arrays.asList(deptDO01.getId(), deptDO02.getId());
@@ -214,8 +214,8 @@ public class DeptServiceImplTest extends BaseDbUnitTest {
         List<DeptDO> deptDOList = deptService.getDeptList(ids);
         // 断言
         assertEquals(2, deptDOList.size());
-        assertEquals(deptDO01, deptDOList.get(0));
-        assertEquals(deptDO02, deptDOList.get(1));
+        assertPojoEquals(deptDO01, deptDOList.get(0));
+        assertPojoEquals(deptDO02, deptDOList.get(1));
     }
 
     @Test
@@ -224,6 +224,7 @@ public class DeptServiceImplTest extends BaseDbUnitTest {
         DeptDO dept = randomPojo(DeptDO.class, o -> { // 等会查询到
             o.setName("开发部");
             o.setStatus(CommonStatusEnum.ENABLE.getStatus());
+            o.setCount(null); // count是动态计算字段
         });
         deptMapper.insert(dept);
         // 测试 name 不匹配
@@ -245,14 +246,26 @@ public class DeptServiceImplTest extends BaseDbUnitTest {
     @Test
     public void testGetChildDeptList() {
         // mock 数据（1 级别子节点）
-        DeptDO dept1 = randomPojo(DeptDO.class, o -> o.setName("1"));
+        DeptDO dept1 = randomPojo(DeptDO.class, o -> {
+            o.setName("1");
+            o.setCount(null); // count是动态计算字段
+        });
         deptMapper.insert(dept1);
-        DeptDO dept2 = randomPojo(DeptDO.class, o -> o.setName("2"));
+        DeptDO dept2 = randomPojo(DeptDO.class, o -> {
+            o.setName("2");
+            o.setCount(null); // count是动态计算字段
+        });
         deptMapper.insert(dept2);
         // mock 数据（2 级子节点）
-        DeptDO dept1a = randomPojo(DeptDO.class, o -> o.setName("1-a").setParentId(dept1.getId()));
+        DeptDO dept1a = randomPojo(DeptDO.class, o -> {
+            o.setName("1-a").setParentId(dept1.getId());
+            o.setCount(null); // count是动态计算字段
+        });
         deptMapper.insert(dept1a);
-        DeptDO dept2a = randomPojo(DeptDO.class, o -> o.setName("2-a").setParentId(dept2.getId()));
+        DeptDO dept2a = randomPojo(DeptDO.class, o -> {
+            o.setName("2-a").setParentId(dept2.getId());
+            o.setCount(null); // count是动态计算字段
+        });
         deptMapper.insert(dept2a);
         // 准备参数
         Long id = dept1.getParentId();

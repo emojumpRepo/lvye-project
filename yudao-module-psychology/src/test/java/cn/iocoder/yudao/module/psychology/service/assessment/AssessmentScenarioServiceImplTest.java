@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentSc
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentScenarioMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentScenarioSlotMapper;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 
 import jakarta.annotation.Resource;
