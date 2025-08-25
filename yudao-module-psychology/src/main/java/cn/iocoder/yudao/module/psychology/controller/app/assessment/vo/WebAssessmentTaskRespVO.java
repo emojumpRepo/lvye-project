@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.psychology.controller.app.assessment.vo;
 
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -42,5 +43,9 @@ public class WebAssessmentTaskRespVO {
 
     @Schema(description = "量表名称", example = "心理健康量表")
     private String scaleName;
+
+    @Schema(description = "问卷结果详情")
+    private List<StudentAssessmentQuestionnaireDetailVO> questionnaireDetailList;
+
 
 }

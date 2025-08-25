@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.annotation.security.PermitAll;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -43,9 +44,9 @@ public class WebAssessmentParticipantController {
 
     @PostMapping("/submit")
     @Operation(summary = "提交测评答案")
+    @PermitAll
     public CommonResult<Boolean> submitAssessment(@Valid @RequestBody WebAssessmentParticipateReqVO participateReqVO) {
-        Long userId = WebFrameworkUtils.getLoginUserId();
-        assessmentParticipantService.submitAssessment(participateReqVO.getTaskNo(), userId, participateReqVO);
+        assessmentParticipantService.submitAssessment(participateReqVO.getTaskNo(), participateReqVO.getUserId(), participateReqVO);
         return success(true);
     }
 

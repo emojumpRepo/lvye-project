@@ -4,7 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.module.system.controller.admin.permission.vo.permission.PermissionAssignRoleDataScopeReqVO;
 import cn.iocoder.yudao.module.system.controller.admin.permission.vo.permission.PermissionAssignRoleMenuReqVO;
-import cn.iocoder.yudao.module.system.controller.admin.permission.vo.permission.PermissionAssignUserDeptReqVO;
+import cn.iocoder.yudao.module.system.controller.admin.permission.vo.permission.PermissionAssignUserRoleAndDeptReqVO;
 import cn.iocoder.yudao.module.system.controller.admin.permission.vo.permission.PermissionAssignUserRoleReqVO;
 import cn.iocoder.yudao.module.system.service.permission.PermissionService;
 import cn.iocoder.yudao.module.system.service.tenant.TenantService;
@@ -80,11 +80,11 @@ public class PermissionController {
         return success(true);
     }
 
-    @Operation(summary = "赋予用户部门")
-    @PostMapping("/assign-user-dept")
+    @Operation(summary = "赋予用户部门以及角色")
+    @PostMapping("/assign-user-dept-role")
 //    @PreAuthorize("@ss.hasPermission('system:permission:assign-user-dept')")
-    public CommonResult<Boolean> assignUserDept(@Validated @RequestBody PermissionAssignUserDeptReqVO reqVO) {
-        permissionService.assignUserDept(reqVO.getUserId(), reqVO.getDeptIds());
+    public CommonResult<Boolean> assignUserDept(@Validated @RequestBody PermissionAssignUserRoleAndDeptReqVO reqVO) {
+        permissionService.assignUserRoleAndDept(reqVO.getUserId(), reqVO.getDeptIds(), reqVO.getRoleIds());
         return success(true);
     }
 
