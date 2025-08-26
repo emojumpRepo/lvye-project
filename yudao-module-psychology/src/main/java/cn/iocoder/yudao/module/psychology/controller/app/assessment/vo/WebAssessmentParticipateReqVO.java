@@ -10,6 +10,9 @@ import java.util.List;
 @Data
 public class WebAssessmentParticipateReqVO {
 
+    @Schema(description = "用户ID", example = "123")
+    private Long userId;
+
     @Schema(description = "任务编号", example = "123")
     private String taskNo;
 

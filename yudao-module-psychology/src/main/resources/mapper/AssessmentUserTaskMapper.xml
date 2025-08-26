@@ -29,4 +29,37 @@
         select count(*) from lvye_assessment_user_task where task_no = #{taskNo} and status = #{status} and deleted = 0
     </select>
 
+    <select id="selectStudentAssessmentTaskList"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskHisVO">
+        select
+        b.id as task_id,
+        a.task_no,
+        b.task_name,
+        b.target_audience,
+        b.status,
+        b.startline,
+        b.deadline
+        from lvye_assessment_user_task a
+        left join lvye_assessment_task b on a.task_no  = b.task_no and b.deleted = 0
+        left join lvye_student_profile c on c.user_id  = a.user_id
+        where c.id = #{studentProfileId} and a.deleted = 0
+    </select>
+
+    <select id="selectStudentAssessmentTaskDetail"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskDetailVO">
+        select
+        b.id as task_id,
+        a.task_no,
+        b.task_name,
+        b.target_audience,
+        b.status,
+        b.startline,
+        b.deadline
+        from lvye_assessment_user_task a
+        left join lvye_assessment_task b on a.task_no  = b.task_no and b.deleted = 0
+        left join lvye_student_profile c on c.user_id  = a.user_id
+        where c.id = #{studentProfileId} and a.task_no = #{taskNo} and a.deleted = 0
+    </select>
+
+
 </mapper>

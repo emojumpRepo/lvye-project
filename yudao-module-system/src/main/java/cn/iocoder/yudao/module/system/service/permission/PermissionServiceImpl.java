@@ -314,7 +314,7 @@ public class PermissionServiceImpl implements PermissionService {
             }
             // 情况四，DEPT_DEPT_AND_CHILD
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_AND_CHILD.getScope())) {
-                CollUtil.addAll(result.getDeptIds(), deptService.getChildDeptIdListFromCache(userDeptId.get()));
+                CollUtil.addAll(result.getDeptIds(), getUserDeptIdListByDeptIdFromCache(userId));
                 // 添加本身部门编号
                 CollectionUtils.addIfNotNull(result.getDeptIds(), userDeptId.get());
                 continue;
@@ -341,9 +341,9 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     @DSTransactional // 多数据源，使用 @DSTransactional 保证本地事务，以及数据源的切换
-    @CacheEvict(value = RedisKeyConstants.USER_DEPT_ID_LIST, key = "#userId")
-    public void assignUserDept(Long userId, Set<Long> deptIds) {
-        // 获得角色拥有角色编号
+    @CacheEvict(value = RedisKeyConstants.USER_ROLE_DEPT_ID_LIST, key = "#userId")
+    public void assignUserRoleAndDept(Long userId, Set<Long> deptIds, Set<Long> roleIds) {
+        // 获得角色拥有部门编号
         Set<Long> dbDeptIds = convertSet(userDeptMapper.selectListByUserId(userId),
                 UserDeptDO::getDeptId);
         // 计算新增和删除的角色编号
@@ -362,6 +362,25 @@ public class PermissionServiceImpl implements PermissionService {
         if (!CollectionUtil.isEmpty(deleteDeptIds)) {
             userDeptMapper.deleteListByUserIdAndDeptIdIds(userId, deleteDeptIds);
         }
+        // 获得角色拥有角色编号
+        Set<Long> dbRoleIds = convertSet(userRoleMapper.selectListByUserId(userId),
+                UserRoleDO::getRoleId);
+        // 计算新增和删除的角色编号
+        Set<Long> roleIdList = CollUtil.emptyIfNull(roleIds);
+        Collection<Long> createRoleIds = CollUtil.subtract(roleIdList, dbRoleIds);
+        Collection<Long> deleteMenuIds = CollUtil.subtract(dbRoleIds, roleIdList);
+        // 执行新增和删除。对于已经授权的角色，不用做任何处理
+        if (!CollectionUtil.isEmpty(createRoleIds)) {
+            userRoleMapper.insertBatch(CollectionUtils.convertList(createRoleIds, roleId -> {
+                UserRoleDO entity = new UserRoleDO();
+                entity.setUserId(userId);
+                entity.setRoleId(roleId);
+                return entity;
+            }));
+        }
+        if (!CollectionUtil.isEmpty(deleteMenuIds)) {
+            userRoleMapper.deleteListByUserIdAndRoleIdIds(userId, deleteMenuIds);
+        }
     }
 
     @Override
@@ -370,8 +389,8 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    @Cacheable(value = RedisKeyConstants.USER_DEPT_ID_LIST, key = "#userId")
-    public Set<Long> getUserRoleIdListByDeptIdFromCache(Long userId) {
+    @Cacheable(value = RedisKeyConstants.USER_ROLE_DEPT_ID_LIST, key = "#userId")
+    public Set<Long> getUserDeptIdListByDeptIdFromCache(Long userId) {
         return getUserDeptIdListByUserId(userId);
     }
 
