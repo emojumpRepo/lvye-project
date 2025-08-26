@@ -27,10 +27,17 @@ public class QuestionnaireUserVO {
     private String taskNo;
 
     /**
+     * 学号
+     */
+    @Schema(description = "学号")
+    private String studentNo;
+
+    /**
      * 名称
      */
     @Schema(description = "名称")
     private String name;
+
 
     /**
      * 班级

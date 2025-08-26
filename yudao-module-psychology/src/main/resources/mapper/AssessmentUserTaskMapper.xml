@@ -66,6 +66,7 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireUserVO">
         select
         s.id as student_profile_id,
+        s.student_no,
         a.task_no,s.name,
         c.name as grade_name,
         d.name as class_name,
