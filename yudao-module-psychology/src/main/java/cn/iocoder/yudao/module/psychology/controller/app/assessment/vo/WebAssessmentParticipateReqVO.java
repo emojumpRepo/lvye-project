@@ -24,7 +24,7 @@ public class WebAssessmentParticipateReqVO {
     @Data
     public static class AssessmentAnswerItem {
 
-        @Schema(description = "题目索引", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+        @Schema(description = "题目内容", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
         private String title;
 
         @Schema(description = "题目索引", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")

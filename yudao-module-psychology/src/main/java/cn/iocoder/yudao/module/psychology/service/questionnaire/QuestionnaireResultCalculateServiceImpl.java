@@ -84,7 +84,7 @@ public class QuestionnaireResultCalculateServiceImpl implements QuestionnaireRes
             // 分数区间计算公式
             else if (resultConfigDO.getCalculateType().equals(QuestionnaireResultCalculateTypeEnum.SCORE.getType())) {
                 ScoreBetweenFormulaVO formula = JSON.parseObject(resultConfigDO.getCalculateFormula(), ScoreBetweenFormulaVO.class);
-                //判断性别，年龄，分数
+                //判断最高分与最低分区间
                 if (!NumberUtils.isBetween(score, formula.getMinScore(), formula.getMaxScore())) {
                     continue;
                 }
