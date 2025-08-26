@@ -65,4 +65,11 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
         return questionnaireDetailList;
     }
 
+    @Override
+    public StudentAssessmentQuestionnaireDetailVO selectQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId){
+        QuestionnaireResultDO questionnaireResult = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
+        StudentAssessmentQuestionnaireDetailVO questionnaireDetailVO = BeanUtils.toBean(questionnaireResult, StudentAssessmentQuestionnaireDetailVO.class);
+        return questionnaireDetailVO;
+    }
+
 }
