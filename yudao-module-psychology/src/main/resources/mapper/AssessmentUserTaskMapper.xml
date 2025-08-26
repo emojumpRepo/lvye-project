@@ -62,4 +62,31 @@
     </select>
 
 
+    <select id="selectQuestionnaireUserListByTaskNoAndQuestionnaire"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireUserVO">
+        select
+        s.id as student_profile_id,
+        a.task_no,s.name,
+        c.name as grade_name,
+        d.name as class_name,
+        if(r.id is null ,0,1) as status,
+        r.create_time as finish_time
+        from lvye_assessment_user_task a
+        left join lvye_student_profile s on s.user_id  = a.user_id
+        left join system_dept c ON s.grade_dept_id = c.id
+        left join system_dept d ON s.class_dept_id = d.id
+        left join lvye_assessment_task_questionnaire b on b.task_no = a.task_no
+        left join lvye_questionnaire_result r on r.assessment_task_no = a.task_no and r.questionnaire_id = b.questionnaire_id
+        <where>
+            a.deleted = 0
+            AND  a.task_no = #{pageReqVO.taskNo} and b.questionnaire_id = #{pageReqVO.questionnaireId}
+            <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
+                AND s.student_no LIKE CONCAT('%',#{pageReqVO.studentNo},'%')
+            </if>
+            <if test="pageReqVO.name != null and pageReqVO.name !=''">
+                AND s.name LIKE CONCAT('%',#{pageReqVO.name},'%')
+            </if>
+        </where>
+    </select>
+
 </mapper>

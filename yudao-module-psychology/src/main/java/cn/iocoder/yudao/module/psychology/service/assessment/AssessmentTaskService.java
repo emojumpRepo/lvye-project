@@ -141,4 +141,11 @@ public interface AssessmentTaskService {
      */
     StudentAssessmentTaskDetailVO selectStudentAssessmentTaskDetail(String taskNo, Long studentProfileId);
 
+    /**
+     * 根据任务编号获取问卷人员列表
+     * @param pageVO
+     * @return
+     */
+    PageResult<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNoAndQuestionnaire(QuestionnaireUserPageVO pageVO);
+
 }

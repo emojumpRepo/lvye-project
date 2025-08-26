@@ -272,4 +272,12 @@ public class AssessmentTaskController {
         return success(true);
     }
 
+    @GetMapping("/participants-questionnaire-page")
+    @Operation(summary = "获得测评问卷人员列表")
+    @DataPermission(enable = false)
+    public CommonResult<PageResult<QuestionnaireUserVO>> getAssessmentTaskUserList(@Valid QuestionnaireUserPageVO pageReqVO) {
+        PageResult<QuestionnaireUserVO> assessmentTaskUserList = assessmentTaskService.selectQuestionnaireUserListByTaskNoAndQuestionnaire(pageReqVO);
+        return success(BeanUtils.toBean(assessmentTaskUserList, QuestionnaireUserVO.class));
+    }
+
 }
