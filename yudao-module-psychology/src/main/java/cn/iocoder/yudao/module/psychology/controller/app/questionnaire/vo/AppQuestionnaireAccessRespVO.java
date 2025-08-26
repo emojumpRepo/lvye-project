@@ -58,6 +58,9 @@ public class AppQuestionnaireAccessRespVO {
     @Schema(description = "问卷描述", example = "这是一份用于评估心理健康状况的专业问卷")
     private String description;
 
+    @Schema(description = "问卷类型", example = "1")
+    private Integer questionnaireType;
+
     @Schema(description = "是否已完成", example = "false")
     private Boolean completed;
 

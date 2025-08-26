@@ -2,6 +2,8 @@ package cn.iocoder.yudao.module.psychology.service.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskDetailVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskHisVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
@@ -124,6 +126,35 @@ public interface AssessmentTaskService {
      * @return
      */
     List<WebAssessmentTaskVO> selectListByUserId();
+
+    /**
+     * 根据学生档案ID查询测评任务列表
+     * @param studentProfileId
+     * @return
+     */
+    List<StudentAssessmentTaskHisVO> selectStudentAssessmentTaskList(Long studentProfileId);
+
+    /**
+     * 根据学生档案ID和任务编号查询测评任务详情
+     * @param taskNo
+     * @param studentProfileId
+     * @return
+     */
+    StudentAssessmentTaskDetailVO selectStudentAssessmentTaskDetail(String taskNo, Long studentProfileId);
+
+    /**
+     * 根据任务编号获取问卷人员列表
+     * @param pageVO
+     * @return
+     */
+    PageResult<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNoAndQuestionnaire(QuestionnaireUserPageVO pageVO);
+
+    /**
+     * 根据测评任务编号获取问卷列表
+     * @param taskNo
+     * @return
+     */
+    List<AssessmentTaskQuestionnaireDO> selectQuestionnaireListByTaskNo(String taskNo);
 
     /**
      * 获取任务的问卷关联列表

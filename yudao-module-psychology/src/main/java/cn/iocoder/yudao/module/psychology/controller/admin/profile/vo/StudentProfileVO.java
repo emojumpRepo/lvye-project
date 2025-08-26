@@ -79,4 +79,8 @@ public class StudentProfileVO {
 
     @Schema(description = "班级")
     private String className;
+
+    @Schema(description = "更新者")
+    private String updater;
+
 }

@@ -2,10 +2,13 @@ package cn.iocoder.yudao.module.psychology.dal.mysql.assessment;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
-import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentTaskUserVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskDetailVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskHisVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -57,5 +60,12 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
     Long selectCountByTaskNo(@Param("taskNo") String taskNo);
 
     Long selectCountByTaskNoAndStatus(@Param("taskNo") String taskNo, @Param("status") Integer status);
+
+    List<StudentAssessmentTaskHisVO> selectStudentAssessmentTaskList(@Param("studentProfileId") Long studentProfileId);
+
+    StudentAssessmentTaskDetailVO selectStudentAssessmentTaskDetail(@Param("studentProfileId") Long studentProfileId, @Param("taskNo") String taskNo);
+
+    IPage<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNoAndQuestionnaire(IPage<QuestionnaireUserVO> page
+            , @Param("pageReqVO") QuestionnaireUserPageVO pageReqVO);
 
 }

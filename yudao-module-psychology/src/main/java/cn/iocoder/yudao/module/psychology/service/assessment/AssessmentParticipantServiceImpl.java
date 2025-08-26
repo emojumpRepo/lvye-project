@@ -82,7 +82,7 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_PARTICIPANT_CANNOT_START);
         }
         // 检查是否已经参与(即状态为进行中或已完成)
-        if (assessmentUserTaskDO != null && !assessmentUserTaskDO.getStatus().equals(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus())) {
+        if (assessmentUserTaskDO.getStatus().equals(ParticipantCompletionStatusEnum.COMPLETED.getStatus())) {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_PARTICIPANT_EXISTS);
         }
         //更新参与测评状态

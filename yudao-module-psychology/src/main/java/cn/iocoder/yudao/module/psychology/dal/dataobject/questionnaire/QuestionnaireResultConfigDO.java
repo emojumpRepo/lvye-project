@@ -1,16 +1,16 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * @Author: MinGoo
- * @CreateTime: 2025-08-23
- * @Description:问卷结果参数表
- * @Version: 1.0
+ * 问卷结果配置 DO
+ *
+ * @author MinGoo
  */
 @TableName(value = "lvye_questionnaire_result_config", autoResultMap = true)
 @Data
@@ -18,18 +18,18 @@ import lombok.EqualsAndHashCode;
 public class QuestionnaireResultConfigDO extends TenantBaseDO {
 
     /**
-     * 问卷ID
+     * 配置ID
      */
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 问卷id
+     * 问卷ID
      */
     private Long questionnaireId;
 
     /**
-     * 维度结果
+     * 维度名称
      */
     private String dimensionName;
 
@@ -44,7 +44,7 @@ public class QuestionnaireResultConfigDO extends TenantBaseDO {
     private Integer calculateType;
 
     /**
-     * 计算类型
+     * 计算公式
      */
     private String calculateFormula;
 

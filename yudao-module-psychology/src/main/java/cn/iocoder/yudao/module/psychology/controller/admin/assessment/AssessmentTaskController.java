@@ -7,15 +7,14 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTemplateDO;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.*;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTemplateMapper;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,6 +48,9 @@ public class AssessmentTaskController {
 
     @Resource
     private QuestionnaireService questionnaireService;
+
+    @Resource
+    private QuestionnaireResultService questionnaireResultService;
 
     @GetMapping("/get-exam-template")
     @Operation(summary = "获得测评任务")
@@ -270,6 +272,31 @@ public class AssessmentTaskController {
             @RequestBody @Validated List<AssessmentScenarioVO.ScenarioSlotVO> slots) {
         scenarioService.updateScenarioSlots(scenarioId, slots);
         return success(true);
+    }
+
+    @GetMapping("/participants-questionnaire-page")
+    @Operation(summary = "获得测评问卷人员列表")
+    @DataPermission(enable = false)
+    public CommonResult<PageResult<QuestionnaireUserVO>> getAssessmentTaskUserList(@Valid QuestionnaireUserPageVO pageReqVO) {
+        PageResult<QuestionnaireUserVO> assessmentTaskUserList = assessmentTaskService.selectQuestionnaireUserListByTaskNoAndQuestionnaire(pageReqVO);
+        return success(BeanUtils.toBean(assessmentTaskUserList, QuestionnaireUserVO.class));
+    }
+
+    @GetMapping("/participants-questionnaire-detail")
+    @Operation(summary = "获得测评问卷人员回答详情")
+    @DataPermission(enable = false)
+    public CommonResult<StudentAssessmentQuestionnaireDetailVO> getAssessmentQuestionnaireDetail(@RequestParam String taskNo
+            , @RequestParam Long questionnaireId, @RequestParam Long userId) {
+        StudentAssessmentQuestionnaireDetailVO questionnaireDetail = questionnaireResultService.selectQuestionnaireResultByUnique(taskNo, questionnaireId, userId);
+        return success(questionnaireDetail);
+    }
+
+    @GetMapping("/get-questionnaire-list")
+    @Operation(summary = "获得测评任务问卷列表")
+    @DataPermission(enable = false)
+    public CommonResult<List<AssessmentTaskQuestionnaireDO>> getAssessmentQuestionnaireDetail(@RequestParam String taskNo) {
+        List<AssessmentTaskQuestionnaireDO> questionnaireList = assessmentTaskService.selectQuestionnaireListByTaskNo(taskNo);
+        return success(questionnaireList);
     }
 
 }

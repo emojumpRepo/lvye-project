@@ -1,0 +1,36 @@
+package cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig;
+
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDateTime;
+
+import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND;
+
+@Schema(description = "管理后台 - 问卷结果配置分页 Request VO")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class QuestionnaireResultConfigPageReqVO extends PageParam {
+
+    @Schema(description = "问卷ID", example = "1024")
+    private Long questionnaireId;
+
+    @Schema(description = "维度名称", example = "睡眠质量")
+    private String dimensionName;
+
+    @Schema(description = "计算类型", example = "1")
+    private Integer calculateType;
+
+    @Schema(description = "是否异常", example = "0")
+    private Integer isAbnormal;
+
+    @Schema(description = "创建时间")
+    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
+    private LocalDateTime[] createTime;
+
+}

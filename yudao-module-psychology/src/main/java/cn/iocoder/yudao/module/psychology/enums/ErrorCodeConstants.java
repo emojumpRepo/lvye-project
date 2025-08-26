@@ -62,8 +62,9 @@ public interface ErrorCodeConstants {
     ErrorCode GRADE_GRADUATION_FAILED = new ErrorCode(1_003_009_001, "年级毕业操作失败");
     ErrorCode CLASS_TEACHER_ASSIGNMENT_FAILED = new ErrorCode(1_003_009_002, "班主任分配失败");
 
-    // ========== 问卷管理相关 1-003-010-000 ==========
-    ErrorCode QUESTIONNAIRE_NOT_EXISTS = new ErrorCode(1_003_010_000, "问卷不存在");
+    // ========== 问卷相关 1-003-004-000 ==========
+    ErrorCode QUESTIONNAIRE_NOT_EXISTS = new ErrorCode(1_003_004_000, "问卷不存在");
+    ErrorCode QUESTIONNAIRE_RESULT_CONFIG_NOT_EXISTS = new ErrorCode(1_003_004_001, "问卷结果配置不存在");
     ErrorCode QUESTIONNAIRE_NOT_PUBLISHED = new ErrorCode(1_003_010_001, "问卷未发布");
     ErrorCode QUESTIONNAIRE_ALREADY_PUBLISHED = new ErrorCode(1_003_010_002, "问卷已发布");
     ErrorCode QUESTIONNAIRE_SYNC_FAILED = new ErrorCode(1_003_010_003, "问卷同步失败");
