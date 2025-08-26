@@ -120,4 +120,14 @@ public class WebAssessmentTaskController {
         return success(respVO);
     }
 
+    @GetMapping("/questionnaire-result-detail")
+    @Operation(summary = "获得测评问卷回答详情")
+    @DataPermission(enable = false)
+    public CommonResult<StudentAssessmentQuestionnaireDetailVO> getAssessmentTaskQuestionnaireDetail(@RequestParam String taskNo
+            , @RequestParam Long questionnaireId) {
+        Long userId = WebFrameworkUtils.getLoginUserId();
+        StudentAssessmentQuestionnaireDetailVO questionnaireDetail = questionnaireResultService.selectQuestionnaireResultByUnique(taskNo, questionnaireId, userId);
+        return success(questionnaireDetail);
+    }
+
 }

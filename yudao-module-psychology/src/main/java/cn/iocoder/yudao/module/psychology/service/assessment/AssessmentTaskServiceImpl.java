@@ -538,4 +538,16 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         return detail;
     }
 
+    @Override
+    public PageResult<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNoAndQuestionnaire(QuestionnaireUserPageVO pageVO){
+        IPage<QuestionnaireUserVO> page = new Page<>(pageVO.getPageNo(), pageVO.getPageSize());
+        userTaskMapper.selectQuestionnaireUserListByTaskNoAndQuestionnaire(page, pageVO);
+        return new PageResult<>(page.getRecords(), page.getTotal());
+    }
+
+    @Override
+    public List<AssessmentTaskQuestionnaireDO> selectQuestionnaireListByTaskNo(String taskNo){
+        return taskQuestionnaireMapper.selectListByTaskNo(taskNo, TenantContextHolder.getTenantId());
+    }
+
 }

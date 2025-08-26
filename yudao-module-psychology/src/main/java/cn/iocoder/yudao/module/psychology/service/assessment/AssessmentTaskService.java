@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAss
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskHisVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -140,5 +141,19 @@ public interface AssessmentTaskService {
      * @return
      */
     StudentAssessmentTaskDetailVO selectStudentAssessmentTaskDetail(String taskNo, Long studentProfileId);
+
+    /**
+     * 根据任务编号获取问卷人员列表
+     * @param pageVO
+     * @return
+     */
+    PageResult<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNoAndQuestionnaire(QuestionnaireUserPageVO pageVO);
+
+    /**
+     * 根据测评任务编号获取问卷列表
+     * @param taskNo
+     * @return
+     */
+    List<AssessmentTaskQuestionnaireDO> selectQuestionnaireListByTaskNo(String taskNo);
 
 }

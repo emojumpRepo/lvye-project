@@ -51,11 +51,13 @@
                a.home_address, b.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
                a.create_time, a.update_time,
-               b.mobile, c.name AS gradeName, d.name AS className
+               b.mobile, c.name AS gradeName, d.name AS className,
+               e.nickname AS updater
         FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        LEFT JOIN system_users e ON a.updater = e.id
         <where>
             a.deleted = 0 and a.id = #{studentProfileId}
         </where>

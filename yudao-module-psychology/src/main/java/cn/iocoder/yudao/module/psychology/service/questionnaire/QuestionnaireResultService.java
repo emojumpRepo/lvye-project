@@ -45,4 +45,13 @@ public interface QuestionnaireResultService {
      */
     List<StudentAssessmentQuestionnaireDetailVO> selectQuestionnaireResultByTaskNoAndUserId(String taskNo, Long userId);
 
+    /**
+     * 根据测评任务编号,问卷ID,用户ID查询问卷结果
+     * @param taskNo
+     * @param questionnaireId
+     * @param userId
+     * @return
+     */
+    StudentAssessmentQuestionnaireDetailVO selectQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId);
+
 }
