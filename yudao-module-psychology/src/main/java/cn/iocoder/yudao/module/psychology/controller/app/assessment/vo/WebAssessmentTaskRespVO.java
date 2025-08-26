@@ -1,14 +1,13 @@
 package cn.iocoder.yudao.module.psychology.controller.app.assessment.vo;
 
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
+import cn.iocoder.yudao.module.psychology.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
-
-import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO;
 
 @Schema(description = "App - 测评任务 Response VO")
 @Data
@@ -27,10 +26,19 @@ public class WebAssessmentTaskRespVO {
     private List<Long> questionnaireIds;
 
     @Schema(description = "问卷详细信息列表")
-    private List<QuestionnaireInfoVO> questionnaires;
+    private List<AppQuestionnaireAccessRespVO> questionnaires;
 
     @Schema(description = "任务状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
+
+    @Schema(description = "任务参与状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private Integer participantStatus;
+
+    @Schema(description = "场景ID", example = "1")
+    private Long scenarioId;
+
+    @Schema(description = "任务完成进度，百分比0-100", example = "75")
+    private Integer progress;
 
     @Schema(description = "开始时间")
     private Date startline;

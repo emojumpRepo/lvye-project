@@ -15,8 +15,6 @@ import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAss
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptTaskDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
@@ -24,7 +22,6 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileD
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentDeptTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
-import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskQuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
@@ -118,7 +115,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         assessmentTask.setPublishUserId(SecurityFrameworkUtils.getLoginUserId());
         // 校验场景（如选择）并写入任务
         if (createReqVO.getScenarioId() != null) {
-            AssessmentScenarioDO scenario = scenarioService.validateScenarioActive(createReqVO.getScenarioId());
+            scenarioService.validateScenarioActive(createReqVO.getScenarioId());
             assessmentTask.setScenarioId(createReqVO.getScenarioId());
 
             // 校验问卷数量限制
@@ -496,7 +493,18 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     public List<WebAssessmentTaskVO> selectListByUserId() {
         Long userId = WebFrameworkUtils.getLoginUserId();
         Integer isParent = WebFrameworkUtils.getIsParent();
-        return assessmentTaskMapper.selectListByUserId(userId, isParent);
+        log.info("查询用户任务列表，userId: {}, isParent: {}", userId, isParent);
+        List<WebAssessmentTaskVO> list = assessmentTaskMapper.selectListByUserId(userId, isParent);
+        log.info("查询到任务数量: {}", list != null ? list.size() : 0);
+        if (list != null && !list.isEmpty()) {
+            for (WebAssessmentTaskVO vo : list) {
+                log.info("任务信息: taskNo={}, scenarioId={}", vo.getTaskNo(), vo.getScenarioId());
+                if (vo.getQuestionnaireIds() == null && vo.getQuestionnaireIdsStr() != null) {
+                    vo.setQuestionnaireIds(parseQuestionnaireIds(vo.getQuestionnaireIdsStr()));
+                }
+            }
+        }
+        return list;
     }
 
     @Override

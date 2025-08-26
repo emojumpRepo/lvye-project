@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 /**
  * 问卷结果服务实现（简化版本）
@@ -30,10 +31,25 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
     private QuestionnaireResultMapper questionnaireResultMapper;
 
     @Override
+    public boolean hasUserCompletedTaskQuestionnaire(String taskNo, Long questionnaireId, Long userId) {
+        log.debug("检查用户是否已完成问卷，任务编号: {}, 问卷ID: {}, 用户ID: {}", taskNo, questionnaireId, userId);
+        
+        // 使用Mapper的selectByUnique方法查询对应任务编号、userId和questionnaireId的记录
+        QuestionnaireResultDO result = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
+        
+        // 如果存在记录且score不为null，说明用户已经完成问卷
+        return result != null && result.getScore() != null;
+    }
+
+    @Override
     public boolean hasUserCompletedQuestionnaire(Long questionnaireId, Long userId) {
-        log.debug("检查用户是否已完成问卷（简化实现），问卷ID: {}, 用户ID: {}", questionnaireId, userId);
-        // TODO: 实现具体的检查逻辑
-        return false;
+        log.debug("检查用户是否已完成问卷，问卷ID: {}, 用户ID: {}", questionnaireId, userId);
+        Long count = questionnaireResultMapper.selectCount(
+                new LambdaQueryWrapper<QuestionnaireResultDO>()
+                        .eq(QuestionnaireResultDO::getQuestionnaireId, questionnaireId)
+                        .eq(QuestionnaireResultDO::getUserId, userId)
+        );
+        return count != null && count > 0;
     }
 
     @Override

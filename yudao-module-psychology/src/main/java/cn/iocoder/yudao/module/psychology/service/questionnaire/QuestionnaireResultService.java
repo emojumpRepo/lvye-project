@@ -19,6 +19,16 @@ import java.util.Map;
 public interface QuestionnaireResultService {
 
     /**
+     * 检查用户是否已完成对应测评任务的问卷
+     *
+     * @param taskNo 任务编号
+     * @param questionnaireId 问卷ID
+     * @param userId 用户ID
+     * @return 是否已完成
+     */
+    boolean hasUserCompletedTaskQuestionnaire(String taskNo, Long questionnaireId, Long userId);
+
+    /**
      * 检查用户是否已完成问卷
      *
      * @param questionnaireId 问卷ID
