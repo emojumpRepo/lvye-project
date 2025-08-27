@@ -1,6 +1,4 @@
 package cn.iocoder.yudao.module.psychology.controller.app.assessment.vo;
-
-import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioInfoVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
 import cn.iocoder.yudao.module.psychology.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -58,10 +56,6 @@ public class WebAssessmentTaskRespVO {
 
     @Schema(description = "问卷结果详情")
     private List<StudentAssessmentQuestionnaireDetailVO> questionnaireDetailList;
-
-
-    @Schema(description = "场景信息")
-    private ScenarioInfoVO scenario;
 
 
 }

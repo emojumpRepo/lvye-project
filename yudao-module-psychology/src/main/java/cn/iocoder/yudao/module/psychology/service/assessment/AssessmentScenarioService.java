@@ -45,6 +45,15 @@ public interface AssessmentScenarioService {
      * @return 测评场景
      */
     AssessmentScenarioDO getScenario(Long id);
+    
+    /**
+     * 获得详细测评场景（包含场景插槽、问卷及其完成状态）
+     *
+     * @param id 编号
+     * @param userId 用户Id
+     * @return 测评场景
+     */
+    // AssessmentScenarioDO getScenarioQuestionnaire(Long id, Long userId);
 
     /**
      * 获得启用的测评场景列表（含插槽与插槽问卷信息）
