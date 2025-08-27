@@ -56,4 +56,8 @@ public class WebAssessmentTaskRespVO {
     private List<StudentAssessmentQuestionnaireDetailVO> questionnaireDetailList;
 
 
+    @Schema(description = "场景信息")
+    private ScenarioInfoVO scenario;
+
+
 }

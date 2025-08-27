@@ -50,6 +50,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 
@@ -459,7 +463,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     }
 
     @Override
-    public AssessmentTaskStatisticsRespVO getTaskStatistics(String taskNo) {
+    public AssessmentTaskStatisticsRespVO getTaskStatistics(String taskNo, Integer includeDeptTree) {
         // 校验任务存在
         validateAssessmentTaskExists(taskNo);
 
@@ -479,7 +483,97 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
                 ? BigDecimal.ZERO
                 : completed.divide(total, 2, java.math.RoundingMode.HALF_UP);
         statistics.setCompletionRate(totalParticipants > 0 ? completionRate.multiply(new BigDecimal("100")) : new BigDecimal("0.00"));
+
+        // include dept tree if requested
+        if (includeDeptTree != null && includeDeptTree == 1) {
+            statistics.setDeptTree(buildDeptTreeStatistics(taskNo));
+        }
         return statistics;
+    }
+
+    private List<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentDeptNodeVO> buildDeptTreeStatistics(String taskNo) {
+        // 1) 聚合查询：按年级/班级分组，得到 total/completed
+        List<cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptAggregationRow> rows = userTaskMapper.selectAggregationByDept(taskNo);
+        if (rows == null || rows.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        // 2) 收集所有涉及的 deptId（剔除 -1）
+        java.util.Set<Long> deptIds = rows.stream()
+                .flatMap(r -> java.util.stream.Stream.of(r.getGradeDeptId(), r.getClassDeptId()))
+                .filter(id -> id != null && id > 0)
+                .collect(java.util.stream.Collectors.toSet());
+        // 3) 批量查询部门名称与排序
+        List<cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO> deptList = deptService.getDeptList(deptIds);
+        Map<Long, cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO> deptMap = deptList.stream()
+                .collect(Collectors.toMap(cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO::getId, d -> d));
+        // 4) 先按年级分组，再生成班级 children
+        Map<Long, List<cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptAggregationRow>> byGrade = rows.stream()
+                .collect(Collectors.groupingBy(r -> r.getGradeDeptId() == null ? -1L : r.getGradeDeptId()));
+        List<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentDeptNodeVO> gradeNodes = new ArrayList<>();
+        for (Map.Entry<Long, List<cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptAggregationRow>> e : byGrade.entrySet()) {
+            Long gradeId = e.getKey();
+            List<cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptAggregationRow> classRows = e.getValue();
+            // 构建班级节点
+            List<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentDeptNodeVO> classNodes = new ArrayList<>();
+            for (var r : classRows) {
+                Long classId = r.getClassDeptId() == null ? -1L : r.getClassDeptId();
+                cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO classDept = classId > 0 ? deptMap.get(classId) : null;
+                String className = classDept != null ? classDept.getName() : "未知班级";
+                long total = r.getTotalCnt() == null ? 0L : r.getTotalCnt();
+                long completed = r.getCompletedCnt() == null ? 0L : r.getCompletedCnt();
+                java.math.BigDecimal rate = total == 0 ? java.math.BigDecimal.ZERO
+                        : new java.math.BigDecimal(completed).divide(new java.math.BigDecimal(total), 2, java.math.RoundingMode.HALF_UP)
+                        .multiply(new java.math.BigDecimal("100"));
+                cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentDeptNodeVO node = new cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentDeptNodeVO();
+                node.setDeptId(classId);
+                node.setDeptName(className);
+                node.setTotalParticipants(total);
+                node.setCompletedParticipants(completed);
+                node.setCompletionRate(rate);
+                classNodes.add(node);
+            }
+            // 班级排序：按 system_dept.sort 升序，未知(-1)最后
+            classNodes.sort((a, b) -> {
+                Long aId = a.getDeptId();
+                Long bId = b.getDeptId();
+                if (aId != null && aId < 0 && (bId == null || bId >= 0)) return 1;
+                if (bId != null && bId < 0 && (aId == null || aId >= 0)) return -1;
+                cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO ad = (aId != null && aId > 0) ? deptMap.get(aId) : null;
+                cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO bd = (bId != null && bId > 0) ? deptMap.get(bId) : null;
+                Integer as = ad != null ? ad.getSort() : Integer.MAX_VALUE;
+                Integer bs = bd != null ? bd.getSort() : Integer.MAX_VALUE;
+                return java.util.Objects.compare(as, bs, java.util.Comparator.naturalOrder());
+            });
+            // 年级节点汇总
+            long gTotal = classRows.stream().mapToLong(r -> r.getTotalCnt() == null ? 0L : r.getTotalCnt()).sum();
+            long gCompleted = classRows.stream().mapToLong(r -> r.getCompletedCnt() == null ? 0L : r.getCompletedCnt()).sum();
+            java.math.BigDecimal gRate = gTotal == 0 ? java.math.BigDecimal.ZERO
+                    : new java.math.BigDecimal(gCompleted).divide(new java.math.BigDecimal(gTotal), 2, java.math.RoundingMode.HALF_UP)
+                    .multiply(new java.math.BigDecimal("100"));
+            cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO gradeDept = gradeId != null && gradeId > 0 ? deptMap.get(gradeId) : null;
+            String gradeName = gradeDept != null ? gradeDept.getName() : "未知年级";
+            cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentDeptNodeVO gNode = new cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentDeptNodeVO();
+            gNode.setDeptId(gradeId);
+            gNode.setDeptName(gradeName);
+            gNode.setTotalParticipants(gTotal);
+            gNode.setCompletedParticipants(gCompleted);
+            gNode.setCompletionRate(gRate);
+            gNode.setChildren(classNodes);
+            gradeNodes.add(gNode);
+        }
+        // 年级排序：按 system_dept.sort 升序，未知(-1)最后
+        gradeNodes.sort((a, b) -> {
+            Long aId = a.getDeptId();
+            Long bId = b.getDeptId();
+            if (aId != null && aId < 0 && (bId == null || bId >= 0)) return 1;
+            if (bId != null && bId < 0 && (aId == null || aId >= 0)) return -1;
+            cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO ad = (aId != null && aId > 0) ? deptMap.get(aId) : null;
+            cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO bd = (bId != null && bId > 0) ? deptMap.get(bId) : null;
+            Integer as = ad != null ? ad.getSort() : Integer.MAX_VALUE;
+            Integer bs = bd != null ? bd.getSort() : Integer.MAX_VALUE;
+            return java.util.Objects.compare(as, bs, java.util.Comparator.naturalOrder());
+        });
+        return gradeNodes;
     }
 
     @Override

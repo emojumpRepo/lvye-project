@@ -17,6 +17,10 @@ import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireSer
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
@@ -95,7 +99,7 @@ public class AssessmentTaskController {
     public CommonResult<AssessmentTaskRespVO> getAssessmentTask(@RequestParam("taskNo") String taskNo) {
         AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTask(taskNo);
         AssessmentTaskRespVO respVO = BeanUtils.toBean(assessmentTask, AssessmentTaskRespVO.class);
-        
+
         // 填充问卷详细信息
         if (assessmentTask.getQuestionnaireIds() != null && !assessmentTask.getQuestionnaireIds().isEmpty()) {
             List<QuestionnaireInfoVO> questionnaires = new ArrayList<>();
@@ -116,7 +120,7 @@ public class AssessmentTaskController {
             }
             respVO.setQuestionnaires(questionnaires);
         }
-        
+
         return success(respVO);
     }
 
@@ -178,13 +182,27 @@ public class AssessmentTaskController {
         return success(true);
     }
 
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "成功",
+            content = @Content(mediaType = "application/json",
+                examples = {
+                    @ExampleObject(name = "仅汇总（includeDeptTree=0）", value = "{\n  \"code\": 0,\n  \"data\": {\n    \"totalParticipants\": 123,\n    \"completedParticipants\": 100,\n    \"inProgressParticipants\": 10,\n    \"notStartedParticipants\": 13,\n    \"completionRate\": 81.30\n  },\n  \"msg\": \"\"\n}")
+                    ,
+                    @ExampleObject(name = "包含部门树（includeDeptTree=1）", value = "{\n  \"code\": 0,\n  \"data\": {\n    \"totalParticipants\": 123,\n    \"completedParticipants\": 100,\n    \"inProgressParticipants\": 10,\n    \"notStartedParticipants\": 13,\n    \"completionRate\": 81.30,\n    \"deptTree\": [\n      {\n        \"deptId\": 2001,\n        \"deptName\": \"高一\",\n        \"totalParticipants\": 60,\n        \"completedParticipants\": 48,\n        \"completionRate\": 80.00,\n        \"children\": [\n          {\n            \"deptId\": 30011,\n            \"deptName\": \"高一1班\",\n            \"totalParticipants\": 30,\n            \"completedParticipants\": 25,\n            \"completionRate\": 83.33\n          },\n          {\n            \"deptId\": 30012,\n            \"deptName\": \"高一2班\",\n            \"totalParticipants\": 30,\n            \"completedParticipants\": 23,\n            \"completionRate\": 76.67\n          }\n        ]\n      },\n      {\n        \"deptId\": -1,\n        \"deptName\": \"未知年级\",\n        \"totalParticipants\": 3,\n        \"completedParticipants\": 2,\n        \"completionRate\": 66.67,\n        \"children\": [\n          {\n            \"deptId\": -1,\n            \"deptName\": \"未知班级\",\n            \"totalParticipants\": 3,\n            \"completedParticipants\": 2,\n            \"completionRate\": 66.67\n          }\n        ]\n      }\n    ]\n  },\n  \"msg\": \"\"\n}")
+                }
+            )
+        )
+    })
+
     @GetMapping("/statistics")
     @Operation(summary = "获取任务统计信息")
     @Parameter(name = "taskNo", description = "任务编号", required = true)
+    @Parameter(name = "includeDeptTree", description = "是否返回部门树状统计：0-否（默认），1-是", required = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:statistics')")
     @DataPermission(enable = false)
-    public CommonResult<AssessmentTaskStatisticsRespVO> getTaskStatistics(@RequestParam("taskNo") String taskNo) {
-        return success(assessmentTaskService.getTaskStatistics(taskNo));
+    public CommonResult<AssessmentTaskStatisticsRespVO> getTaskStatistics(@RequestParam("taskNo") String taskNo,
+                                                                         @RequestParam(value = "includeDeptTree", required = false, defaultValue = "0") Integer includeDeptTree) {
+        return success(assessmentTaskService.getTaskStatistics(taskNo, includeDeptTree));
     }
 
     @GetMapping("/participants-list")

@@ -61,6 +61,21 @@
         where c.id = #{studentProfileId} and a.task_no = #{taskNo} and a.deleted = 0
     </select>
 
+    <!-- 统计：按年级/班级聚合，未知用 -1 表示 -->
+    <select id="selectAggregationByDept"
+            resultType="cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptAggregationRow">
+        select
+            COALESCE(b.grade_dept_id, -1) as grade_dept_id,
+            COALESCE(b.class_dept_id, -1) as class_dept_id,
+            count(*) as total_cnt,
+            sum(case when a.status = 2 then 1 else 0 end) as completed_cnt
+        from lvye_assessment_user_task a
+        left join lvye_student_profile b on a.user_id = b.user_id
+        where a.task_no = #{taskNo} and a.deleted = 0
+        group by COALESCE(b.grade_dept_id, -1), COALESCE(b.class_dept_id, -1)
+    </select>
+
+
 
     <select id="selectQuestionnaireUserListByTaskNoAndQuestionnaire"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireUserVO">
