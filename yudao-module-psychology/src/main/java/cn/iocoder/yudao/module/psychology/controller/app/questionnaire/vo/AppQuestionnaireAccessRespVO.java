@@ -67,4 +67,13 @@ public class AppQuestionnaireAccessRespVO {
     @Schema(description = "完成进度（百分比）", example = "75")
     private Integer progress;
 
+    // 插槽相关信息（可选）
+    @Schema(description = "插槽标识", example = "library")
+    private String slotKey;
+
+    @Schema(description = "插槽内顺序", example = "1")
+    private Integer slotOrder;
+
 }
+
+

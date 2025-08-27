@@ -8,6 +8,13 @@ import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAss
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskRespVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.ScenarioInfoVO;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.ScenarioSlotInfoVO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
+import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
+
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentParticipantService;
@@ -47,6 +54,9 @@ public class WebAssessmentTaskController {
 
     @Resource
     private QuestionnaireAccessService questionnaireAccessService;
+    @Resource
+    private AssessmentScenarioService scenarioService;
+
 
     @GetMapping("/my-tasks")
     @Operation(summary = "获得我的测评任务列表")
@@ -88,8 +98,11 @@ public class WebAssessmentTaskController {
         AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTask(taskNo);
         WebAssessmentTaskRespVO respVO = BeanUtils.toBean(assessmentTask, WebAssessmentTaskRespVO.class);
 
-        // 填充问卷详细信息
+        // 填充问卷详细信息（包含插槽信息）
         if (assessmentTask.getQuestionnaireIds() != null && !assessmentTask.getQuestionnaireIds().isEmpty()) {
+            List<AssessmentTaskQuestionnaireDO> taskQuestionnaires = assessmentTaskService.getTaskQuestionnairesByTaskNo(taskNo);
+            java.util.Map<Long, AssessmentTaskQuestionnaireDO> questionnaireSlotMap = taskQuestionnaires.stream()
+                    .collect(java.util.stream.Collectors.toMap(AssessmentTaskQuestionnaireDO::getQuestionnaireId, java.util.function.Function.identity(), (existing, replacement) -> existing));
             List<AppQuestionnaireAccessRespVO> questionnaireInfos = assessmentTask.getQuestionnaireIds().stream()
                     .map(questionnaireId -> {
                         QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
@@ -106,13 +119,31 @@ public class WebAssessmentTaskController {
                             questionnaireAccessRespVO.setEstimatedDuration(questionnaire.getEstimatedDuration());
                             questionnaireAccessRespVO.setCompleted(completed);
                             questionnaireAccessRespVO.setAccessible(accessible);
+                            AssessmentTaskQuestionnaireDO slotInfo = questionnaireSlotMap.get(questionnaireId);
+                            if (slotInfo != null) {
+                                questionnaireAccessRespVO.setSlotKey(slotInfo.getSlotKey());
+                                questionnaireAccessRespVO.setSlotOrder(slotInfo.getSlotOrder());
+                            }
                             return questionnaireAccessRespVO;
                         }
                         return null;
                     })
                     .filter(info -> info != null)
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
             respVO.setQuestionnaires(questionnaireInfos);
+        }
+
+        // 填充场景信息
+        if (assessmentTask.getScenarioId() != null) {
+            AssessmentScenarioDO scenario = scenarioService.getScenario(assessmentTask.getScenarioId());
+            ScenarioInfoVO scenarioVO = BeanUtils.toBean(scenario, ScenarioInfoVO.class);
+            List<AssessmentScenarioSlotDO> slots = scenarioService.getScenarioSlots(assessmentTask.getScenarioId());
+            List<ScenarioSlotInfoVO> slotInfos = slots.stream()
+                    .sorted(java.util.Comparator.comparing(AssessmentScenarioSlotDO::getSlotOrder))
+                    .map(slot -> BeanUtils.toBean(slot, ScenarioSlotInfoVO.class))
+                    .collect(java.util.stream.Collectors.toList());
+            scenarioVO.setSlots(slotInfos);
+            respVO.setScenario(scenarioVO);
         }
         //补充问卷答案
         List<StudentAssessmentQuestionnaireDetailVO> resultList = questionnaireResultService.selectQuestionnaireResultByTaskNoAndUserId(taskNo, userId);
