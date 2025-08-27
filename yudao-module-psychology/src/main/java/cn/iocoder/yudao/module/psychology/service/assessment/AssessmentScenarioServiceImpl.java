@@ -183,6 +183,45 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
         }
     }
 
+    @Override
+    public cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO getScenarioQuestionnaire(Long id, Long userId) {
+        AssessmentScenarioDO scenario = scenarioMapper.selectById(id);
+        if (scenario == null) {
+            return null;
+        }
+        // 基本信息
+        cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO vo = cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO.class.cast(
+                BeanUtils.toBean(scenario, cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO.class));
+        // 插槽与问卷详情
+        java.util.List<AssessmentScenarioSlotDO> slots = scenarioSlotMapper.selectListByScenarioId(id);
+        java.util.List<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO.ScenarioSlotVO> slotVOs = new java.util.ArrayList<>();
+        if (slots != null) {
+            for (AssessmentScenarioSlotDO slot : slots) {
+                cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO.ScenarioSlotVO slotVO = BeanUtils.toBean(
+                        slot,
+                        cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO.ScenarioSlotVO.class);
+                if (slot.getQuestionnaireId() != null) {
+                    cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(slot.getQuestionnaireId());
+                    if (questionnaire != null) {
+                        cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO info = new cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO();
+                        info.setId(questionnaire.getId());
+                        info.setTitle(questionnaire.getTitle());
+                        info.setDescription(questionnaire.getDescription());
+                        info.setQuestionnaireType(questionnaire.getQuestionnaireType());
+                        info.setTargetAudience(questionnaire.getTargetAudience());
+                        info.setQuestionCount(questionnaire.getQuestionCount());
+                        info.setEstimatedDuration(questionnaire.getEstimatedDuration());
+                        info.setStatus(questionnaire.getStatus());
+                        slotVO.setQuestionnaire(info);
+                    }
+                }
+                slotVOs.add(slotVO);
+            }
+        }
+        vo.setSlots(slotVOs);
+        return vo;
+    }
+
     /**
      * 校验场景是否存在
      */

@@ -1,4 +1,5 @@
 package cn.iocoder.yudao.module.psychology.controller.app.assessment.vo;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioInfoVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
 import cn.iocoder.yudao.module.psychology.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,6 +39,9 @@ public class WebAssessmentTaskRespVO {
 
     @Schema(description = "场景信息（当有场景ID时返回）")
     private ScenarioInfoVO scenario;
+
+    @Schema(description = "场景明细（App专用，包含插槽及问卷访问状态）")
+    private AppScenarioDetailVO scenarioDetail;
 
     @Schema(description = "任务完成进度，百分比0-100", example = "75")
     private Integer progress;

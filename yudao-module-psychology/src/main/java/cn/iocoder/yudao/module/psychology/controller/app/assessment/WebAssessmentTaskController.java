@@ -8,12 +8,10 @@ import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAss
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskRespVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
-import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.ScenarioInfoVO;
-import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.ScenarioSlotInfoVO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppScenarioDetailVO;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppScenarioQuestionnaireAccessVO;
 
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
@@ -30,7 +28,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -98,56 +95,78 @@ public class WebAssessmentTaskController {
         AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTask(taskNo);
         WebAssessmentTaskRespVO respVO = BeanUtils.toBean(assessmentTask, WebAssessmentTaskRespVO.class);
 
-        // 填充问卷详细信息（包含插槽信息）
-        if (assessmentTask.getQuestionnaireIds() != null && !assessmentTask.getQuestionnaireIds().isEmpty()) {
-            List<AssessmentTaskQuestionnaireDO> taskQuestionnaires = assessmentTaskService.getTaskQuestionnairesByTaskNo(taskNo);
-            java.util.Map<Long, AssessmentTaskQuestionnaireDO> questionnaireSlotMap = taskQuestionnaires.stream()
-                    .collect(java.util.stream.Collectors.toMap(AssessmentTaskQuestionnaireDO::getQuestionnaireId, java.util.function.Function.identity(), (existing, replacement) -> existing));
-            List<AppQuestionnaireAccessRespVO> questionnaireInfos = assessmentTask.getQuestionnaireIds().stream()
-                    .map(questionnaireId -> {
-                        QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
-                        if (questionnaire != null) {
-                            AppQuestionnaireAccessRespVO questionnaireAccessRespVO = new AppQuestionnaireAccessRespVO();
-                            boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, questionnaire.getId(), userId);
-                            boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(questionnaire.getId(), userId);
-                            questionnaireAccessRespVO.setQuestionnaireId(questionnaire.getId());
-                            questionnaireAccessRespVO.setExternalLink(questionnaire.getExternalLink());
-                            questionnaireAccessRespVO.setQuestionnaireTitle(questionnaire.getTitle());
-                            questionnaireAccessRespVO.setDescription(questionnaire.getDescription());
-                            questionnaireAccessRespVO.setQuestionnaireType(questionnaire.getQuestionnaireType());
-                            questionnaireAccessRespVO.setQuestionCount(questionnaire.getQuestionCount());
-                            questionnaireAccessRespVO.setEstimatedDuration(questionnaire.getEstimatedDuration());
-                            questionnaireAccessRespVO.setCompleted(completed);
-                            questionnaireAccessRespVO.setAccessible(accessible);
-                            AssessmentTaskQuestionnaireDO slotInfo = questionnaireSlotMap.get(questionnaireId);
-                            if (slotInfo != null) {
-                                questionnaireAccessRespVO.setSlotKey(slotInfo.getSlotKey());
-                                questionnaireAccessRespVO.setSlotOrder(slotInfo.getSlotOrder());
-                            }
-                            return questionnaireAccessRespVO;
-                        }
-                        return null;
-                    })
-                    .filter(info -> info != null)
-                    .collect(java.util.stream.Collectors.toList());
-            respVO.setQuestionnaires(questionnaireInfos);
-        }
-
-        // 填充场景信息
+        // 若绑定场景，优先返回场景详情
         if (assessmentTask.getScenarioId() != null) {
-            AssessmentScenarioDO scenario = scenarioService.getScenario(assessmentTask.getScenarioId());
-            ScenarioInfoVO scenarioVO = BeanUtils.toBean(scenario, ScenarioInfoVO.class);
-            List<AssessmentScenarioSlotDO> slots = scenarioService.getScenarioSlots(assessmentTask.getScenarioId());
-            List<ScenarioSlotInfoVO> slotInfos = slots.stream()
-                    .sorted(java.util.Comparator.comparing(AssessmentScenarioSlotDO::getSlotOrder))
-                    .map(slot -> BeanUtils.toBean(slot, ScenarioSlotInfoVO.class))
-                    .collect(java.util.stream.Collectors.toList());
-            scenarioVO.setSlots(slotInfos);
-            respVO.setScenario(scenarioVO);
+            AssessmentScenarioVO scenario = scenarioService.getScenarioQuestionnaire(assessmentTask.getScenarioId(), userId);
+            // 组装 App 场景明细 VO
+            AppScenarioDetailVO detail = new AppScenarioDetailVO();
+            detail.setId(scenario.getId());
+            detail.setCode(scenario.getCode());
+            detail.setName(scenario.getName());
+            detail.setMaxQuestionnaireCount(scenario.getMaxQuestionnaireCount());
+            detail.setMetadataJson(scenario.getMetadataJson());
+            detail.setIsActive(scenario.getIsActive());
+            java.util.List<AppScenarioDetailVO.AppScenarioSlotDetailVO> slotDetails = new java.util.ArrayList<>();
+            if (scenario.getSlots() != null) {
+                for (AssessmentScenarioVO.ScenarioSlotVO slotVO : scenario.getSlots()) {
+                    AppScenarioDetailVO.AppScenarioSlotDetailVO s = new AppScenarioDetailVO.AppScenarioSlotDetailVO();
+                    s.setId(slotVO.getId());
+                    s.setSlotKey(slotVO.getSlotKey());
+                    s.setSlotName(slotVO.getSlotName());
+                    s.setSlotOrder(slotVO.getSlotOrder());
+                    s.setFrontendComponent(slotVO.getFrontendComponent());
+                    s.setMetadataJson(slotVO.getMetadataJson());
+                    // 映射问卷
+                    if (slotVO.getQuestionnaire() != null) {
+                        AppScenarioQuestionnaireAccessVO q = new AppScenarioQuestionnaireAccessVO();
+                        boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, slotVO.getQuestionnaire().getId(), userId);
+                        boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(slotVO.getQuestionnaire().getId(), userId);
+                        q.setId(slotVO.getQuestionnaire().getId());
+                        q.setTitle(slotVO.getQuestionnaire().getTitle());
+                        q.setDescription(slotVO.getQuestionnaire().getDescription());
+                        q.setQuestionnaireType(slotVO.getQuestionnaire().getQuestionnaireType());
+                        q.setTargetAudience(slotVO.getQuestionnaire().getTargetAudience());
+                        q.setQuestionCount(slotVO.getQuestionnaire().getQuestionCount());
+                        q.setEstimatedDuration(slotVO.getQuestionnaire().getEstimatedDuration());
+                        q.setStatus(slotVO.getQuestionnaire().getStatus());
+                        q.setCompleted(completed);
+                        q.setAccessible(accessible);
+                        s.setQuestionnaire(q);
+                    }
+                    slotDetails.add(s);
+                }
+            }
+            detail.setSlots(slotDetails);
+            respVO.setScenarioDetail(detail);
+        } else {
+            // 若未绑定场景，则返回问卷详细信息
+            if (assessmentTask.getQuestionnaireIds() != null && !assessmentTask.getQuestionnaireIds().isEmpty()) {
+                List<AppQuestionnaireAccessRespVO> questionnaireInfos = assessmentTask.getQuestionnaireIds().stream()
+                        .map(questionnaireId -> {
+                            QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
+                            if (questionnaire != null) {
+                                AppQuestionnaireAccessRespVO questionnaireAccessRespVO = new AppQuestionnaireAccessRespVO();
+                                boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, questionnaire.getId(), userId);
+                                boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(questionnaire.getId(), userId);
+                                questionnaireAccessRespVO.setQuestionnaireId(questionnaire.getId());
+                                questionnaireAccessRespVO.setExternalLink(questionnaire.getExternalLink());
+                                questionnaireAccessRespVO.setQuestionnaireTitle(questionnaire.getTitle());
+                                questionnaireAccessRespVO.setDescription(questionnaire.getDescription());
+                                questionnaireAccessRespVO.setQuestionnaireType(questionnaire.getQuestionnaireType());
+                                questionnaireAccessRespVO.setQuestionCount(questionnaire.getQuestionCount());
+                                questionnaireAccessRespVO.setEstimatedDuration(questionnaire.getEstimatedDuration());
+                                questionnaireAccessRespVO.setCompleted(completed);
+                                questionnaireAccessRespVO.setAccessible(accessible);
+                                return questionnaireAccessRespVO;
+                            }
+                            return null;
+                        })
+                        .filter(info -> info != null)
+                        .collect(java.util.stream.Collectors.toList());
+                respVO.setQuestionnaires(questionnaireInfos);
+            }
         }
-        //补充问卷答案
-        List<StudentAssessmentQuestionnaireDetailVO> resultList = questionnaireResultService.selectQuestionnaireResultByTaskNoAndUserId(taskNo, userId);
-        respVO.setQuestionnaireDetailList(resultList);
+       
         return success(respVO);
     }
 
