@@ -34,4 +34,13 @@ public class QuestionnaireUserPageVO extends PageParam {
     @Schema(description = "学号", example = "123")
     private String studentNo;
 
+    @Schema(description = "完成状态（0：未完成，1：已完成）", example = "1")
+    private Integer status;
+
+    @Schema(description = "风险等级（1-正常，2-关注，3-预警，4-高危）", example = "2")
+    private Integer riskLevel;
+
+    @Schema(description = "班级ID数组，第一个数字是年级ID(grade_dept_id)，第二个数字是班级ID(class_dept_id)", example = "[1, 2]")
+    private Long[] classId;
+
 }
