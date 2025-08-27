@@ -60,8 +60,19 @@ public class QuestionnaireUserVO {
     /**
      * 完成时间
      */
-    @Schema(description = "完成状态（0：未完成，1：已完成）")
+    @Schema(description = "完成时间")
     private Date finishTime;
 
+    /**
+     * 风险等级
+     */
+    @Schema(description = "风险等级（1-正常，2-关注，3-预警，4-高危）")
+    private Integer riskLevel;
+
+    /**
+     * 原始得分
+     */
+    @Schema(description = "原始得分")
+    private java.math.BigDecimal score;
 
 }

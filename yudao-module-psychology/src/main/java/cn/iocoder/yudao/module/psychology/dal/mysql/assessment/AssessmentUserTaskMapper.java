@@ -55,6 +55,14 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
                 .set(AssessmentUserTaskDO::getSubmitTime, new Date()));
     }
 
+    default int updateFinishStatusByTaskNoAndUserId(String taskNo, Long userId) {
+        return update(new LambdaUpdateWrapper<AssessmentUserTaskDO>()
+                .eq(AssessmentUserTaskDO::getTaskNo, taskNo)
+                .eq(AssessmentUserTaskDO::getUserId, userId)
+                .set(AssessmentUserTaskDO::getStatus, ParticipantCompletionStatusEnum.COMPLETED.getStatus())
+                .set(AssessmentUserTaskDO::getSubmitTime, new Date()));
+    }
+
     List<AssessmentTaskUserVO> selectListByTaskNo(@Param("taskNo") String taskNo);
 
     Long selectCountByTaskNo(@Param("taskNo") String taskNo);
