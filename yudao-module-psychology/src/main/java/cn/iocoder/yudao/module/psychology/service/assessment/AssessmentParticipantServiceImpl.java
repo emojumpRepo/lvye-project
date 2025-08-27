@@ -127,7 +127,7 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         //判断问卷是否都已经完成,若已完成，则更新测评任务状态
         Long fishishQuestionnaire = questionnaireResultMapper.selectCountByTaskNoAndUserId(taskNo, userId);
         if (Long.valueOf(questionnaireIds.size()).equals(fishishQuestionnaire)) {
-            userTaskMapper.updateFinishStatusById(taskNo);
+            userTaskMapper.updateFinishStatusByTaskNoAndUserId(taskNo, userId);
         }
     }
 
