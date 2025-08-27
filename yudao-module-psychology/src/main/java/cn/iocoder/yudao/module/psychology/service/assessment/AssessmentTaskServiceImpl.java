@@ -637,8 +637,18 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Override
     public PageResult<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNoAndQuestionnaire(QuestionnaireUserPageVO pageVO){
+        // taskNo 必填保护
+        if (pageVO.getTaskNo() == null || pageVO.getTaskNo().trim().isEmpty()) {
+            return new PageResult<>(java.util.Collections.emptyList(), 0L);
+        }
         IPage<QuestionnaireUserVO> page = new Page<>(pageVO.getPageNo(), pageVO.getPageSize());
-        userTaskMapper.selectQuestionnaireUserListByTaskNoAndQuestionnaire(page, pageVO);
+        String qid = pageVO.getQuestionnaireId();
+        boolean isAllByTaskNo = (qid == null || qid.trim().isEmpty() || "0".equals(qid.trim()));
+        if (isAllByTaskNo) {
+            userTaskMapper.selectQuestionnaireUserListByTaskNo(page, pageVO);
+        } else {
+            userTaskMapper.selectQuestionnaireUserListByTaskNoAndQuestionnaire(page, pageVO);
+        }
         return new PageResult<>(page.getRecords(), page.getTotal());
     }
 

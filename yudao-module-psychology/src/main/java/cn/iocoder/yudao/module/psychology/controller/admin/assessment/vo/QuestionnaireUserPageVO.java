@@ -3,7 +3,6 @@ package cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo;
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -25,7 +24,6 @@ public class QuestionnaireUserPageVO extends PageParam {
     private String taskNo;
 
     @Schema(description = "问卷ID", example = "123")
-    @NotEmpty
     private String questionnaireId;
 
     @Schema(description = "名称", example = "小明")
