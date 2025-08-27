@@ -95,9 +95,10 @@ public interface AssessmentTaskService {
      * 获取任务统计信息
      *
      * @param taskNo 任务编号
+     * @param includeDeptTree 是否返回部门树状统计（0/1）
      * @return 统计信息
      */
-    AssessmentTaskStatisticsRespVO getTaskStatistics(String taskNo);
+    AssessmentTaskStatisticsRespVO getTaskStatistics(String taskNo, Integer includeDeptTree);
 
     /**
      * 根据任务编号获取任务

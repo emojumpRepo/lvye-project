@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
+
 
 @Schema(description = "管理后台 - 测评任务统计 Response VO")
 @Data
@@ -23,5 +25,8 @@ public class AssessmentTaskStatisticsRespVO {
 
     @Schema(description = "完成率", requiredMode = Schema.RequiredMode.REQUIRED, example = "80.0")
     private BigDecimal completionRate;
+
+    @Schema(description = "部门统计树，includeDeptTree=1 时返回")
+    private List<AssessmentDeptNodeVO> deptTree;
 
 }

@@ -76,4 +76,9 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
     IPage<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNoAndQuestionnaire(IPage<QuestionnaireUserVO> page
             , @Param("pageReqVO") QuestionnaireUserPageVO pageReqVO);
 
+    /**
+     * 统计：按年级/班级聚合
+     */
+    List<cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptAggregationRow> selectAggregationByDept(@Param("taskNo") String taskNo);
+
 }
