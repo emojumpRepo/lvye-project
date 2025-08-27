@@ -66,5 +66,14 @@ public class AssessmentScenarioVO {
 
         @Schema(description = "前端组件标识", example = "LibraryComponent")
         private String frontendComponent;
+
+        @Schema(description = "元数据JSON，用于存储插槽的额外配置信息", example = "{\"theme\":\"dark\",\"layout\":\"vertical\"}")
+        private String metadataJson;
+
+        @Schema(description = "关联问卷ID", example = "1001")
+        private Long questionnaireId;
+
+        @Schema(description = "问卷详情")
+        private QuestionnaireInfoVO questionnaire;
     }
 }

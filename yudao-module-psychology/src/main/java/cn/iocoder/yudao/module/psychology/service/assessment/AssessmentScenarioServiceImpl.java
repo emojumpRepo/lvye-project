@@ -21,6 +21,9 @@ import java.util.Set;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.*;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
+import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO;
 
 /**
  * 测评场景 Service 实现类
@@ -37,6 +40,9 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
 
     @Resource
     private AssessmentScenarioSlotMapper scenarioSlotMapper;
+
+    @Resource
+    private QuestionnaireService questionnaireService;
 
     @Override
     @Transactional
@@ -91,8 +97,49 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
     }
 
     @Override
-    public List<AssessmentScenarioDO> getActiveScenarioList() {
-        return scenarioMapper.selectList(AssessmentScenarioDO::getIsActive, true);
+    public List<AssessmentScenarioVO> getActiveScenarioList() {
+        List<AssessmentScenarioDO> activeList = scenarioMapper.selectList(AssessmentScenarioDO::getIsActive, true);
+        if (activeList == null || activeList.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        List<AssessmentScenarioVO> result = new java.util.ArrayList<>();
+        for (AssessmentScenarioDO scenario : activeList) {
+            List<AssessmentScenarioSlotDO> slots = scenarioSlotMapper.selectListByScenarioId(scenario.getId());
+            if (slots == null || slots.isEmpty()) {
+                continue; // 必须有插槽
+            }
+            boolean allSlotsLinkedToQuestionnaire = true;
+            java.util.List<AssessmentScenarioVO.ScenarioSlotVO> slotVOs = new java.util.ArrayList<>();
+            for (AssessmentScenarioSlotDO slot : slots) {
+                if (slot.getQuestionnaireId() == null) {
+                    allSlotsLinkedToQuestionnaire = false;
+                    break;
+                }
+                AssessmentScenarioVO.ScenarioSlotVO slotVO = BeanUtils.toBean(slot, AssessmentScenarioVO.ScenarioSlotVO.class);
+                // 查询问卷详情并填充
+                QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(slot.getQuestionnaireId());
+                if (questionnaire != null) {
+                    QuestionnaireInfoVO info = new QuestionnaireInfoVO();
+                    info.setId(questionnaire.getId());
+                    info.setTitle(questionnaire.getTitle());
+                    info.setDescription(questionnaire.getDescription());
+                    info.setQuestionnaireType(questionnaire.getQuestionnaireType());
+                    info.setTargetAudience(questionnaire.getTargetAudience());
+                    info.setQuestionCount(questionnaire.getQuestionCount());
+                    info.setEstimatedDuration(questionnaire.getEstimatedDuration());
+                    info.setStatus(questionnaire.getStatus());
+                    slotVO.setQuestionnaire(info);
+                }
+                slotVOs.add(slotVO);
+            }
+            if (!allSlotsLinkedToQuestionnaire) {
+                continue;
+            }
+            AssessmentScenarioVO vo = BeanUtils.toBean(scenario, AssessmentScenarioVO.class);
+            vo.setSlots(slotVOs);
+            result.add(vo);
+        }
+        return result;
     }
 
     @Override

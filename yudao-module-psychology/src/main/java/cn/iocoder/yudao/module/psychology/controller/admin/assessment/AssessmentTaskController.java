@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.*;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTemplateMapper;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultService;
@@ -212,8 +213,8 @@ public class AssessmentTaskController {
     @GetMapping("/scenarios")
     @Operation(summary = "查询启用的测评场景列表")
     @DataPermission(enable = false)
-    public CommonResult<List<AssessmentScenarioDO>> listScenarios() {
-        List<AssessmentScenarioDO> list = scenarioService.getActiveScenarioList();
+    public CommonResult<List<AssessmentScenarioVO>> listScenarios() {
+        List<AssessmentScenarioVO> list = scenarioService.getActiveScenarioList();
         return success(list);
     }
 

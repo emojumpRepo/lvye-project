@@ -73,6 +73,8 @@ CREATE TABLE `lvye_assessment_scenario_slot` (
     `slot_key` VARCHAR(64) NOT NULL COMMENT '槽位编码，在场景内唯一',
     `slot_name` VARCHAR(128) NOT NULL COMMENT '槽位名称',
     `slot_order` INT NOT NULL DEFAULT 0 COMMENT '槽位顺序',
+    `questionnaire_id` BIGINT NULL COMMENT '问卷ID',
+    `metadata_json` JSON NULL COMMENT '扩展配置',
     `allowed_questionnaire_types` VARCHAR(256) NULL COMMENT '允许的问卷类型，逗号分隔',
     `frontend_component` VARCHAR(128) NULL COMMENT '前端组件标识',
     `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者',
@@ -83,7 +85,8 @@ CREATE TABLE `lvye_assessment_scenario_slot` (
     `tenant_id` BIGINT DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE KEY `uk_scenario_slot` (`scenario_id`, `slot_key`) USING BTREE,
-    KEY `idx_scenario_id` (`scenario_id`) USING BTREE
+    KEY `idx_scenario_id` (`scenario_id`) USING BTREE,
+    KEY `idx_questionnaire_id` (`questionnaire_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评场景槽位定义表';
 
 -- ----------------------------

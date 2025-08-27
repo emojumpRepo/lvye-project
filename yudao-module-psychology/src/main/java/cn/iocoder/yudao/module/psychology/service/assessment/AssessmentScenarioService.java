@@ -47,11 +47,11 @@ public interface AssessmentScenarioService {
     AssessmentScenarioDO getScenario(Long id);
 
     /**
-     * 获得启用的测评场景列表
+     * 获得启用的测评场景列表（含插槽与插槽问卷信息）
      *
-     * @return 测评场景列表
+     * @return 场景VO列表
      */
-    List<AssessmentScenarioDO> getActiveScenarioList();
+    List<AssessmentScenarioVO> getActiveScenarioList();
 
     /**
      * 获得测评场景分页

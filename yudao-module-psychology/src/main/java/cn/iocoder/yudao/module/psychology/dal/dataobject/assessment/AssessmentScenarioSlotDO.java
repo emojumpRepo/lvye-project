@@ -25,6 +25,16 @@ public class AssessmentScenarioSlotDO extends TenantBaseDO {
     private String allowedQuestionnaireTypes;
 
     private String frontendComponent;
+
+    /**
+     * 元数据JSON，用于存储插槽的额外配置信息
+     */
+    private String metadataJson;
+
+    /**
+     * 关联问卷ID（lvye_questionnaire.id）
+     */
+    private Long questionnaireId;
 }
 
 
