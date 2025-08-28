@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.timeline.StudentTimelin
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
+import cn.iocoder.yudao.framework.common.exception.ServiceException;
 import cn.iocoder.yudao.module.system.enums.common.SexEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +35,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 @RestController
 @RequestMapping("/psychology/student-profile")
 @Validated
+@Slf4j
 public class StudentProfileController {
 
     @Resource
@@ -50,6 +53,33 @@ public class StudentProfileController {
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:create')")
     public CommonResult<Long> createStudentProfile(@Valid @RequestBody StudentProfileSaveReqVO createReqVO) {
         return success(studentProfileService.createStudentProfile(createReqVO));
+    }
+
+    @PostMapping("/import-single")
+    @Operation(summary = "导入单个学生档案")
+    @DataPermission(enable = false)
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:import')")
+    public CommonResult<StudentProfileImportSingleRespVO> importOne(@Valid @RequestBody StudentProfileSaveReqVO reqVO) {
+        try {
+            Long id = studentProfileService.createStudentProfile(reqVO);
+            return success(StudentProfileImportSingleRespVO.builder()
+                    .success(true)
+                    .message("导入成功")
+                    .id(id)
+                    .build());
+        } catch (ServiceException e) {
+            return success(StudentProfileImportSingleRespVO.builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .id(null)
+                    .build());
+        } catch (Exception e) {
+            return success(StudentProfileImportSingleRespVO.builder()
+                    .success(false)
+                    .message("导入失败")
+                    .id(null)
+                    .build());
+        }
     }
 
     @PostMapping("/update")
@@ -127,6 +157,7 @@ public class StudentProfileController {
     public CommonResult<StudentProfileImportRespVO> importStudentProfile(@RequestParam("file") MultipartFile file,
                                                                          @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
         List<StudentImportExcelVO> list = ExcelUtils.read(file, StudentImportExcelVO.class);
+        System.out.println("获取学生档案列表:"+list);
         return success(studentProfileService.importStudentProfile(list, updateSupport));
     }
 

@@ -19,6 +19,13 @@ public interface ErrorCodeConstants {
     ErrorCode STUDENT_GRADE_OR_CLASS_IS_EMPTY = new ErrorCode(1_003_001_005, "年级/班级数据不能为空！");
     ErrorCode STUDENT_GRADE_OR_CLASS_NOT_MATCH = new ErrorCode(1_003_001_005, "年级/班级数据不匹配！");
 
+    // ========== 学生档案-单条导入专用码（保持唯一且不与既有冲突） ==========
+    ErrorCode STUDENT_IMPORT_ONE_SUCCESS = new ErrorCode(1_003_001_100, "导入成功");
+    ErrorCode STUDENT_IMPORT_ONE_STUDENT_NO_DUPLICATE = new ErrorCode(1_003_001_101, "学号已存在");
+    ErrorCode STUDENT_IMPORT_ONE_GRADE_OR_CLASS_EMPTY = new ErrorCode(1_003_001_102, "年级/班级数据不能为空！");
+    ErrorCode STUDENT_IMPORT_ONE_GRADE_OR_CLASS_NOT_MATCH = new ErrorCode(1_003_001_103, "年级/班级数据不匹配！");
+    ErrorCode STUDENT_IMPORT_ONE_UNKNOWN_ERROR = new ErrorCode(1_003_001_199, "导入失败");
+
     // ========== 测评任务相关 1-003-002-000 ==========
     ErrorCode ASSESSMENT_TASK_NOT_EXISTS = new ErrorCode(1_003_002_000, "测评任务不存在");
     ErrorCode ASSESSMENT_TASK_CLOSED = new ErrorCode(1_003_002_001, "测评任务已关闭");
