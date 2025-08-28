@@ -76,6 +76,9 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
     IPage<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNoAndQuestionnaire(IPage<QuestionnaireUserVO> page
             , @Param("pageReqVO") QuestionnaireUserPageVO pageReqVO);
 
+    IPage<QuestionnaireUserVO> selectQuestionnaireUserListByTaskNo(IPage<QuestionnaireUserVO> page
+            , @Param("pageReqVO") QuestionnaireUserPageVO pageReqVO);
+
     /**
      * 统计：按年级/班级聚合
      */

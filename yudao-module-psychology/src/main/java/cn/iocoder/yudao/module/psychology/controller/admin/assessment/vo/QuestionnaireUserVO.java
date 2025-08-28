@@ -27,6 +27,18 @@ public class QuestionnaireUserVO {
     private String taskNo;
 
     /**
+     * 问卷ID
+     */
+    @Schema(description = "问卷ID")
+    private Long questionnaireId;
+
+    /**
+     * 问卷名称
+     */
+    @Schema(description = "问卷名称")
+    private String questionnaireName;
+
+    /**
      * 学号
      */
     @Schema(description = "学号")
