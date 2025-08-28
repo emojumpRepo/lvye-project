@@ -127,6 +127,7 @@ public class WebAssessmentTaskController {
                         q.setQuestionnaireType(slotVO.getQuestionnaire().getQuestionnaireType());
                         q.setTargetAudience(slotVO.getQuestionnaire().getTargetAudience());
                         q.setQuestionCount(slotVO.getQuestionnaire().getQuestionCount());
+                        q.setExternalLink(slotVO.getQuestionnaire().getExternalLink());
                         q.setEstimatedDuration(slotVO.getQuestionnaire().getEstimatedDuration());
                         q.setStatus(slotVO.getQuestionnaire().getStatus());
                         q.setCompleted(completed);

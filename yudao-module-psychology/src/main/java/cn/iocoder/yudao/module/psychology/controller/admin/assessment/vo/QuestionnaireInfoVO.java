@@ -36,4 +36,7 @@ public class QuestionnaireInfoVO {
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
+    @Schema(description = "外部链接", example = "https://www.baidu.com")
+    private String externalLink;
+
 }

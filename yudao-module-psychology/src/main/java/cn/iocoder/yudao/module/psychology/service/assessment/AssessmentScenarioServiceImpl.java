@@ -23,7 +23,7 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.*;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioQuestionnaireAccessVO;
 
 /**
  * 测评场景 Service 实现类
@@ -119,13 +119,14 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
                 // 查询问卷详情并填充
                 QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(slot.getQuestionnaireId());
                 if (questionnaire != null) {
-                    QuestionnaireInfoVO info = new QuestionnaireInfoVO();
+                    ScenarioQuestionnaireAccessVO info = new ScenarioQuestionnaireAccessVO();
                     info.setId(questionnaire.getId());
                     info.setTitle(questionnaire.getTitle());
                     info.setDescription(questionnaire.getDescription());
                     info.setQuestionnaireType(questionnaire.getQuestionnaireType());
                     info.setTargetAudience(questionnaire.getTargetAudience());
                     info.setQuestionCount(questionnaire.getQuestionCount());
+                    info.setExternalLink(questionnaire.getExternalLink());
                     info.setEstimatedDuration(questionnaire.getEstimatedDuration());
                     info.setStatus(questionnaire.getStatus());
                     slotVO.setQuestionnaire(info);
@@ -203,13 +204,14 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
                 if (slot.getQuestionnaireId() != null) {
                     cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(slot.getQuestionnaireId());
                     if (questionnaire != null) {
-                        cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO info = new cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireInfoVO();
+                        cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioQuestionnaireAccessVO info = new cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioQuestionnaireAccessVO();
                         info.setId(questionnaire.getId());
                         info.setTitle(questionnaire.getTitle());
                         info.setDescription(questionnaire.getDescription());
                         info.setQuestionnaireType(questionnaire.getQuestionnaireType());
                         info.setTargetAudience(questionnaire.getTargetAudience());
                         info.setQuestionCount(questionnaire.getQuestionCount());
+                        info.setExternalLink(questionnaire.getExternalLink());
                         info.setEstimatedDuration(questionnaire.getEstimatedDuration());
                         info.setStatus(questionnaire.getStatus());
                         slotVO.setQuestionnaire(info);

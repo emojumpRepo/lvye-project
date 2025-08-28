@@ -74,6 +74,6 @@ public class AssessmentScenarioVO {
         private Long questionnaireId;
 
         @Schema(description = "问卷详情")
-        private QuestionnaireInfoVO questionnaire;
+        private ScenarioQuestionnaireAccessVO questionnaire;
     }
 }
