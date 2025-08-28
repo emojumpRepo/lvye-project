@@ -25,6 +25,9 @@ public class ScenarioQuestionnaireAccessVO {
     @Schema(description = "题目数量", example = "20")
     private Integer questionCount;
 
+    @Schema(description = "外部链接", example = "https://www.baidu.com")
+    private String externalLink;
+
     @Schema(description = "预计耗时(分钟)", example = "10")
     private Integer estimatedDuration;
 

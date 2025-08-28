@@ -25,6 +25,9 @@ public class AppScenarioQuestionnaireAccessVO {
     @Schema(description = "题目数量")
     private Integer questionCount;
 
+    @Schema(description = "外部链接")
+    private String externalLink;
+
     @Schema(description = "预计耗时(分钟)")
     private Integer estimatedDuration;
 
