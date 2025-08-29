@@ -318,4 +318,14 @@ public class AssessmentTaskController {
         return success(questionnaireList);
     }
 
+    @PostMapping("/update-expire-status")
+    @Operation(summary = "更新过期任务状态")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> updateExpireTask() {
+        assessmentTaskService.updateExpireStatus();
+        return success(true);
+    }
+
+
+
 }
