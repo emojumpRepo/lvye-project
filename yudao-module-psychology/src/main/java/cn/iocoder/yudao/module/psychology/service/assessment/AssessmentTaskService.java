@@ -165,4 +165,9 @@ public interface AssessmentTaskService {
      */
     List<AssessmentTaskQuestionnaireDO> getTaskQuestionnairesByTaskNo(String taskNo);
 
+    /**
+     * 更新过期的测评任务状态
+     */
+    void updateExpireStatus();
+
 }

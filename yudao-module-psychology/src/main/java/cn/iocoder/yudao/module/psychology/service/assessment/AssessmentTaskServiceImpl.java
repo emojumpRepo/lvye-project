@@ -47,11 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -660,6 +656,20 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Override
     public List<AssessmentTaskQuestionnaireDO> getTaskQuestionnairesByTaskNo(String taskNo) {
         return taskQuestionnaireMapper.selectListByTaskNo(taskNo, TenantContextHolder.getTenantId());
+    }
+
+    @Override
+    public void updateExpireStatus() {
+        List<AssessmentTaskDO> taskList = assessmentTaskMapper.selectList();
+        for(AssessmentTaskDO taskDO : taskList){
+            Date startline = taskDO.getStartline();
+            Date endline = taskDO.getDeadline();
+            if(!DateUtils.isInDateRange(new Date(), startline, endline)){
+                log.info("任务：" + taskDO.getTaskNo() + "已到deadline，关闭任务");
+                taskDO.setStatus(AssessmentTaskStatusEnum.CLOSED.getStatus());
+                assessmentTaskMapper.updateStatusByTaskNo(taskDO);
+            }
+        }
     }
 
 }

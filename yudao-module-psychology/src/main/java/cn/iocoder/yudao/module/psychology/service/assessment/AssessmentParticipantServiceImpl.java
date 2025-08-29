@@ -15,7 +15,9 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireR
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
+import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultCalculateService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO;
 import com.alibaba.fastjson.JSON;
@@ -62,6 +64,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Resource
     private QuestionnaireResultEvaluateConfigMapper evaluateConfigMapper;
+
+    @Resource
+    private StudentTimelineService studentTimelineService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -128,6 +133,8 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         Long fishishQuestionnaire = questionnaireResultMapper.selectCountByTaskNoAndUserId(taskNo, userId);
         if (Long.valueOf(questionnaireIds.size()).equals(fishishQuestionnaire)) {
             userTaskMapper.updateFinishStatusByTaskNoAndUserId(taskNo, userId);
+            //登记时间线
+            studentTimelineService.saveTimeline(studentProfile.getId(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(), taskNo);
         }
     }
 
