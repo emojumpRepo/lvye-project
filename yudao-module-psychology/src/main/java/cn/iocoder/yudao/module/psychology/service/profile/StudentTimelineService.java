@@ -14,9 +14,12 @@ public interface StudentTimelineService {
 
     /**
      * 保存时间线
-     * @param studentTimelineDO
+     * @param studentProfileId
+     * @param eventType
+     * @param title
+     * @param bizId
      */
-    void saveTimeline(StudentTimelineDO studentTimelineDO);
+    void saveTimeline(Long studentProfileId, Integer eventType, String title, String bizId);
 
     /**
      * 学生档案id

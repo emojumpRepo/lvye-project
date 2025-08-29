@@ -28,7 +28,7 @@ import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUti
 @RestController
 @RequestMapping("/system/notify-message")
 @Validated
-public class NotifyMessageController {
+public class AppNotifyMessageController {
 
     @Resource
     private NotifyMessageService notifyMessageService;
@@ -87,12 +87,5 @@ public class NotifyMessageController {
         return success(BeanUtils.toBean(list, NotifyMessageRespVO.class));
     }
 
-    @GetMapping("/get-unread-count")
-    @Operation(summary = "获得当前用户的未读站内信数量")
-    @ApiAccessLog(enable = false) // 由于前端会不断轮询该接口，记录日志没有意义
-    public CommonResult<Long> getUnreadNotifyMessageCount() {
-        return success(notifyMessageService.getUnreadNotifyMessageCount(
-                getLoginUserId(), UserTypeEnum.MEMBER.getValue()));
-    }
 
 }

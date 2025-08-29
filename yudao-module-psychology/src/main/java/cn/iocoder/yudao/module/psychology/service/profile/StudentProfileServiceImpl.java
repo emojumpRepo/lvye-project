@@ -16,6 +16,7 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileRecordMapper;
 import cn.iocoder.yudao.module.psychology.enums.ContactEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
+import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.common.DataImportService;
 import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
 import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
@@ -136,7 +137,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         studentProfileRecordDO.setClassDeptId(createReqVO.getClassDeptId());
         studentProfileRecordMapper.insert(studentProfileRecordDO);
         //登记时间线
-        //....
+        studentTimelineService.saveTimeline(studentProfile.getId(), TimelineEventTypeEnum.PROFILE_CREATED.getType(), TimelineEventTypeEnum.PROFILE_CREATED.getName(), String.valueOf(studentProfile.getId()));
         // 返回
         return studentProfile.getId();
     }
