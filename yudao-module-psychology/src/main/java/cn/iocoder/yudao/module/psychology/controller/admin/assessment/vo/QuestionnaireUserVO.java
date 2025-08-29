@@ -87,4 +87,10 @@ public class QuestionnaireUserVO {
     @Schema(description = "原始得分")
     private java.math.BigDecimal score;
 
+    /**
+     * 问卷结果ID（格式：id:xxx，未完成时为null）
+     */
+    @Schema(description = "问卷结果ID（格式：id:xxx，未完成时为null）")
+    private String id;
+
 }

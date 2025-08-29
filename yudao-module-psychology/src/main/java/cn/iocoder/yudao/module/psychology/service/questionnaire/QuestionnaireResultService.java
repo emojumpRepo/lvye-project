@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.psychology.service.questionnaire;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireResultRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
 
 import jakarta.validation.Valid;
@@ -53,5 +54,13 @@ public interface QuestionnaireResultService {
      * @return
      */
     StudentAssessmentQuestionnaireDetailVO selectQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId);
+
+    /**
+     * 根据ID获取问卷结果
+     *
+     * @param id 问卷结果ID
+     * @return 问卷结果详情
+     */
+    QuestionnaireResultRespVO getQuestionnaireResult(Long id);
 
 }
