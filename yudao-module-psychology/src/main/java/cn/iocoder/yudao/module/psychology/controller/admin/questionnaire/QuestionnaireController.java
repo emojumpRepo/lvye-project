@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.Questionn
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireAccessService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireSyncService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,6 +44,9 @@ public class QuestionnaireController {
 
     @Resource
     private QuestionnaireSyncService questionnaireSyncService;
+
+    @Resource
+    private QuestionnaireResultService questionnaireResultService;
 
     @PostMapping("/create")
     @Operation(summary = "创建问卷")
@@ -356,6 +360,23 @@ public class QuestionnaireController {
         } catch (Exception e) {
             log.error("批量发布问卷失败", e);
             return success(java.util.Collections.emptyMap());
+        }
+    }
+
+    @GetMapping("/get-result")
+    @Operation(summary = "获取问卷结果")
+    @Parameter(name = "id", description = "问卷结果ID", required = true, example = "1024")
+    @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
+    public CommonResult<QuestionnaireResultRespVO> getQuestionnaireResult(@RequestParam("id") Long id) {
+        try {
+            QuestionnaireResultRespVO result = questionnaireResultService.getQuestionnaireResult(id);
+            if (result == null) {
+                return success(null);
+            }
+            return success(result);
+        } catch (Exception e) {
+            log.error("获取问卷结果失败，结果ID: {}", id, e);
+            return success(null);
         }
     }
 }

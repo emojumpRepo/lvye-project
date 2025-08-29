@@ -27,22 +27,33 @@
         s.id as student_profile_id,
         s.student_no,
         a.task_no,
-        b.questionnaire_id as questionnaire_id,
-        q.title as questionnaire_name,
+        null as questionnaire_id,
+        null as questionnaire_name,
         s.name,
         c.name as grade_name,
         d.name as class_name,
-        if(r.id is null ,0,1) as status,
-        r.completed_time as finish_time,
-        r.risk_level as risk_level,
-        r.score as score
+        case when completed_count = total_count then 1 else 0 end as status,
+        case when completed_count = total_count then latest_completed_time else null end as finish_time,
+        null as risk_level,
+        null as score
         from lvye_assessment_user_task a
-        inner join lvye_assessment_task_questionnaire b on b.task_no = a.task_no and b.deleted = 0
-        left join lvye_student_profile s on s.user_id  = a.user_id
+        left join lvye_student_profile s on s.user_id = a.user_id
         left join system_dept c ON s.grade_dept_id = c.id
         left join system_dept d ON s.class_dept_id = d.id
-        left join lvye_questionnaire_result r on r.assessment_task_no = a.task_no and r.user_id = a.user_id and r.questionnaire_id = b.questionnaire_id
-        left join lvye_questionnaire q on q.id = b.questionnaire_id and q.deleted = 0
+        left join (
+            select 
+                a.user_id,
+                count(b.questionnaire_id) as total_count,
+                count(r.id) as completed_count,
+                max(r.completed_time) as latest_completed_time
+            from lvye_assessment_user_task a
+            inner join lvye_assessment_task_questionnaire b on b.task_no = a.task_no and b.deleted = 0
+            left join lvye_questionnaire_result r on r.assessment_task_no = a.task_no 
+                and r.questionnaire_id = b.questionnaire_id 
+                and r.user_id = a.user_id
+            where a.task_no = #{pageReqVO.taskNo} and a.deleted = 0
+            group by a.user_id
+        ) stats on stats.user_id = a.user_id
         <where>
             a.deleted = 0
             AND a.task_no = #{pageReqVO.taskNo}
@@ -53,10 +64,10 @@
                 AND s.name LIKE CONCAT('%',#{pageReqVO.name},'%')
             </if>
             <if test="pageReqVO.status != null">
-                AND if(r.id is null ,0,1) = #{pageReqVO.status}
+                AND case when completed_count = total_count then 1 else 0 end = #{pageReqVO.status}
             </if>
             <if test="pageReqVO.riskLevel != null">
-                AND r.risk_level = #{pageReqVO.riskLevel}
+                AND 1 = 0
             </if>
             <if test="pageReqVO.classId != null and pageReqVO.classId.length > 0">
                 <choose>
@@ -133,14 +144,16 @@
         select
         s.id as student_profile_id,
         s.student_no,
-        a.task_no,s.name,
+        a.task_no,
+        s.name,
         q.title as questionnaire_name,
         c.name as grade_name,
         d.name as class_name,
         if(r.id is null ,0,1) as status,
         r.completed_time as finish_time,
         r.risk_level as risk_level,
-        r.score as score
+        r.score as score,
+        case when r.id is not null then r.id else null end as id
         from lvye_assessment_user_task a
         left join lvye_student_profile s on s.user_id  = a.user_id
         left join system_dept c ON s.grade_dept_id = c.id

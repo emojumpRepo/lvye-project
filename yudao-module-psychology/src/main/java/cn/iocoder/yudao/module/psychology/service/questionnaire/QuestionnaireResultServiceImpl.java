@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.psychology.service.questionnaire;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireResultRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +71,35 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
         QuestionnaireResultDO questionnaireResult = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
         StudentAssessmentQuestionnaireDetailVO questionnaireDetailVO = BeanUtils.toBean(questionnaireResult, StudentAssessmentQuestionnaireDetailVO.class);
         return questionnaireDetailVO;
+    }
+
+    @Override
+    public QuestionnaireResultRespVO getQuestionnaireResult(Long id) {
+        log.debug("根据ID获取问卷结果，结果ID: {}", id);
+        
+        // 根据ID查询问卷结果
+        QuestionnaireResultDO result = questionnaireResultMapper.selectById(id);
+        if (result == null) {
+            log.warn("未找到ID为{}的问卷结果", id);
+            return null;
+        }
+        
+        // 转换为响应VO
+        QuestionnaireResultRespVO respVO = BeanUtils.toBean(result, QuestionnaireResultRespVO.class);
+        
+        // 处理时间字段转换（从Date转换为LocalDateTime）
+        if (result.getCompletedTime() != null) {
+            respVO.setCompletedTime(result.getCompletedTime().toInstant()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDateTime());
+        }
+        if (result.getGenerationTime() != null) {
+            respVO.setGenerationTime(result.getGenerationTime().toInstant()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDateTime());
+        }
+        
+        return respVO;
     }
 
 }
