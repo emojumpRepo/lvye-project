@@ -53,6 +53,31 @@ public class StudentProfileDO extends TenantBaseDO {
     private Integer sex;
 
     /**
+     * 民族（字典：student_ethnicity）
+     */
+    private Integer ethnicity;
+
+    /**
+     * 身高（厘米）
+     */
+    private java.math.BigDecimal height;
+
+    /**
+     * 体重（千克）
+     */
+    private java.math.BigDecimal weight;
+
+    /**
+     * 实际年龄（岁）
+     */
+    private Integer actualAge;
+
+    /**
+     * 家中孩子情况（JSON格式）
+     */
+    private String familyChildrenInfo;
+
+    /**
      * 年级部门编号，关联 system_dept.id
      */
     private Long gradeDeptId;

@@ -41,6 +41,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_IMPORT_LIST_IS_EMPTY;
@@ -314,6 +316,125 @@ public class StudentProfileServiceImpl implements StudentProfileService {
             return Collections.emptyList();
         }
         return studentProfileMapper.selectListByClassIds(classIds);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateStudentBasicInfo(@Valid StudentProfileBasicInfoUpdateReqVO updateReqVO) {
+        // 校验存在
+        validateStudentProfileExists(updateReqVO.getId());
+        
+        // 构建更新对象
+        StudentProfileDO updateObj = new StudentProfileDO();
+        updateObj.setId(updateReqVO.getId());
+        updateObj.setSex(updateReqVO.getSex());
+        updateObj.setEthnicity(updateReqVO.getEthnicity());
+        updateObj.setActualAge(updateReqVO.getActualAge());
+        updateObj.setBirthDate(updateReqVO.getBirthDate());
+        updateObj.setHeight(updateReqVO.getHeight());
+        updateObj.setWeight(updateReqVO.getWeight());
+        
+        // 处理家中孩子情况JSON
+        if (updateReqVO.getFamilyChildrenInfo() != null) {
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                updateObj.setFamilyChildrenInfo(objectMapper.writeValueAsString(updateReqVO.getFamilyChildrenInfo()));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("家中孩子情况JSON序列化失败", e);
+            }
+        }
+        
+        // 更新数据库
+        studentProfileMapper.updateById(updateObj);
+    }
+
+    @Override
+    public StudentProfileCompletenessRespVO checkProfileCompleteness(Long id) {
+        // 校验存在
+        StudentProfileDO studentProfile = validateStudentProfileExists(id);
+        
+        StudentProfileCompletenessRespVO respVO = new StudentProfileCompletenessRespVO();
+        respVO.setId(id);
+        respVO.setStudentNo(studentProfile.getStudentNo());
+        respVO.setName(studentProfile.getName());
+        
+        // 定义必填字段
+        List<StudentProfileCompletenessRespVO.FieldCompletenessVO> fieldCompleteness = new ArrayList<>();
+        List<String> missingFields = new ArrayList<>();
+        
+        // 检查各字段完善情况（最后一个布尔为 JSON 字段判定）
+        checkFieldCompleteness(fieldCompleteness, missingFields, "性别", "sex", studentProfile.getSex(), false, true);
+        checkFieldCompleteness(fieldCompleteness, missingFields, "民族", "ethnicity", studentProfile.getEthnicity(), false, true);
+        checkFieldCompleteness(fieldCompleteness, missingFields, "实际年龄", "actualAge", studentProfile.getActualAge(), false, true);
+        checkFieldCompleteness(fieldCompleteness, missingFields, "出生日期", "birthDate", studentProfile.getBirthDate(), false, true);
+        checkFieldCompleteness(fieldCompleteness, missingFields, "身高", "height", studentProfile.getHeight(), false, true);
+        checkFieldCompleteness(fieldCompleteness, missingFields, "体重", "weight", studentProfile.getWeight(), false, true);
+        checkFieldCompleteness(fieldCompleteness, missingFields, "家中孩子情况", "familyChildrenInfo", studentProfile.getFamilyChildrenInfo(), true, true);
+        
+        respVO.setFieldCompleteness(fieldCompleteness);
+        respVO.setMissingFields(missingFields);
+        
+        // 仅以必填字段计算完善度百分比
+        int totalRequired = (int) fieldCompleteness.stream()
+                .filter(StudentProfileCompletenessRespVO.FieldCompletenessVO::getIsRequired)
+                .count();
+        int filledRequired = (int) fieldCompleteness.stream()
+                .filter(f -> Boolean.TRUE.equals(f.getIsRequired()) && Boolean.TRUE.equals(f.getIsFilled()))
+                .count();
+        int completenessPercentage = totalRequired > 0 ? (filledRequired * 100 / totalRequired) : 100;
+        
+        respVO.setCompletenessPercentage(completenessPercentage);
+        respVO.setIsComplete(completenessPercentage == 100);
+        
+        return respVO;
+    }
+
+    /**
+     * 检查字段完善情况
+     */
+    private void checkFieldCompleteness(List<StudentProfileCompletenessRespVO.FieldCompletenessVO> fieldCompleteness,
+                                       List<String> missingFields,
+                                       String fieldName,
+                                       String fieldCode,
+                                       Object fieldValue,
+                                       boolean isJson,
+                                       boolean isRequired) {
+        StudentProfileCompletenessRespVO.FieldCompletenessVO fieldVO = new StudentProfileCompletenessRespVO.FieldCompletenessVO();
+        fieldVO.setFieldName(fieldName);
+        fieldVO.setFieldCode(fieldCode);
+        fieldVO.setIsRequired(isRequired);
+
+        boolean isFilled = isValueFilled(fieldValue, isJson);
+        fieldVO.setIsFilled(isFilled);
+        
+        if (isFilled) {
+            fieldVO.setFieldValue(fieldValue.toString());
+        } else if (isRequired) {
+            missingFields.add(fieldName);
+        }
+        
+        fieldCompleteness.add(fieldVO);
+    }
+
+    private boolean isValueFilled(Object value, boolean isJson) {
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof CharSequence) {
+            String s = value.toString().trim();
+            if (s.isEmpty()) {
+                return false;
+            }
+            if (isJson) {
+                // 将空对象或空数组视为未填写
+                if ("{}".equals(s) || "[]".equals(s)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        // 数字、日期等非字符串类型，只要非 null 即视为已填写
+        return true;
     }
 
     /**

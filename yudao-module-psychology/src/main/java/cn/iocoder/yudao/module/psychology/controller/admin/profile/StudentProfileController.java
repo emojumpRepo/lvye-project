@@ -218,5 +218,22 @@ public class StudentProfileController {
         return success(result);
     }
 
+    @PutMapping("/update-basic-info")
+    @Operation(summary = "补充学生基本信息")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> updateStudentBasicInfo(@Valid @RequestBody StudentProfileBasicInfoUpdateReqVO updateReqVO) {
+        studentProfileService.updateStudentBasicInfo(updateReqVO);
+        return success(true);
+    }
+
+    @GetMapping("/check-completeness/{studentProfileId}")
+    @Operation(summary = "检查学生档案信息完善情况")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true)
+    @DataPermission(enable = false)
+    public CommonResult<StudentProfileCompletenessRespVO> checkProfileCompleteness(@PathVariable("studentProfileId") Long studentProfileId) {
+        StudentProfileCompletenessRespVO result = studentProfileService.checkProfileCompleteness(studentProfileId);
+        return success(result);
+    }
+
 
 }

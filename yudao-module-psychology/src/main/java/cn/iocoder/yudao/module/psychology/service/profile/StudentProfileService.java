@@ -117,4 +117,19 @@ public interface StudentProfileService {
      */
     List<StudentProfileDO> getStudentListByClassIds(Collection<Long> classIds);
 
+    /**
+     * 更新学生基本信息
+     *
+     * @param updateReqVO 更新信息
+     */
+    void updateStudentBasicInfo(@Valid StudentProfileBasicInfoUpdateReqVO updateReqVO);
+
+    /**
+     * 检查学生档案信息完善情况
+     *
+     * @param id 学生档案ID
+     * @return 信息完善情况
+     */
+    StudentProfileCompletenessRespVO checkProfileCompleteness(Long id);
+
 }
