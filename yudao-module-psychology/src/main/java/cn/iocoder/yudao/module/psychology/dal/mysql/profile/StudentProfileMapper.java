@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentCla
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfilePageReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -35,6 +36,12 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
 
     default StudentProfileDO selectByUserId(Long userId) {
         return selectOne(StudentProfileDO::getUserId, userId);
+    }
+
+    default int updateRiskLevel(Long id, Integer riskLevel) {
+        return update(new LambdaUpdateWrapper<StudentProfileDO>()
+                .eq(StudentProfileDO::getId, id)
+                .set(StudentProfileDO::getRiskLevel, riskLevel));
     }
 
     IPage<StudentProfileVO> selectPageList(IPage<StudentProfileVO> page, @Param("pageReqVO") StudentProfilePageReqVO pageReqVO);

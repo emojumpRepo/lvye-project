@@ -52,6 +52,9 @@ import java.util.stream.Collectors;
 
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static java.util.Comparator.comparingLong;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 
 /**
  * 测评任务 Service 实现类
@@ -214,7 +217,10 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             }
         }
         if (!userTaskList.isEmpty()) {
-            userTaskMapper.insertBatch(userTaskList);
+            //userTaskList去重
+            List<AssessmentUserTaskDO> uniqueuserTaskList = userTaskList.stream().collect(collectingAndThen(
+                    toCollection(() -> new TreeSet<>(comparingLong(AssessmentUserTaskDO::getUserId))), ArrayList::new));
+            userTaskMapper.insertBatch(uniqueuserTaskList);
         }
 
         // 如果需要立即发布，则发布任务

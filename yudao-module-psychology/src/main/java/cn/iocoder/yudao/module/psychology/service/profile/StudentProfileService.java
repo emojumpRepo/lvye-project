@@ -132,4 +132,11 @@ public interface StudentProfileService {
      */
     StudentProfileCompletenessRespVO checkProfileCompleteness(Long id);
 
+    /**
+     * 更新学生风险等级
+     * @param studentProfileId
+     * @param riskLevel
+     */
+    void updateStudentRiskLevel(Long studentProfileId, Integer riskLevel);
+
 }

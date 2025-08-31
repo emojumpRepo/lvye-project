@@ -53,6 +53,16 @@ public class AssessmentUserTaskDO extends TenantBaseDO {
     private Integer riskLevel;
 
     /**
+     * 评价
+     */
+    private String evaluate;
+
+    /**
+     * 建议内容
+     */
+    private String suggestions;
+
+    /**
      * 开始作答时间
      */
     private Date startTime;
