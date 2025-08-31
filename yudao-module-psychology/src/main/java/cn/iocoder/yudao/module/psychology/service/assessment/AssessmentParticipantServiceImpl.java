@@ -23,6 +23,7 @@ import cn.iocoder.yudao.module.psychology.service.questionnaire.vo.Questionnaire
 import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -128,11 +129,16 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         List<QuestionnaireResultVO> resultCalculate = resultCalculateService.resultCalculate(participateReqVO.getQuestionnaireId(),
                 userId, participateReqVO.getAnswers());
         //更新问卷结果
-        this.updateQuestionnaireResult(questionnaireResultId, participateReqVO.getQuestionnaireId(), participateReqVO.getAnswers(), resultCalculate);
+        QuestionnaireResultDO questionnaireResultDO = this.updateQuestionnaireResult(questionnaireResultId, participateReqVO.getQuestionnaireId(), participateReqVO.getAnswers(), resultCalculate);
+        //如果问卷结果有返回风险等级/评价/建议，则更新学生测评表,更新学生档案
+        if(questionnaireResultDO.getRiskLevel() != null || !StringUtils.isAnyBlank(questionnaireResultDO.getEvaluate(), questionnaireResultDO.getSuggestions())){
+            userTaskMapper.updateTaskRiskLevel(taskNo, userId, questionnaireResultDO.getRiskLevel(), questionnaireResultDO.getEvaluate(), questionnaireResultDO.getSuggestions());
+            studentProfileService.updateStudentRiskLevel(studentProfile.getId(), questionnaireResultDO.getRiskLevel());
+        }
         //判断问卷是否都已经完成,若已完成，则更新测评任务状态
         Long fishishQuestionnaire = questionnaireResultMapper.selectCountByTaskNoAndUserId(taskNo, userId);
         if (Long.valueOf(questionnaireIds.size()).equals(fishishQuestionnaire)) {
-            userTaskMapper.updateFinishStatusByTaskNoAndUserId(taskNo, userId);
+            userTaskMapper.updateFinishTask(taskNo, userId);
             //登记时间线
             studentTimelineService.saveTimeline(studentProfile.getId(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(), taskNo);
         }
@@ -165,7 +171,7 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         return resultDO.getId();
     }
 
-    private void updateQuestionnaireResult(Long questionnaireResultId, Long questionnaireId, List<WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList, List<QuestionnaireResultVO> answerResultList) {
+    private QuestionnaireResultDO updateQuestionnaireResult(Long questionnaireResultId, Long questionnaireId, List<WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList, List<QuestionnaireResultVO> answerResultList) {
         QuestionnaireResultDO resultDO = new QuestionnaireResultDO();
         resultDO.setId(questionnaireResultId);
         int score = 0;
@@ -192,6 +198,7 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         resultDO.setResultData(JSON.toJSONString(answerResultList));
         resultDO.setCompletedTime(new Date());
         questionnaireResultMapper.updateById(resultDO);
+        return resultDO;
     }
 
 }

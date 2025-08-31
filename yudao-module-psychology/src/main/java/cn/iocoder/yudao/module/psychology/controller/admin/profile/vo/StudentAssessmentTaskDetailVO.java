@@ -48,6 +48,24 @@ public class StudentAssessmentTaskDetailVO {
     private Integer status;
 
     /**
+     * 风险等级
+     */
+    @Schema(description = "风险等级")
+    private String riskLevel;
+
+    /**
+     * 评价
+     */
+    @Schema(description = "评价")
+    private String evaluate;
+
+    /**
+     * 建议内容
+     */
+    @Schema(description = "建议内容")
+    private String suggestions;
+
+    /**
      * 开始时间
      */
     @Schema(description = "开始时间")

@@ -390,6 +390,11 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         return respVO;
     }
 
+    @Override
+    public void updateStudentRiskLevel(Long studentProfileId, Integer riskLevel){
+        studentProfileMapper.updateRiskLevel(studentProfileId, riskLevel);
+    }
+
     /**
      * 检查字段完善情况
      */

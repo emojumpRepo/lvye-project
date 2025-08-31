@@ -99,6 +99,9 @@
         b.task_name,
         b.target_audience,
         b.status,
+        a.risk_level,
+        a.evaluate,
+        a.suggestions,
         b.startline,
         b.deadline
         from lvye_assessment_user_task a
@@ -115,6 +118,9 @@
         b.task_name,
         b.target_audience,
         b.status,
+        a.risk_level,
+        a.evaluate,
+        a.suggestions,
         b.startline,
         b.deadline
         from lvye_assessment_user_task a
