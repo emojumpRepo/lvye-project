@@ -1,10 +1,10 @@
 package cn.iocoder.yudao.module.psychology.service.quickreport;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportPageReqVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportSaveReqVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportHandleReqVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.*;
+import cn.iocoder.yudao.module.system.api.user.dto.QuickReportHandleUserVO;
+
+import java.util.List;
 
 /**
  * @Author: MinGoo
@@ -38,5 +38,11 @@ public interface QuickReportService {
      * @param handleReqVO
      */
     void updateQuickReport(QuickReportHandleReqVO handleReqVO);
+
+    /**
+     * 快速上报负责人选择列表
+     * @return
+     */
+    List<QuickReportHandleUserVO> selectHandleUserList(Long studentProfileId);
 
 }

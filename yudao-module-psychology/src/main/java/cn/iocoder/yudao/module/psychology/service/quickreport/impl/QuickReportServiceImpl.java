@@ -2,22 +2,34 @@ package cn.iocoder.yudao.module.psychology.service.quickreport.impl;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
-import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportPageReqVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportSaveReqVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportHandleReqVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.*;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.quickreport.QuickReportDO;
+import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.quickreport.QuickReportMapper;
+import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.QuickReportStatusEnum;
 import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.psychology.service.quickreport.QuickReportService;
+import cn.iocoder.yudao.module.system.api.user.dto.QuickReportHandleUserVO;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.UserRoleMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.TreeSet;
+
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static java.util.Comparator.comparingLong;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 
 /**
  * @Author: MinGoo
@@ -33,6 +45,15 @@ public class QuickReportServiceImpl implements QuickReportService {
 
     @Autowired
     private StudentTimelineService studentTimelineService;
+
+    @Autowired
+    private StudentProfileMapper studentProfileMapper;
+
+    @Autowired
+    private RoleMapper roleMapper;
+
+    @Autowired
+    private UserRoleMapper userRoleMapper;
 
     @Override
     public void saveQuickReport(QuickReportSaveReqVO saveReqVO){
@@ -85,6 +106,42 @@ public class QuickReportServiceImpl implements QuickReportService {
         quickReportDO.setTags(handleReqVO.getTags());
         quickReportDO.setAttachments(handleReqVO.getAttachments());
         quickReportMapper.updateById(quickReportDO);
+    }
+
+    @Override
+    public List<QuickReportHandleUserVO> selectHandleUserList(Long studentProfileId){
+        List<QuickReportHandleUserVO> resultList = new ArrayList<>();
+        StudentProfileDO studentProfileDO = studentProfileMapper.selectById(studentProfileId);
+        if (studentProfileDO == null){
+            throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
+        }
+        Long classId = studentProfileDO.getClassDeptId();
+        Long gradeId = studentProfileDO.getGradeDeptId();
+        //心理老师
+        RoleDO roleDO = roleMapper.selectByCode("psychology_teacher");
+        if (roleDO != null){
+            List<QuickReportHandleUserVO> userList =  userRoleMapper.selectUserListByRoleIdAndDeptId(roleDO.getId(), null);
+            resultList.addAll(userList);
+        }
+        //年级管理员
+        RoleDO gradeTeacherRoleDO = roleMapper.selectByCode("grade_teacher");
+        if (gradeTeacherRoleDO != null){
+            List<QuickReportHandleUserVO> userList =  userRoleMapper.selectUserListByRoleIdAndDeptId(gradeTeacherRoleDO.getId(), gradeId);
+            resultList.addAll(userList);
+        }
+        //普通老师
+        RoleDO teacherRoleDO = roleMapper.selectByCode("teacher");
+        if (teacherRoleDO != null){
+            List<QuickReportHandleUserVO> userList =  userRoleMapper.selectUserListByRoleIdAndDeptId(teacherRoleDO.getId(), gradeId);
+            resultList.addAll(userList);
+        }
+        //去重
+        if (!resultList.isEmpty()){
+            List<QuickReportHandleUserVO> uniqueResultList = resultList.stream().collect(collectingAndThen(
+                    toCollection(() -> new TreeSet<>(comparingLong(QuickReportHandleUserVO::getUserId))), ArrayList::new));
+            return uniqueResultList;
+        }
+        return resultList;
     }
 
 
