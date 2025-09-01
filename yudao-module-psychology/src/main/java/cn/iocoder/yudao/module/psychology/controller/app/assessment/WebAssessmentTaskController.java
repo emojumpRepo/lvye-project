@@ -15,6 +15,7 @@ import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppScenar
 
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppQuestionnaireResultDetailVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentParticipantService;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultService;
@@ -179,6 +180,45 @@ public class WebAssessmentTaskController {
         Long userId = WebFrameworkUtils.getLoginUserId();
         StudentAssessmentQuestionnaireDetailVO questionnaireDetail = questionnaireResultService.selectQuestionnaireResultByUnique(taskNo, questionnaireId, userId);
         return success(questionnaireDetail);
+    }
+
+    @GetMapping("/my-task-results")
+    @Operation(summary = "获得我的测评结果（按任务聚合问卷结果）")
+    @DataPermission(enable = false)
+    public CommonResult<java.util.List<AppQuestionnaireResultDetailVO>> getMyTaskResults(@RequestParam String taskNo) {
+        Long userId = WebFrameworkUtils.getLoginUserId();
+        java.util.List<StudentAssessmentQuestionnaireDetailVO> list = questionnaireResultService.selectQuestionnaireResultByTaskNoAndUserId(taskNo, userId);
+        java.util.List<AppQuestionnaireResultDetailVO> resp = new java.util.ArrayList<>();
+        if (list != null) {
+            for (StudentAssessmentQuestionnaireDetailVO src : list) {
+                AppQuestionnaireResultDetailVO d = new AppQuestionnaireResultDetailVO();
+                d.setId(src.getId());
+                d.setQuestionnaireId(src.getQuestionnaireId());
+                d.setUserId(src.getUserId());
+                d.setAssessmentTaskNo(src.getAssessmentTaskNo());
+                d.setAnswers(src.getAnswers());
+                d.setScore(src.getScore());
+                d.setRiskLevel(src.getRiskLevel());
+                d.setEvaluate(src.getEvaluate());
+                d.setSuggestions(src.getSuggestions());
+                d.setDimensionScores(src.getDimensionScores());
+                d.setResultData(src.getResultData());
+                d.setCompletedTime(src.getCompletedTime());
+                d.setGenerationStatus(src.getGenerationStatus());
+                // 解析 JSON 字符串
+                if (src.getResultData() != null && !src.getResultData().trim().isEmpty()) {
+                    try {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        d.setResultDataParsed(mapper.readValue(src.getResultData(), Object.class));
+                    } catch (Exception ignored) {
+                        // 保底：解析失败时返回原始字符串
+                        d.setResultDataParsed(null);
+                    }
+                }
+                resp.add(d);
+            }
+        }
+        return success(resp);
     }
 
 }
