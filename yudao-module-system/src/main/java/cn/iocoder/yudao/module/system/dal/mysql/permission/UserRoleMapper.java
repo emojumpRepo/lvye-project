@@ -1,9 +1,11 @@
 package cn.iocoder.yudao.module.system.dal.mysql.permission;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
+import cn.iocoder.yudao.module.system.api.user.dto.QuickReportHandleUserVO;
 import cn.iocoder.yudao.module.system.dal.dataobject.permission.UserRoleDO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -36,5 +38,11 @@ public interface UserRoleMapper extends BaseMapperX<UserRoleDO> {
     default UserRoleDO selectByUserIdAndRoleId(Long userId, Long roleId) {
         return selectOne(new LambdaQueryWrapper<UserRoleDO>().eq(UserRoleDO::getRoleId, roleId).eq(UserRoleDO::getUserId, userId));
     }
+
+    default List<UserRoleDO> selectListByRoleId(Long roleId) {
+        return selectList(UserRoleDO::getRoleId, roleId);
+    }
+
+    List<QuickReportHandleUserVO> selectUserListByRoleIdAndDeptId(@Param("roleId") Long roleId, @Param("deptId") Long deptId);
 
 }

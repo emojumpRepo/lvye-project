@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickR
 import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportHandleReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.quickreport.vo.QuickReportVO;
 import cn.iocoder.yudao.module.psychology.service.quickreport.QuickReportService;
+import cn.iocoder.yudao.module.system.api.user.dto.QuickReportHandleUserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -65,6 +68,14 @@ public class QuickReportController {
     public CommonResult<Boolean> updateQuickReport(@Valid @RequestBody QuickReportHandleReqVO updateReqVO) {
         quickReportService.updateQuickReport(updateReqVO);
         return success(true);
+    }
+
+    @GetMapping("/teacher-list")
+    @Operation(summary = "获得选择负责人列表")
+    @DataPermission(enable = false)
+    public CommonResult<List<QuickReportHandleUserVO>> selectHandleUserList(@RequestParam Long studentProfileId) {
+        List<QuickReportHandleUserVO> userList = quickReportService.selectHandleUserList(studentProfileId);
+        return success(userList);
     }
 
 }
