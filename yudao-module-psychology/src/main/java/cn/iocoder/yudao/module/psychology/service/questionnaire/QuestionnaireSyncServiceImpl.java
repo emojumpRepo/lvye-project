@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.psychology.framework.config.SurveySystemPropertie
 import cn.iocoder.yudao.module.psychology.framework.survey.client.SurveySystemClient;
 import cn.iocoder.yudao.module.psychology.framework.survey.util.SurveyDataConverter;
 import cn.iocoder.yudao.module.psychology.framework.survey.util.SurveyStatusComparator;
+import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyQuestionRespVO;
 import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyRespVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -129,6 +130,16 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
         }
         
         return result;
+    }
+
+    @Override
+    public ExternalSurveyQuestionRespVO getSurveyQuestions(String surveyId) {
+        try {
+            return surveySystemClient.getSurveyQuestion(surveyId);
+        } catch (Exception e) {
+            log.error("[getSurveyQuestions] 获取外部问卷题目失败，surveyId: {}", surveyId, e);
+            return null;
+        }
     }
 
     /**

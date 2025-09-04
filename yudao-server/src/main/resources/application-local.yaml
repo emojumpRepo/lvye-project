@@ -245,10 +245,11 @@ yudao:
     update-config-path: /api/survey/updateSimpleConf # 更新问卷配置的API路径
     publish-survey-path: /api/survey/publishSurvey # 发布问卷的API路径
     pause-survey-path: /api/survey/pausingSurvey # 暂停问卷的API路径
+    get-survey-questions-path: /api/survey/getFormattedQuestions # 获取问卷问题的API路径
     connect-timeout: 5000 # 连接超时时间（毫秒）
     read-timeout: 10000 # 读取超时时间（毫秒）
     retry-count: 3 # 重试次数
-    api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OGE4NTYzNjEzNWQyOGEzOTM1Nzc5ZGIiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU2OTUyMjcwfQ.NCr8KYQ2t9ySBkmBdTbfgBZVkPz0hNd1Qo1kZ6kZSe # 外部问卷系统的API Key
+    api-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OGE4NTYzNjEzNWQyOGEzOTM1Nzc5ZGIiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU2OTgzMTkzfQ.udZwlCVAsPfNdbFADU3eUVjtsxonO3mrkKZMphT00FU # 外部问卷系统的API Key
 
 justauth:
   enabled: true

@@ -69,7 +69,7 @@ public class AssessmentTaskController {
     @Operation(summary = "创建测评任务")
     @DataPermission(enable = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:assessment-task:create')")
-    public CommonResult<Long> createAssessmentTask(@Valid @RequestBody AssessmentTaskSaveReqVO createReqVO) {
+    public CommonResult<String> createAssessmentTask(@Valid @RequestBody AssessmentTaskSaveReqVO createReqVO) {
         return success(assessmentTaskService.createAssessmentTask(createReqVO));
     }
 

@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireSer
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireAccessService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireSyncService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultService;
+import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyQuestionRespVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +48,8 @@ public class QuestionnaireController {
 
     @Resource
     private QuestionnaireResultService questionnaireResultService;
+
+    // 通过 service 间接调用外部问卷系统
 
     @PostMapping("/create")
     @Operation(summary = "创建问卷")
@@ -301,6 +304,20 @@ public class QuestionnaireController {
         } catch (Exception e) {
             log.error("获取热门问卷排行失败", e);
             return success(java.util.Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/survey-questions")
+    @Operation(summary = "获取外部问卷题目")
+    @Parameter(name = "surveyId", description = "外部问卷ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
+    public CommonResult<ExternalSurveyQuestionRespVO> getSurveyQuestions(@RequestParam("surveyId") String surveyId) {
+        try {
+            ExternalSurveyQuestionRespVO resp = questionnaireSyncService.getSurveyQuestions(surveyId);
+            return success(resp);
+        } catch (Exception e) {
+            log.error("获取外部问卷题目失败，surveyId: {}", surveyId, e);
+            return success(null);
         }
     }
 
