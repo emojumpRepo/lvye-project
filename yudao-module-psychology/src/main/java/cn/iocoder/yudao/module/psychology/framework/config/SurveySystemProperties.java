@@ -45,9 +45,14 @@ public class SurveySystemProperties {
     private String pauseSurveyPath = "/pausingSurvey";
 
     /**
+     * 问卷题目的API路径
+     */
+    private String getSurveyQuestionsPath = "/getFormattedQuestions";
+
+    /**
      * 获取问卷系统管理员的永久token
      */
-    private String surveyAdminToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OGE4NTYzNjEzNWQyOGEzOTM1Nzc5ZGIiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU2OTUyMjcwfQ.NCr8KYQ2t9ySBkmBdTbfgBZVkPz0hNd1Qo1kZ6kZSe";
+    private String surveyAdminToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OGE4NTYzNjEzNWQyOGEzOTM1Nzc5ZGIiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU2OTgzMTkzfQ.udZwlCVAsPfNdbFADU3eUVjtsxonO3mrkKZMphT00FU";
 
     /**
      * 连接超时时间（毫秒）
@@ -97,4 +102,10 @@ public class SurveySystemProperties {
         return baseUrl + pauseSurveyPath;
     }
 
+    /**
+     * 获取完整的获取问卷题目URL
+     */
+    public String getGetQuestionUrl() {
+        return baseUrl + getSurveyQuestionsPath;
+    }
 }
