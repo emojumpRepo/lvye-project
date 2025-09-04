@@ -309,14 +309,20 @@ public class QuestionnaireController {
 
     @GetMapping("/survey-questions")
     @Operation(summary = "获取外部问卷题目")
-    @Parameter(name = "surveyId", description = "外部问卷ID", required = true)
+    @Parameter(name = "questionnaireId", description = "问卷ID", required = true)
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
-    public CommonResult<ExternalSurveyQuestionRespVO> getSurveyQuestions(@RequestParam("surveyId") String surveyId) {
+    public CommonResult<ExternalSurveyQuestionRespVO> getSurveyQuestions(@RequestParam("questionnaireId") Long questionnaireId) {
         try {
+            QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
+            if (questionnaire == null || questionnaire.getExternalId() == null || questionnaire.getExternalId().trim().isEmpty()) {
+                log.error("获取外部问卷题目失败，问卷不存在或未绑定externalId，questionnaireId: {}", questionnaireId);
+                return success(null);
+            }
+            String surveyId = questionnaire.getExternalId();
             ExternalSurveyQuestionRespVO resp = questionnaireSyncService.getSurveyQuestions(surveyId);
             return success(resp);
         } catch (Exception e) {
-            log.error("获取外部问卷题目失败，surveyId: {}", surveyId, e);
+            log.error("获取外部问卷题目失败，questionnaireId: {}", questionnaireId, e);
             return success(null);
         }
     }
