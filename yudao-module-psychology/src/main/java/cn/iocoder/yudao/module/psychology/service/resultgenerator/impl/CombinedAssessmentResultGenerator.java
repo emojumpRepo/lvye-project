@@ -29,7 +29,7 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
 
     @Override
     public boolean supports(Long assessmentId, ResultGeneratorTypeEnum type) {
-        return ResultGeneratorTypeEnum.COMBINED_ASSESSMENT.equals(type) 
+        return ResultGeneratorTypeEnum.COMBINED_ASSESSMENT.equals(type)
                && isAssessmentSupported(assessmentId);
     }
 
@@ -37,30 +37,30 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
     @SuppressWarnings("unchecked")
     public <T> T generateResult(ResultGenerationContext context) {
         log.info("开始生成组合测评结果，测评ID: {}", context.getAssessmentId());
-        
+
         // 1. 获取所有关联的问卷结果
         List<QuestionnaireResultVO> questionnaireResults = context.getQuestionnaireResults();
-        
+
         // 2. 获取组合测评配置
         AssessmentConfigVO config = getAssessmentConfig(context.getAssessmentId());
-        
+
         // 3. 计算加权综合得分
         BigDecimal combinedScore = calculateCombinedScore(questionnaireResults, config.getWeightConfig());
-        
+
         // 4. 确定综合风险等级
         RiskLevelEnum combinedRiskLevel = determineCombinedRiskLevel(questionnaireResults, config);
-        
+
         // 5. 分析风险因素
         List<RiskFactorVO> riskFactors = analyzeRiskFactors(questionnaireResults, config);
-        
+
         // 6. 生成干预建议
-        List<InterventionSuggestionVO> interventionSuggestions = 
+        List<InterventionSuggestionVO> interventionSuggestions =
                 generateInterventionSuggestions(combinedRiskLevel, riskFactors, config);
-        
+
         // 7. 生成综合报告
         String comprehensiveReport = generateComprehensiveReport(
                 questionnaireResults, combinedScore, combinedRiskLevel, riskFactors, config);
-        
+
         AssessmentResultVO result = AssessmentResultVO.builder()
                 .assessmentId(context.getAssessmentId())
                 .combinedScore(combinedScore)
@@ -70,7 +70,7 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                 .comprehensiveReport(comprehensiveReport)
                 .questionnaireResults(questionnaireResults)
                 .build();
-        
+
         log.info("组合测评结果生成完成，综合风险等级: {}", combinedRiskLevel.getName());
         return (T) result;
     }
@@ -96,6 +96,14 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
         return assessmentId != null && assessmentId > 0;
     }
 
+    private RiskLevelEnum safeRiskLevel(Integer level) {
+        if (level == null) {
+            return null;
+        }
+        RiskLevelEnum e = RiskLevelEnum.fromLevel(level);
+        return e != null ? e : RiskLevelEnum.NORMAL;
+    }
+
     /**
      * 获取测评配置
      */
@@ -104,7 +112,7 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
         // 这里返回一个模拟的配置
         AssessmentConfigVO config = new AssessmentConfigVO();
         config.setAssessmentId(assessmentId);
-        
+
         // 设置默认的权重配置
         WeightConfigVO weightConfig = new WeightConfigVO();
         Map<Long, BigDecimal> questionnaireWeights = new HashMap<>();
@@ -112,23 +120,23 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
         questionnaireWeights.put(2L, new BigDecimal("0.6"));
         weightConfig.setQuestionnaireWeights(questionnaireWeights);
         config.setWeightConfig(weightConfig);
-        
+
         // 设置综合风险等级规则
         CombinedRiskLevelRulesVO riskRules = new CombinedRiskLevelRulesVO();
         riskRules.setAlgorithmType("MAX_RISK");
         config.setCombinedRiskLevelRules(riskRules);
-        
+
         return config;
     }
 
     /**
      * 计算加权综合得分
      */
-    private BigDecimal calculateCombinedScore(List<QuestionnaireResultVO> results, 
+    private BigDecimal calculateCombinedScore(List<QuestionnaireResultVO> results,
                                             WeightConfigVO weightConfig) {
         BigDecimal totalScore = BigDecimal.ZERO;
         BigDecimal totalWeight = BigDecimal.ZERO;
-        
+
         for (QuestionnaireResultVO result : results) {
             BigDecimal weight = weightConfig.getWeight(result.getQuestionnaireId());
             if (result.getStandardScore() != null) {
@@ -136,31 +144,41 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                 totalWeight = totalWeight.add(weight);
             }
         }
-        
-        return totalWeight.compareTo(BigDecimal.ZERO) > 0 ? 
+
+        return totalWeight.compareTo(BigDecimal.ZERO) > 0 ?
                totalScore.divide(totalWeight, 2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
     }
 
     /**
      * 确定综合风险等级
      */
-    private RiskLevelEnum determineCombinedRiskLevel(List<QuestionnaireResultVO> results, 
+    private RiskLevelEnum determineCombinedRiskLevel(List<QuestionnaireResultVO> results,
                                                    AssessmentConfigVO config) {
+        // 检查是否包含PHCSS问卷（ID=12），如果有则应用PHCSS规则
+        Optional<QuestionnaireResultVO> phcssResult = results.stream()
+                .filter(r -> Long.valueOf(12L).equals(r.getQuestionnaireId()))
+                .findFirst();
+
+        if (phcssResult.isPresent()) {
+            return applyPhcssCountRule(phcssResult.get());
+        }
+
+        // 兜底：使用原有逻辑
         String algorithmType = config.getCombinedRiskLevelRules().getAlgorithmType();
-        
+
         switch (algorithmType) {
             case "MAX_RISK":
-                // 采用最高风险等级
+                // 采用最高风险等级（兼容空值）
                 return results.stream()
-                        .map(r -> RiskLevelEnum.fromLevel(r.getRiskLevel()))
+                        .map(r -> safeRiskLevel(r.getRiskLevel()))
                         .filter(Objects::nonNull)
                         .max(Comparator.comparing(RiskLevelEnum::getLevel))
                         .orElse(RiskLevelEnum.NORMAL);
-                        
+
             case "WEIGHTED_AVERAGE":
                 // 采用加权平均
                 return calculateWeightedAverageRiskLevel(results, config.getWeightConfig());
-                
+
             default:
                 return RiskLevelEnum.NORMAL;
         }
@@ -169,45 +187,53 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
     /**
      * 计算加权平均风险等级
      */
-    private RiskLevelEnum calculateWeightedAverageRiskLevel(List<QuestionnaireResultVO> results, 
+    private RiskLevelEnum calculateWeightedAverageRiskLevel(List<QuestionnaireResultVO> results,
                                                           WeightConfigVO weightConfig) {
         BigDecimal totalWeightedRisk = BigDecimal.ZERO;
         BigDecimal totalWeight = BigDecimal.ZERO;
-        
+
         for (QuestionnaireResultVO result : results) {
+            if (result.getRiskLevel() == null) {
+                continue;
+            }
             BigDecimal weight = weightConfig.getWeight(result.getQuestionnaireId());
+            if (weight == null) {
+                continue;
+            }
             BigDecimal riskValue = new BigDecimal(result.getRiskLevel());
             totalWeightedRisk = totalWeightedRisk.add(riskValue.multiply(weight));
             totalWeight = totalWeight.add(weight);
         }
-        
+
         if (totalWeight.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal averageRisk = totalWeightedRisk.divide(totalWeight, 0, RoundingMode.HALF_UP);
-            return RiskLevelEnum.fromLevel(averageRisk.intValue());
+            return safeRiskLevel(averageRisk.intValue());
         }
-        
+
         return RiskLevelEnum.NORMAL;
     }
 
     /**
      * 分析风险因素
      */
-    private List<RiskFactorVO> analyzeRiskFactors(List<QuestionnaireResultVO> results, 
+    private List<RiskFactorVO> analyzeRiskFactors(List<QuestionnaireResultVO> results,
                                                 AssessmentConfigVO config) {
         List<RiskFactorVO> riskFactors = new ArrayList<>();
-        
+
         for (QuestionnaireResultVO result : results) {
-            if (result.getRiskLevel() >= 3) { // 预警及以上等级
+            Integer rLevel = result.getRiskLevel();
+            if (rLevel != null && rLevel >= 3) { // 预警及以上等级
+                RiskLevelEnum rle = safeRiskLevel(rLevel);
                 RiskFactorVO riskFactor = RiskFactorVO.builder()
                         .factorCode("QUESTIONNAIRE_RISK_" + result.getQuestionnaireId())
                         .factorName("问卷" + result.getQuestionnaireId() + "风险因素")
-                        .riskLevel(result.getRiskLevel())
-                        .description("该问卷显示存在" + RiskLevelEnum.fromLevel(result.getRiskLevel()).getName() + "风险")
+                        .riskLevel(rLevel)
+                        .description("该问卷显示存在" + (rle != null ? rle.getName() : "异常") + "风险")
                         .sourceQuestionnaireId(result.getQuestionnaireId())
                         .build();
                 riskFactors.add(riskFactor);
             }
-            
+
             // 分析维度风险
             if (result.getDimensionScores() != null) {
                 for (Map.Entry<String, BigDecimal> entry : result.getDimensionScores().entrySet()) {
@@ -225,18 +251,18 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                 }
             }
         }
-        
+
         return riskFactors;
     }
 
     /**
      * 生成干预建议
      */
-    private List<InterventionSuggestionVO> generateInterventionSuggestions(RiskLevelEnum combinedRiskLevel, 
-                                                                          List<RiskFactorVO> riskFactors, 
+    private List<InterventionSuggestionVO> generateInterventionSuggestions(RiskLevelEnum combinedRiskLevel,
+                                                                          List<RiskFactorVO> riskFactors,
                                                                           AssessmentConfigVO config) {
         List<InterventionSuggestionVO> suggestions = new ArrayList<>();
-        
+
         // 根据综合风险等级生成基础建议
         switch (combinedRiskLevel) {
             case NORMAL:
@@ -248,7 +274,7 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                         .timeframe("持续")
                         .build());
                 break;
-                
+
             case ATTENTION:
                 suggestions.add(InterventionSuggestionVO.builder()
                         .suggestionType("PREVENTION")
@@ -258,7 +284,7 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                         .timeframe("1-2周")
                         .build());
                 break;
-                
+
             case WARNING:
                 suggestions.add(InterventionSuggestionVO.builder()
                         .suggestionType("INTERVENTION")
@@ -268,7 +294,7 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                         .timeframe("立即")
                         .build());
                 break;
-                
+
             case HIGH_RISK:
                 suggestions.add(InterventionSuggestionVO.builder()
                         .suggestionType("CRISIS_INTERVENTION")
@@ -279,7 +305,7 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                         .build());
                 break;
         }
-        
+
         // 根据具体风险因素生成针对性建议
         for (RiskFactorVO riskFactor : riskFactors) {
             if (riskFactor.getSourceDimension() != null) {
@@ -294,7 +320,7 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                 suggestions.add(suggestion);
             }
         }
-        
+
         return suggestions.stream()
                 .sorted(Comparator.comparing(InterventionSuggestionVO::getPriority).reversed())
                 .collect(Collectors.toList());
@@ -303,27 +329,36 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
     /**
      * 生成综合报告
      */
-    private String generateComprehensiveReport(List<QuestionnaireResultVO> questionnaireResults, 
-                                             BigDecimal combinedScore, 
-                                             RiskLevelEnum combinedRiskLevel, 
-                                             List<RiskFactorVO> riskFactors, 
+    private String generateComprehensiveReport(List<QuestionnaireResultVO> questionnaireResults,
+                                             BigDecimal combinedScore,
+                                             RiskLevelEnum combinedRiskLevel,
+                                             List<RiskFactorVO> riskFactors,
                                              AssessmentConfigVO config) {
         StringBuilder report = new StringBuilder();
-        
+
         report.append("综合测评结果报告\n");
         report.append("===================\n\n");
-        
+
         report.append("综合得分: ").append(combinedScore).append("\n");
         report.append("综合风险等级: ").append(combinedRiskLevel.getName()).append("\n\n");
-        
+
         report.append("各问卷结果汇总:\n");
         for (QuestionnaireResultVO result : questionnaireResults) {
             report.append("- 问卷").append(result.getQuestionnaireId())
                   .append(": 标准分 ").append(result.getStandardScore())
-                  .append(", 风险等级 ").append(RiskLevelEnum.fromLevel(result.getRiskLevel()).getName())
-                  .append("\n");
+                  .append(", 风险等级 ");
+            RiskLevelEnum rle = safeRiskLevel(result.getRiskLevel());
+            report.append(rle != null ? rle.getName() : "未知");
+            // 来自 evaluate_config 的单卷评价/建议（在问卷结果阶段已计算），这里统一拼接到综合报告
+            if (result.getLevelDescription() != null && !result.getLevelDescription().isEmpty()) {
+                report.append("，评价：").append(result.getLevelDescription());
+            }
+            if (result.getSuggestions() != null && !result.getSuggestions().isEmpty()) {
+                report.append("，建议：").append(result.getSuggestions());
+            }
+            report.append("\n");
         }
-        
+
         if (!riskFactors.isEmpty()) {
             report.append("\n识别的风险因素:\n");
             for (RiskFactorVO riskFactor : riskFactors) {
@@ -331,8 +366,123 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                       .append(": ").append(riskFactor.getDescription()).append("\n");
             }
         }
-        
+
+        // 检查是否应用了PHCSS规则，如果是则添加PHCSS专用的评价和建议
+        Optional<QuestionnaireResultVO> phcssResult = questionnaireResults.stream()
+                .filter(r -> Long.valueOf(12L).equals(r.getQuestionnaireId()))
+                .findFirst();
+
+        if (phcssResult.isPresent()) {
+            String phcssEvaluation = getPhcssEvaluation(combinedRiskLevel);
+            String phcssSuggestion = getPhcssSuggestion(combinedRiskLevel);
+
+            report.append("\n=== PHCSS测评结果解读 ===\n");
+            report.append("评价：").append(phcssEvaluation).append("\n");
+            report.append("建议：").append(phcssSuggestion).append("\n");
+        }
+
         return report.toString();
+    }
+
+    /**
+     * 应用PHCSS维度计数规则
+     * 根据PHCSS问卷6个维度低于界值的数量确定风险等级
+     */
+    private RiskLevelEnum applyPhcssCountRule(QuestionnaireResultVO phcssResult) {
+        if (phcssResult.getDimensionScores() == null || phcssResult.getDimensionScores().isEmpty()) {
+            log.warn("PHCSS问卷结果缺少维度分数，使用兜底风险等级");
+            return RiskLevelEnum.NORMAL;
+        }
+
+        // PHCSS 6个维度的阈值配置（硬编码，后续可配置化）
+        Map<String, BigDecimal> phcssThresholds = getPhcssThresholds();
+
+        // 统计低于界值的维度数量
+        int belowThresholdCount = 0;
+        Map<String, BigDecimal> dimensionScores = phcssResult.getDimensionScores();
+
+        for (Map.Entry<String, BigDecimal> entry : dimensionScores.entrySet()) {
+            String dimensionKey = entry.getKey();
+            BigDecimal score = entry.getValue();
+            BigDecimal threshold = phcssThresholds.get(dimensionKey);
+
+            if (threshold != null && score != null && score.compareTo(threshold) < 0) {
+                belowThresholdCount++;
+                log.debug("PHCSS维度 {} 得分 {} 低于界值 {}", dimensionKey, score, threshold);
+            }
+        }
+
+        log.info("PHCSS规则：共{}个维度低于界值", belowThresholdCount);
+
+        // 根据低于界值的维度数量映射风险等级
+        return mapPhcssCountToRiskLevel(belowThresholdCount);
+    }
+
+    /**
+     * 获取PHCSS 6个维度的阈值配置
+     * TODO: 后续可从数据库配置表读取
+     */
+    private Map<String, BigDecimal> getPhcssThresholds() {
+        Map<String, BigDecimal> thresholds = new HashMap<>();
+        // 硬编码PHCSS 6个维度的阈值，后续可配置化
+        thresholds.put("dimension1", new BigDecimal("50")); // 示例维度1阈值
+        thresholds.put("dimension2", new BigDecimal("50")); // 示例维度2阈值
+        thresholds.put("dimension3", new BigDecimal("50")); // 示例维度3阈值
+        thresholds.put("dimension4", new BigDecimal("50")); // 示例维度4阈值
+        thresholds.put("dimension5", new BigDecimal("50")); // 示例维度5阈值
+        thresholds.put("dimension6", new BigDecimal("50")); // 示例维度6阈值
+        return thresholds;
+    }
+
+    /**
+     * 将PHCSS低于界值的维度数量映射到风险等级
+     */
+    private RiskLevelEnum mapPhcssCountToRiskLevel(int belowThresholdCount) {
+        if (belowThresholdCount == 0) {
+            return RiskLevelEnum.NORMAL; // 无/低风险
+        } else if (belowThresholdCount <= 2) {
+            return RiskLevelEnum.ATTENTION; // 轻度风险
+        } else if (belowThresholdCount == 3) {
+            return RiskLevelEnum.WARNING; // 中度风险
+        } else { // >= 4
+            return RiskLevelEnum.HIGH_RISK; // 重度风险
+        }
+    }
+
+    /**
+     * 获取PHCSS风险等级对应的评价文本
+     */
+    private String getPhcssEvaluation(RiskLevelEnum riskLevel) {
+        switch (riskLevel) {
+            case NORMAL:
+                return "目前的心理状况良好。";
+            case ATTENTION:
+                return "目前为心理健康问题的低风险人群。";
+            case WARNING:
+                return "目前为心理健康问题的中风险人群。";
+            case HIGH_RISK:
+                return "目前为心理健康问题的高风险人群。";
+            default:
+                return "心理状况评估结果未知。";
+        }
+    }
+
+    /**
+     * 获取PHCSS风险等级对应的建议文本
+     */
+    private String getPhcssSuggestion(RiskLevelEnum riskLevel) {
+        switch (riskLevel) {
+            case NORMAL:
+                return "无需关注，可建议请继续保持良好的心境。";
+            case ATTENTION:
+                return "日常关注，可建议多做运动，参加社交活动，丰富日常生活。";
+            case WARNING:
+                return "建议多与家长、老师、同伴交流自己的感受、想法，寻求他们的帮助和情感支持；多参与户外活动，释放压力、调节情绪；关注学校心理咨询中心的活动，必要时寻求心理咨询帮助【补充说明：鉴于小学生正处于身心快速发展时期，此结果仅作部分参考，建议同时关注家长端评估结果】。";
+            case HIGH_RISK:
+                return "建议积极寻求家长、学校老师及学校心理咨询中心的帮助，必要时在家长陪同下至专科门诊寻求专业心理支持【补充说明：鉴于小学生正处于身心快速发展时期，此结果仅作部分参考，建议同时关注家长端评估结果】。";
+            default:
+                return "请咨询专业心理健康工作者获取进一步建议。";
+        }
     }
 
 }

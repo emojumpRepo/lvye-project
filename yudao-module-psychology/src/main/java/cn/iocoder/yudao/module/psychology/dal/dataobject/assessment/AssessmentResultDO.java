@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.assessment;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -18,7 +19,7 @@ import lombok.*;
 public class AssessmentResultDO extends TenantBaseDO {
 
     /** 主键 */
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /** 任务参与者编号 */
