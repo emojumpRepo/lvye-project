@@ -69,6 +69,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
     @Resource
     private StudentTimelineService studentTimelineService;
 
+    @Resource
+    private AssessmentResultService assessmentResultService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void startAssessment(String taskNo, Long userId) {
@@ -141,6 +144,12 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
             userTaskMapper.updateFinishTask(taskNo, userId);
             //登记时间线
             studentTimelineService.saveTimeline(studentProfile.getId(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(), taskNo);
+            try {
+                // 问卷全部完成后，触发组合测评结果生成并保存
+                assessmentResultService.generateAndSaveCombinedResult(taskNo, userId);
+            } catch (Exception e) {
+                log.error("生成组合测评结果失败, taskNo={}, userId={}, err={}", taskNo, userId, e.getMessage(), e);
+            }
         }
     }
 
