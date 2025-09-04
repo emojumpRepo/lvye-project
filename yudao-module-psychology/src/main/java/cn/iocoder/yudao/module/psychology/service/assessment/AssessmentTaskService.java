@@ -22,7 +22,7 @@ public interface AssessmentTaskService {
      * @param createReqVO 创建信息
      * @return 编号
      */
-    Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO);
+    String createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO);
 
     /**
      * 创建测评任务（支持立即发布）
@@ -31,7 +31,7 @@ public interface AssessmentTaskService {
      * @param isPublish 是否立即发布
      * @return 编号
      */
-    Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO, boolean isPublish);
+    String createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO, boolean isPublish);
 
     /**
      * 更新测评任务

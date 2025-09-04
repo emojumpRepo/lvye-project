@@ -99,7 +99,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO) {
+    public String createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO) {
         // 检查是否需要立即发布
         boolean isPublish = createReqVO.getIsPublish() != null && createReqVO.getIsPublish();
         return createAssessmentTask(createReqVO, isPublish);
@@ -107,7 +107,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO, boolean isPublish) {
+    public String createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO, boolean isPublish) {
         // 校验任务编号唯一性
         validateTaskNameUnique(null, createReqVO.getTaskName());
         // 插入测评信息
@@ -235,7 +235,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         }
 
         // 返回
-        return assessmentTask.getId();
+        return assessmentTask.getTaskNo();
     }
 
     @Override
