@@ -8,6 +8,7 @@ import cn.iocoder.yudao.framework.common.util.number.NumberUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
+import cn.iocoder.yudao.module.infra.api.config.ConfigApi;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.*;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskDetailVO;
@@ -28,6 +29,7 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTas
 import cn.iocoder.yudao.module.psychology.enums.AssessmentTaskStatusEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
+import cn.iocoder.yudao.module.psychology.enums.RiskLevelEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
@@ -64,6 +66,8 @@ import static java.util.stream.Collectors.toCollection;
 @Slf4j
 public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
+    static final String SCHOOL_YEAR = "school.year";
+
     @Resource
     private AssessmentTaskMapper assessmentTaskMapper;
 
@@ -96,6 +100,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Resource
     private QuestionnaireResultMapper questionnaireResultMapper;
+
+    @Resource
+    private ConfigApi configApi;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -676,6 +683,70 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
                 assessmentTaskMapper.updateStatusByTaskNo(taskDO);
             }
         }
+    }
+
+    @Override
+    public AssessmentTaskRiskLevelStatisticsVO getTaskRiskStatistics(String taskNo){
+        AssessmentTaskRiskLevelStatisticsVO assessmentTaskRiskLevelStatisticsVO = new AssessmentTaskRiskLevelStatisticsVO();
+        String schoolYear = configApi.getConfigValueByKey(SCHOOL_YEAR);
+        List<RiskLevelDeptStatisticsVO> riskLevelDeptStatisticsList = userTaskMapper.selectRiskLevelListByTaskNo(taskNo, schoolYear);
+        //计算年级/班级风险数量
+        Set<Long> gradeDeptIds = new HashSet<>();
+        List<RiskLevelStatisticsVO> totalList = new ArrayList<>();
+        //计算风险等级总数
+        List<RiskLevelGradeStatisticsVO> gradeList = new ArrayList<>();
+        Map<Integer, Integer> map = new HashMap<>();
+        map.put(RiskLevelEnum.NORMAL.getLevel(), 0);
+        map.put(RiskLevelEnum.ATTENTION.getLevel(), 0);
+        map.put(RiskLevelEnum.WARNING.getLevel(), 0);
+        map.put(RiskLevelEnum.HIGH_RISK.getLevel(), 0);
+        if (riskLevelDeptStatisticsList != null && !riskLevelDeptStatisticsList.isEmpty()){
+            for (RiskLevelDeptStatisticsVO statistics : riskLevelDeptStatisticsList){
+                if (statistics.getRiskLevel() != null){
+                    Integer count = map.get(RiskLevelEnum.fromLevel(statistics.getRiskLevel()).getLevel()) + 1;
+                    map.put(RiskLevelEnum.fromLevel(statistics.getRiskLevel()).getLevel(),count);
+                }
+                gradeDeptIds.add(statistics.getGradeDeptId());
+            }
+        }
+        //map转对象
+        for (Map.Entry<Integer, Integer> entry : map.entrySet()){
+            RiskLevelStatisticsVO riskLevelStatisticsVO = new RiskLevelStatisticsVO();
+            riskLevelStatisticsVO.setRiskLevel(entry.getKey());
+            riskLevelStatisticsVO.setCount(entry.getValue());
+            totalList.add(riskLevelStatisticsVO);
+        }
+
+        assessmentTaskRiskLevelStatisticsVO.setTotalList(totalList);
+
+        for (Long gradeDeptId : gradeDeptIds){
+            Map<Integer, Integer> gradeMap = new HashMap<>();
+            gradeMap.put(RiskLevelEnum.NORMAL.getLevel(), 0);
+            gradeMap.put(RiskLevelEnum.ATTENTION.getLevel(), 0);
+            gradeMap.put(RiskLevelEnum.WARNING.getLevel(), 0);
+            gradeMap.put(RiskLevelEnum.HIGH_RISK.getLevel(), 0);
+            List<RiskLevelStatisticsVO> riskLevelGradeStatisticsList = new ArrayList<>();
+            for (RiskLevelDeptStatisticsVO statistics : riskLevelDeptStatisticsList){
+                if (statistics.getRiskLevel() != null && statistics.getGradeDeptId().equals(gradeDeptId)){
+                    Integer count = gradeMap.get(RiskLevelEnum.fromLevel(statistics.getRiskLevel()).getLevel()) + 1;
+                    gradeMap.put(RiskLevelEnum.fromLevel(statistics.getRiskLevel()).getLevel(),count);
+                }
+            }
+            //map转对象
+            for (Map.Entry<Integer, Integer> entry : map.entrySet()){
+                RiskLevelStatisticsVO riskLevelStatisticsVO = new RiskLevelStatisticsVO();
+                riskLevelStatisticsVO.setRiskLevel(entry.getKey());
+                riskLevelStatisticsVO.setCount(entry.getValue());
+                riskLevelGradeStatisticsList.add(riskLevelStatisticsVO);
+            }
+            RiskLevelGradeStatisticsVO riskLevelGradeStatisticsVO = new RiskLevelGradeStatisticsVO();
+            riskLevelGradeStatisticsVO.setGradeDeptId(gradeDeptId);
+            riskLevelGradeStatisticsVO.setGradeName(deptService.getDept(gradeDeptId).getName());
+            riskLevelGradeStatisticsVO.setRiskLevelList(riskLevelGradeStatisticsList);
+            gradeList.add(riskLevelGradeStatisticsVO);
+        }
+        assessmentTaskRiskLevelStatisticsVO.setGradeList(gradeList);
+        return assessmentTaskRiskLevelStatisticsVO;
     }
 
 }

@@ -94,4 +94,6 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
      */
     List<cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptAggregationRow> selectAggregationByDept(@Param("taskNo") String taskNo);
 
+    List<RiskLevelDeptStatisticsVO> selectRiskLevelListByTaskNo(@Param("taskNo") String taskNo, @Param("schoolYear") String schoolYear);
+
 }
