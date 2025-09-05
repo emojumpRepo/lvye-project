@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -43,8 +44,11 @@ public class AssessmentResultDetailRespVO {
     @Schema(description = "风险因素", example = "{\"factors\": []}")
     private String riskFactors;
 
-    @Schema(description = "干预建议", example = "{\"suggestions\": []}")
+    @Schema(description = "干预建议(JSON格式)", example = "{\"suggestions\": []}")
     private String interventionSuggestions;
+
+    @Schema(description = "当前风险等级干预建议")
+    private RiskLevelInterventionVO riskLevelIntervention;
 
     @Schema(description = "生成配置版本", example = "v1.0")
     private String generationConfigVersion;
@@ -94,5 +98,20 @@ public class AssessmentResultDetailRespVO {
 
         @Schema(description = "百分位排名", example = "75.5")
         private BigDecimal percentileRank;
+
+        @Schema(description = "答题结果", example = "[{\"questionId\":1,\"answer\":\"A\"},{\"questionId\":2,\"answer\":\"B\"}]")
+        private String answers;
+
+        @Schema(description = "问卷结果ID", example = "1024")
+        private Long resultId;
+
+        @Schema(description = "完成时间")
+        private Date completedTime;
+
+        @Schema(description = "生成状态", example = "2")
+        private Integer generationStatus;
+
+        @Schema(description = "生成状态描述", example = "已生成")
+        private String generationStatusDescription;
     }
 }
