@@ -153,23 +153,14 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     }
 
     @Override
-    public AssessmentResultDetailRespVO getAssessmentResult(String taskNo, Long studentProfileId) {
-        // 1. 查询测评结果基本信息 - 通过taskNo和studentProfileId查询
-        // 注意：这里的participantId存储的是学生档案ID
-        List<AssessmentResultDO> assessmentResults = assessmentResultMapper.selectList(
-            new LambdaQueryWrapperX<AssessmentResultDO>()
-                .eq(AssessmentResultDO::getTaskNo, taskNo)  // 直接通过taskNo字段查询
-                .eq(AssessmentResultDO::getParticipantId, studentProfileId)
-                .orderByDesc(AssessmentResultDO::getCreateTime)
-                .last("LIMIT 1")
-        );
+    public AssessmentResultDetailRespVO getAssessmentResult(Long id) {
+        // 1. 根据ID查询测评结果基本信息
+        AssessmentResultDO assessmentResult = assessmentResultMapper.selectById(id);
 
-        if (assessmentResults.isEmpty()) {
-            log.warn("未找到测评结果, taskNo={}, studentProfileId={}", taskNo, studentProfileId);
+        if (assessmentResult == null) {
+            log.warn("未找到测评结果, id={}", id);
             return null;
         }
-
-        AssessmentResultDO assessmentResult = assessmentResults.get(0);
 
         // 2. 构建响应VO
         AssessmentResultDetailRespVO respVO = new AssessmentResultDetailRespVO();
@@ -223,14 +214,14 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                     questionnaireResults.add(detailVO);
                 }
             } catch (Exception e) {
-                log.error("解析问卷结果JSON失败, taskNo={}, studentProfileId={}", taskNo, studentProfileId, e);
+                log.error("解析问卷结果JSON失败, id={}", id, e);
             }
         }
 
         respVO.setQuestionnaireResults(questionnaireResults);
 
-        log.info("获取测评结果详情成功, taskNo={}, studentProfileId={}, 包含{}个问卷结果",
-            taskNo, studentProfileId, questionnaireResults.size());
+        log.info("获取测评结果详情成功, id={}, 包含{}个问卷结果",
+            id, questionnaireResults.size());
         return respVO;
     }
 

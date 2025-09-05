@@ -17,12 +17,11 @@ public interface AssessmentResultService {
     Long generateAndSaveCombinedResult(String taskNo, Long studentProfileId);
 
     /**
-     * 根据任务编号和学生档案ID获取测评结果详情
+     * 根据测评结果ID获取测评结果详情
      *
-     * @param taskNo 测评任务编号
-     * @param studentProfileId 学生档案ID
+     * @param id 测评结果ID
      * @return 测评结果详情
      */
-    AssessmentResultDetailRespVO getAssessmentResult(String taskNo, Long studentProfileId);
+    AssessmentResultDetailRespVO getAssessmentResult(Long id);
 }
 

@@ -34,12 +34,14 @@
         d.name as class_name,
         case when completed_count = total_count then 1 else 0 end as status,
         case when completed_count = total_count then latest_completed_time else null end as finish_time,
-        null as risk_level,
-        null as score
+        ar.combined_risk_level as risk_level,
+        ar.score as score,
+        ar.id as id
         from lvye_assessment_user_task a
         left join lvye_student_profile s on s.user_id = a.user_id
         left join system_dept c ON s.grade_dept_id = c.id
         left join system_dept d ON s.class_dept_id = d.id
+        left join lvye_assessment_result ar on ar.participant_id = s.id and ar.task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci
         left join (
             select 
                 a.user_id,
@@ -47,8 +49,8 @@
                 count(r.id) as completed_count,
                 max(r.completed_time) as latest_completed_time
             from lvye_assessment_user_task a
-            inner join lvye_assessment_task_questionnaire b on b.task_no = a.task_no and b.deleted = 0
-            left join lvye_questionnaire_result r on r.assessment_task_no = a.task_no 
+            inner join lvye_assessment_task_questionnaire b on b.task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci and b.deleted = 0
+            left join lvye_questionnaire_result r on r.assessment_task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci
                 and r.questionnaire_id = b.questionnaire_id 
                 and r.user_id = a.user_id
             where a.task_no = #{pageReqVO.taskNo} and a.deleted = 0
@@ -67,7 +69,7 @@
                 AND case when completed_count = total_count then 1 else 0 end = #{pageReqVO.status}
             </if>
             <if test="pageReqVO.riskLevel != null">
-                AND 1 = 0
+                AND ar.combined_risk_level = #{pageReqVO.riskLevel}
             </if>
             <if test="pageReqVO.classId != null and pageReqVO.classId.length > 0">
                 <choose>

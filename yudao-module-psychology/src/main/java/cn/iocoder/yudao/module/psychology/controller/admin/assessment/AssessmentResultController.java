@@ -64,26 +64,24 @@ public class AssessmentResultController {
     @Operation(summary = "获取测评结果详情")
     @PreAuthorize("@ss.hasPermission('psychology:assessment:query')")
     public CommonResult<AssessmentResultDetailRespVO> getAssessmentResult(
-            @Parameter(description = "测评任务编号", required = true)
-            @RequestParam @NotNull(message = "测评任务编号不能为空") String taskNo,
-            @Parameter(description = "学生档案ID", required = true)
-            @RequestParam @NotNull(message = "学生档案ID不能为空") Long studentProfileId) {
+            @Parameter(description = "测评结果ID", required = true)
+            @RequestParam @NotNull(message = "测评结果ID不能为空") Long id) {
 
-        log.info("开始获取测评结果详情，taskNo={}, studentProfileId={}", taskNo, studentProfileId);
+        log.info("开始获取测评结果详情，id={}", id);
 
         try {
-            AssessmentResultDetailRespVO result = assessmentResultService.getAssessmentResult(taskNo, studentProfileId);
+            AssessmentResultDetailRespVO result = assessmentResultService.getAssessmentResult(id);
 
             if (result != null) {
-                log.info("获取测评结果详情成功，taskNo={}, studentProfileId={}, 包含{}个问卷结果",
-                    taskNo, studentProfileId, result.getQuestionnaireResults() != null ? result.getQuestionnaireResults().size() : 0);
+                log.info("获取测评结果详情成功，id={}, 包含{}个问卷结果",
+                    id, result.getQuestionnaireResults() != null ? result.getQuestionnaireResults().size() : 0);
                 return success(result);
             } else {
-                log.warn("测评结果不存在，taskNo={}, studentProfileId={}", taskNo, studentProfileId);
+                log.warn("测评结果不存在，id={}", id);
                 return success(null);
             }
         } catch (Exception e) {
-            log.error("获取测评结果详情时发生异常，taskNo={}, studentProfileId={}", taskNo, studentProfileId, e);
+            log.error("获取测评结果详情时发生异常，id={}", id, e);
             throw e;
         }
     }
