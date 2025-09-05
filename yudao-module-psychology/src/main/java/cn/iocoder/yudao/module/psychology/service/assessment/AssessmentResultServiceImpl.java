@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.AssessmentResultDetailRespVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.RiskLevelInterventionVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentResultDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDO;
@@ -184,12 +185,20 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         respVO.setRiskFactors(assessmentResult.getRiskFactors());
         respVO.setInterventionSuggestions(assessmentResult.getInterventionSuggestions());
         respVO.setGenerationConfigVersion(assessmentResult.getGenerationConfigVersion());
+
+        // 生成当前风险等级的结构化干预建议
+        respVO.setRiskLevelIntervention(generateCurrentRiskLevelIntervention(assessmentResult.getCombinedRiskLevel()));
         respVO.setCreateTime(assessmentResult.getCreateTime());
         respVO.setUpdateTime(assessmentResult.getUpdateTime());
 
-        // 3. 解析问卷结果JSON并添加问卷名称
+        // 3. 解析问卷结果JSON并添加问卷名称和答题结果
         List<AssessmentResultDetailRespVO.QuestionnaireResultDetailVO> questionnaireResults = new ArrayList<>();
-        if (assessmentResult.getQuestionnaireResults() != null) {
+
+        // 首先获取userId用于查询原始问卷结果
+        StudentProfileDO studentProfile = studentProfileMapper.selectById(studentProfileId);
+        Long userId = studentProfile != null ? studentProfile.getUserId() : null;
+
+        if (assessmentResult.getQuestionnaireResults() != null && userId != null) {
             try {
                 List<QuestionnaireResultVO> resultVOList = JsonUtils.parseArray(
                     assessmentResult.getQuestionnaireResults(), QuestionnaireResultVO.class);
@@ -220,6 +229,19 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                         detailVO.setQuestionnaireName("未知问卷");
                     }
 
+                    // 查询原始问卷结果获取答题详情
+                    List<QuestionnaireResultDO> originalResults = questionnaireResultMapper.selectListByTaskNoAndUserId(taskNo, userId);
+                    for (QuestionnaireResultDO originalResult : originalResults) {
+                        if (originalResult.getQuestionnaireId().equals(resultVO.getQuestionnaireId())) {
+                            detailVO.setAnswers(originalResult.getAnswers());
+                            detailVO.setResultId(originalResult.getId());
+                            detailVO.setCompletedTime(originalResult.getCompletedTime());
+                            detailVO.setGenerationStatus(originalResult.getGenerationStatus());
+                            detailVO.setGenerationStatusDescription(getGenerationStatusDescription(originalResult.getGenerationStatus()));
+                            break;
+                        }
+                    }
+
                     questionnaireResults.add(detailVO);
                 }
             } catch (Exception e) {
@@ -232,6 +254,25 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         log.info("获取测评结果详情成功, taskNo={}, studentProfileId={}, 包含{}个问卷结果",
             taskNo, studentProfileId, questionnaireResults.size());
         return respVO;
+    }
+
+    /**
+     * 生成当前风险等级的结构化干预建议
+     */
+    private RiskLevelInterventionVO generateCurrentRiskLevelIntervention(Integer currentRiskLevel) {
+        List<RiskLevelInterventionVO> interventions = RiskLevelInterventionVO.getStandardInterventions();
+
+        // 找到当前风险等级对应的干预建议
+        RiskLevelInterventionVO currentIntervention = interventions.stream()
+            .filter(intervention -> intervention.getRiskLevel().equals(currentRiskLevel))
+            .findFirst()
+            .orElse(null);
+
+        if (currentIntervention != null) {
+            currentIntervention.setIsCurrent(true);
+        }
+
+        return currentIntervention;
     }
 
     /**
@@ -250,6 +291,27 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 return "预警";
             case 4:
                 return "高风险";
+            default:
+                return "未知";
+        }
+    }
+
+    /**
+     * 获取生成状态描述
+     */
+    private String getGenerationStatusDescription(Integer generationStatus) {
+        if (generationStatus == null) {
+            return "未知";
+        }
+        switch (generationStatus) {
+            case 0:
+                return "待生成";
+            case 1:
+                return "生成中";
+            case 2:
+                return "已生成";
+            case 3:
+                return "生成失败";
             default:
                 return "未知";
         }
