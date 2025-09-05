@@ -203,4 +203,18 @@
         </where>
     </select>
 
+    <select id="selectRiskLevelListByTaskNo" resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.RiskLevelDeptStatisticsVO">
+        select
+        DISTINCT
+        b.id as student_profile_id,
+        a.user_id,
+        c.grade_dept_id,
+        c.class_dept_id,
+        a.risk_level
+        from lvye_assessment_user_task a
+        left join lvye_student_profile b on a.user_id = b.user_id
+        left join lvye_student_profile_record c on c.student_no = b.student_no
+        where a.task_no= #{taskNo} and c.study_year = #{schoolYear} and a.deleted = 0
+    </select>
+
 </mapper>

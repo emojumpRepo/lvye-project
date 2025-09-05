@@ -163,10 +163,11 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         adminUserDO.setStatus(CommonStatusEnum.ENABLE.getStatus());
         adminUserMapper.updateById(adminUserDO);
         //如果有更换年级或者班级，就要插入记录表
+        String schoolYear = configApi.getConfigValueByKey(SCHOOL_YEAR);
         if (!studentProfileDO.getGradeDeptId().equals(updateReqVO.getGradeDeptId()) || !studentProfileDO.getClassDeptId().equals(updateReqVO.getClassDeptId())) {
             StudentProfileRecordDO studentProfileRecordDO = new StudentProfileRecordDO();
             studentProfileRecordDO.setStudentNo(updateReqVO.getStudentNo());
-            //        studentProfileRecordDO.setStudyYear()
+            studentProfileRecordDO.setStudyYear(schoolYear);
             studentProfileRecordDO.setGradeDeptId(updateReqVO.getGradeDeptId());
             studentProfileRecordDO.setClassDeptId(updateReqVO.getClassDeptId());
             studentProfileRecordMapper.insert(studentProfileRecordDO);

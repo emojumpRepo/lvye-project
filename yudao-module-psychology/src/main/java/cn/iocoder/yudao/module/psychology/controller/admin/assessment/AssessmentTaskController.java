@@ -326,6 +326,12 @@ public class AssessmentTaskController {
         return success(true);
     }
 
-
+    @GetMapping("/risk-level-statistics")
+    @Operation(summary = "获取任务风险等级统计信息")
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
+    @DataPermission(enable = false)
+    public CommonResult<AssessmentTaskRiskLevelStatisticsVO> getTaskStatistics(@RequestParam("taskNo") String taskNo) {
+        return success(assessmentTaskService.getTaskRiskStatistics(taskNo));
+    }
 
 }

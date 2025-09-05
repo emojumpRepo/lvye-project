@@ -170,4 +170,6 @@ public interface AssessmentTaskService {
      */
     void updateExpireStatus();
 
+    AssessmentTaskRiskLevelStatisticsVO getTaskRiskStatistics(String taskNo);
+
 }
