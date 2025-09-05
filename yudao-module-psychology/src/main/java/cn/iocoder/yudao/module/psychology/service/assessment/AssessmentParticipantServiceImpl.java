@@ -146,9 +146,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
             studentTimelineService.saveTimeline(studentProfile.getId(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(), taskNo);
             try {
                 // 问卷全部完成后，触发组合测评结果生成并保存
-                assessmentResultService.generateAndSaveCombinedResult(taskNo, userId);
+                assessmentResultService.generateAndSaveCombinedResult(taskNo, studentProfile.getId());
             } catch (Exception e) {
-                log.error("生成组合测评结果失败, taskNo={}, userId={}, err={}", taskNo, userId, e.getMessage(), e);
+                log.error("生成组合测评结果失败, taskNo={}, studentProfileId={}, err={}", taskNo, studentProfile.getId(), e.getMessage(), e);
             }
         }
     }

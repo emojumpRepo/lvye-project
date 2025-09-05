@@ -12,6 +12,8 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentResultM
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.enums.ResultGeneratorTypeEnum;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.QuestionnaireResultVO;
 
@@ -48,16 +50,26 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     @Resource
     private QuestionnaireMapper questionnaireMapper;
     @Resource
+    private StudentProfileMapper studentProfileMapper;
+    @Resource
     private ResultGeneratorFactory resultGeneratorFactory;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long generateAndSaveCombinedResult(String taskNo, Long studentProfileId) {
-        // 1) 拉取该任务下该学生的全部问卷结果
-        // 注意：这里需要通过学生档案ID查询，而不是系统用户ID
-        List<QuestionnaireResultDO> resultDOList = questionnaireResultMapper.selectListByTaskNoAndUserId(taskNo, studentProfileId);
-        log.info("查询问卷结果, taskNo={}, studentProfileId={}, 查询到{}条记录", taskNo, studentProfileId,
-                 resultDOList != null ? resultDOList.size() : 0);
+        // 1) 通过studentProfileId获取userId
+        StudentProfileDO studentProfile = studentProfileMapper.selectById(studentProfileId);
+        if (studentProfile == null) {
+            log.warn("未找到学生档案, studentProfileId={}", studentProfileId);
+            return null;
+        }
+        Long userId = studentProfile.getUserId();
+
+        // 2) 拉取该任务下该学生的全部问卷结果
+        // 注意：lvye_questionnaire_result表中存储的是userId，不是studentProfileId
+        List<QuestionnaireResultDO> resultDOList = questionnaireResultMapper.selectListByTaskNoAndUserId(taskNo, userId);
+        log.info("查询问卷结果, taskNo={}, studentProfileId={}, userId={}, 查询到{}条记录",
+                 taskNo, studentProfileId, userId, resultDOList != null ? resultDOList.size() : 0);
 
         if (resultDOList != null && !resultDOList.isEmpty()) {
             log.info("问卷结果详情:");
@@ -95,15 +107,15 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         }
 
         // 获取参与者记录，以便拿到任务信息
-        AssessmentUserTaskDO userTask = assessmentUserTaskMapper.selectByTaskNoAndUserId(taskNo, studentProfileId);
-        // participantId 直接使用学生档案ID
+        AssessmentUserTaskDO userTask = assessmentUserTaskMapper.selectByTaskNoAndUserId(taskNo, userId);
+        // participantId 使用学生档案ID
         Long participantId = studentProfileId;
 
         // 2) 调用生成器生成组合测评结果
         ResultGenerationContext context = ResultGenerationContext.builder()
                 .generationType(ResultGeneratorTypeEnum.COMBINED_ASSESSMENT)
                 .assessmentId(userTask != null ? userTask.getId() : null) // 暂以参与者任务ID代替assessmentId概念
-                .userId(studentProfileId) // 这里使用学生档案ID
+                .userId(userId) // 这里使用系统用户ID
                 .questionnaireResults(questionnaireResults)
                 .build();
         AssessmentResultVO resultVO = resultGeneratorFactory.generateResult(ResultGeneratorTypeEnum.COMBINED_ASSESSMENT, context);
