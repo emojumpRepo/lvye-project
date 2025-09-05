@@ -186,7 +186,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         List<AssessmentResultDetailRespVO.QuestionnaireResultDetailVO> questionnaireResults = new ArrayList<>();
 
         // 首先获取userId用于查询原始问卷结果
-        StudentProfileDO studentProfile = studentProfileMapper.selectById(studentProfileId);
+        StudentProfileDO studentProfile = studentProfileMapper.selectById(assessmentResult.getParticipantId());
         Long userId = studentProfile != null ? studentProfile.getUserId() : null;
 
         if (assessmentResult.getQuestionnaireResults() != null && userId != null) {
@@ -221,7 +221,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                     }
 
                     // 查询原始问卷结果获取答题详情
-                    List<QuestionnaireResultDO> originalResults = questionnaireResultMapper.selectListByTaskNoAndUserId(taskNo, userId);
+                    List<QuestionnaireResultDO> originalResults = questionnaireResultMapper.selectListByTaskNoAndUserId(assessmentResult.getTaskNo(), userId);
                     for (QuestionnaireResultDO originalResult : originalResults) {
                         if (originalResult.getQuestionnaireId().equals(resultVO.getQuestionnaireId())) {
                             detailVO.setAnswers(originalResult.getAnswers());
