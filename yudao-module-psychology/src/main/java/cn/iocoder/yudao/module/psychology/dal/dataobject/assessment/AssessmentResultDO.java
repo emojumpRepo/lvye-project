@@ -25,6 +25,9 @@ public class AssessmentResultDO extends TenantBaseDO {
     /** 任务参与者编号 */
     private Long participantId;
 
+    /** 测评任务编号 */
+    private String taskNo;
+
     /** 维度编码（如 total 为总分，其它维度按问卷定义） */
     private String dimensionCode;
 

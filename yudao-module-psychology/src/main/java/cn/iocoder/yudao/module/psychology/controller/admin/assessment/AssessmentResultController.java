@@ -1,7 +1,10 @@
 package cn.iocoder.yudao.module.psychology.controller.admin.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.AssessmentResultDetailRespVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentResultService;
+
+import jakarta.validation.constraints.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,14 +39,14 @@ public class AssessmentResultController {
     public CommonResult<Long> generateCombinedResult(
             @Parameter(description = "测评任务编号", required = true)
             @RequestParam @NotBlank(message = "测评任务编号不能为空") String taskNo,
-            @Parameter(description = "用户ID", required = true)
-            @RequestParam @NotNull(message = "用户ID不能为空") Long userId) {
-        
-        log.info("开始生成组合测评结果，taskNo={}, userId={}", taskNo, userId);
-        
+            @Parameter(description = "学生档案ID", required = true)
+            @RequestParam @NotNull(message = "学生档案ID不能为空") Long studentProfileId) {
+
+        log.info("开始生成组合测评结果，taskNo={}, studentProfileId={}", taskNo, studentProfileId);
+
         try {
-            Long resultId = assessmentResultService.generateAndSaveCombinedResult(taskNo, userId);
-            
+            Long resultId = assessmentResultService.generateAndSaveCombinedResult(taskNo, studentProfileId);
+
             if (resultId != null) {
                 log.info("组合测评结果生成成功，resultId={}", resultId);
                 return success(resultId);
@@ -52,10 +55,37 @@ public class AssessmentResultController {
                 return success(null);
             }
         } catch (Exception e) {
-            log.error("生成组合测评结果时发生异常，taskNo={}, userId={}", taskNo, userId, e);
+            log.error("生成组合测评结果时发生异常，taskNo={}, studentProfileId={}", taskNo, studentProfileId, e);
             throw e;
         }
     }
 
+    @GetMapping("/get")
+    @Operation(summary = "获取测评结果详情")
+    @PreAuthorize("@ss.hasPermission('psychology:assessment:query')")
+    public CommonResult<AssessmentResultDetailRespVO> getAssessmentResult(
+            @Parameter(description = "测评任务编号", required = true)
+            @RequestParam @NotNull(message = "测评任务编号不能为空") String taskNo,
+            @Parameter(description = "学生档案ID", required = true)
+            @RequestParam @NotNull(message = "学生档案ID不能为空") Long studentProfileId) {
+
+        log.info("开始获取测评结果详情，taskNo={}, studentProfileId={}", taskNo, studentProfileId);
+
+        try {
+            AssessmentResultDetailRespVO result = assessmentResultService.getAssessmentResult(taskNo, studentProfileId);
+
+            if (result != null) {
+                log.info("获取测评结果详情成功，taskNo={}, studentProfileId={}, 包含{}个问卷结果",
+                    taskNo, studentProfileId, result.getQuestionnaireResults() != null ? result.getQuestionnaireResults().size() : 0);
+                return success(result);
+            } else {
+                log.warn("测评结果不存在，taskNo={}, studentProfileId={}", taskNo, studentProfileId);
+                return success(null);
+            }
+        } catch (Exception e) {
+            log.error("获取测评结果详情时发生异常，taskNo={}, studentProfileId={}", taskNo, studentProfileId, e);
+            throw e;
+        }
+    }
 
 }

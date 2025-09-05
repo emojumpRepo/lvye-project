@@ -2,13 +2,21 @@ package cn.iocoder.yudao.module.psychology.service.assessment;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.AssessmentResultDetailRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentResultDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentResultMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
 import cn.iocoder.yudao.module.psychology.enums.ResultGeneratorTypeEnum;
+import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.QuestionnaireResultVO;
+
+import java.util.ArrayList;
+import java.util.List;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.ResultGenerationContext;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.ResultGeneratorFactory;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.AssessmentResultVO;
@@ -38,14 +46,17 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     @Resource
     private AssessmentResultMapper assessmentResultMapper;
     @Resource
+    private QuestionnaireMapper questionnaireMapper;
+    @Resource
     private ResultGeneratorFactory resultGeneratorFactory;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long generateAndSaveCombinedResult(String taskNo, Long userId) {
-        // 1) 拉取该任务下该用户的全部问卷结果
-        List<QuestionnaireResultDO> resultDOList = questionnaireResultMapper.selectListByTaskNoAndUserId(taskNo, userId);
-        log.info("查询问卷结果, taskNo={}, userId={}, 查询到{}条记录", taskNo, userId,
+    public Long generateAndSaveCombinedResult(String taskNo, Long studentProfileId) {
+        // 1) 拉取该任务下该学生的全部问卷结果
+        // 注意：这里需要通过学生档案ID查询，而不是系统用户ID
+        List<QuestionnaireResultDO> resultDOList = questionnaireResultMapper.selectListByTaskNoAndUserId(taskNo, studentProfileId);
+        log.info("查询问卷结果, taskNo={}, studentProfileId={}, 查询到{}条记录", taskNo, studentProfileId,
                  resultDOList != null ? resultDOList.size() : 0);
 
         if (resultDOList != null && !resultDOList.isEmpty()) {
@@ -59,7 +70,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         }
 
         if (CollUtil.isEmpty(resultDOList)) {
-            log.info("无问卷结果可用于生成测评结果, taskNo={}, userId={}", taskNo, userId);
+            log.info("无问卷结果可用于生成测评结果, taskNo={}, studentProfileId={}", taskNo, studentProfileId);
             return null;
         }
 
@@ -83,15 +94,16 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
             questionnaireResults.add(vo);
         }
 
-        // 获取参与者记录，以便拿到 participantId
-        AssessmentUserTaskDO userTask = assessmentUserTaskMapper.selectByTaskNoAndUserId(taskNo, userId);
-        Long participantId = userTask != null ? userTask.getId() : null;
+        // 获取参与者记录，以便拿到任务信息
+        AssessmentUserTaskDO userTask = assessmentUserTaskMapper.selectByTaskNoAndUserId(taskNo, studentProfileId);
+        // participantId 直接使用学生档案ID
+        Long participantId = studentProfileId;
 
         // 2) 调用生成器生成组合测评结果
         ResultGenerationContext context = ResultGenerationContext.builder()
                 .generationType(ResultGeneratorTypeEnum.COMBINED_ASSESSMENT)
                 .assessmentId(userTask != null ? userTask.getId() : null) // 暂以参与者任务ID代替assessmentId概念
-                .userId(userId)
+                .userId(studentProfileId) // 这里使用学生档案ID
                 .questionnaireResults(questionnaireResults)
                 .build();
         AssessmentResultVO resultVO = resultGeneratorFactory.generateResult(ResultGeneratorTypeEnum.COMBINED_ASSESSMENT, context);
@@ -99,6 +111,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         // 3) 将 VO 映射到 DO（综合报告由生成器统一拼接 evaluate_config 结果）
         AssessmentResultDO save = AssessmentResultDO.builder()
                 .participantId(participantId)
+                .taskNo(taskNo)  // 添加taskNo字段
                 .dimensionCode("total")
                 .score(resultVO.getCombinedScore() == null ? null : resultVO.getCombinedScore().intValue())
                 .combinedRiskLevel(resultVO.getCombinedRiskLevel())
@@ -109,8 +122,13 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 .generationConfigVersion(context.getConfigVersion())
                 .build();
 
-        // 4) 幂等保存：根据 (participantId, dimensionCode) 存在则更新，否则插入
-        AssessmentResultDO exist = assessmentResultMapper.selectByParticipantAndDim(participantId, save.getDimensionCode());
+        // 4) 幂等保存：根据 (taskNo, participantId, dimensionCode) 存在则更新，否则插入
+        AssessmentResultDO exist = assessmentResultMapper.selectOne(
+            new LambdaQueryWrapperX<AssessmentResultDO>()
+                .eq(AssessmentResultDO::getTaskNo, taskNo)
+                .eq(AssessmentResultDO::getParticipantId, participantId)
+                .eq(AssessmentResultDO::getDimensionCode, save.getDimensionCode())
+        );
         if (exist == null) {
             assessmentResultMapper.insert(save);
             log.info("已保存组合测评结果(新增), participantId={}, id={}", participantId, save.getId());
@@ -120,6 +138,109 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
             log.info("已保存组合测评结果(更新), participantId={}, id={}", participantId, save.getId());
         }
         return save.getId();
+    }
+
+    @Override
+    public AssessmentResultDetailRespVO getAssessmentResult(String taskNo, Long studentProfileId) {
+        // 1. 查询测评结果基本信息 - 通过taskNo和studentProfileId查询
+        // 注意：这里的participantId存储的是学生档案ID
+        List<AssessmentResultDO> assessmentResults = assessmentResultMapper.selectList(
+            new LambdaQueryWrapperX<AssessmentResultDO>()
+                .eq(AssessmentResultDO::getTaskNo, taskNo)  // 直接通过taskNo字段查询
+                .eq(AssessmentResultDO::getParticipantId, studentProfileId)
+                .orderByDesc(AssessmentResultDO::getCreateTime)
+                .last("LIMIT 1")
+        );
+
+        if (assessmentResults.isEmpty()) {
+            log.warn("未找到测评结果, taskNo={}, studentProfileId={}", taskNo, studentProfileId);
+            return null;
+        }
+
+        AssessmentResultDO assessmentResult = assessmentResults.get(0);
+
+        // 2. 构建响应VO
+        AssessmentResultDetailRespVO respVO = new AssessmentResultDetailRespVO();
+        respVO.setId(assessmentResult.getId());
+        respVO.setParticipantId(assessmentResult.getParticipantId());
+        respVO.setTaskNo(assessmentResult.getTaskNo());
+        respVO.setDimensionCode(assessmentResult.getDimensionCode());
+        respVO.setScore(assessmentResult.getScore());
+        respVO.setSuggestion(assessmentResult.getSuggestion());
+        respVO.setCombinedRiskLevel(assessmentResult.getCombinedRiskLevel());
+        respVO.setRiskLevelDescription(getRiskLevelDescription(assessmentResult.getCombinedRiskLevel()));
+        respVO.setRiskFactors(assessmentResult.getRiskFactors());
+        respVO.setInterventionSuggestions(assessmentResult.getInterventionSuggestions());
+        respVO.setGenerationConfigVersion(assessmentResult.getGenerationConfigVersion());
+        respVO.setCreateTime(assessmentResult.getCreateTime());
+        respVO.setUpdateTime(assessmentResult.getUpdateTime());
+
+        // 3. 解析问卷结果JSON并添加问卷名称
+        List<AssessmentResultDetailRespVO.QuestionnaireResultDetailVO> questionnaireResults = new ArrayList<>();
+        if (assessmentResult.getQuestionnaireResults() != null) {
+            try {
+                List<QuestionnaireResultVO> resultVOList = JsonUtils.parseArray(
+                    assessmentResult.getQuestionnaireResults(), QuestionnaireResultVO.class);
+
+                for (QuestionnaireResultVO resultVO : resultVOList) {
+                    AssessmentResultDetailRespVO.QuestionnaireResultDetailVO detailVO =
+                        new AssessmentResultDetailRespVO.QuestionnaireResultDetailVO();
+
+                    detailVO.setQuestionnaireId(resultVO.getQuestionnaireId());
+                    detailVO.setRawScore(resultVO.getRawScore());
+                    detailVO.setStandardScore(resultVO.getStandardScore());
+                    detailVO.setRiskLevel(resultVO.getRiskLevel());
+                    detailVO.setLevelDescription(resultVO.getLevelDescription());
+                    detailVO.setSuggestions(resultVO.getSuggestions());
+                    detailVO.setReportContent(resultVO.getReportContent());
+                    detailVO.setPercentileRank(resultVO.getPercentileRank());
+
+                    // 转换维度得分为JSON字符串
+                    if (resultVO.getDimensionScores() != null) {
+                        detailVO.setDimensionScores(JsonUtils.toJsonString(resultVO.getDimensionScores()));
+                    }
+
+                    // 获取问卷名称
+                    QuestionnaireDO questionnaire = questionnaireMapper.selectById(resultVO.getQuestionnaireId());
+                    if (questionnaire != null) {
+                        detailVO.setQuestionnaireName(questionnaire.getTitle());
+                    } else {
+                        detailVO.setQuestionnaireName("未知问卷");
+                    }
+
+                    questionnaireResults.add(detailVO);
+                }
+            } catch (Exception e) {
+                log.error("解析问卷结果JSON失败, taskNo={}, studentProfileId={}", taskNo, studentProfileId, e);
+            }
+        }
+
+        respVO.setQuestionnaireResults(questionnaireResults);
+
+        log.info("获取测评结果详情成功, taskNo={}, studentProfileId={}, 包含{}个问卷结果",
+            taskNo, studentProfileId, questionnaireResults.size());
+        return respVO;
+    }
+
+    /**
+     * 获取风险等级描述
+     */
+    private String getRiskLevelDescription(Integer riskLevel) {
+        if (riskLevel == null) {
+            return "未知";
+        }
+        switch (riskLevel) {
+            case 1:
+                return "正常";
+            case 2:
+                return "关注";
+            case 3:
+                return "预警";
+            case 4:
+                return "高风险";
+            default:
+                return "未知";
+        }
     }
 }
 
