@@ -18,6 +18,7 @@ public interface ErrorCodeConstants {
     ErrorCode STUDENT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_001_005, "导入用户数据不能为空！");
     ErrorCode STUDENT_GRADE_OR_CLASS_IS_EMPTY = new ErrorCode(1_003_001_005, "年级/班级数据不能为空！");
     ErrorCode STUDENT_GRADE_OR_CLASS_NOT_MATCH = new ErrorCode(1_003_001_005, "年级/班级数据不匹配！");
+    ErrorCode STUDENT_NAME_NOT_MATCH = new ErrorCode(1_003_001_006, "学生姓名与学号不匹配");
 
     // ========== 学生档案-单条导入专用码（保持唯一且不与既有冲突） ==========
     ErrorCode STUDENT_IMPORT_ONE_SUCCESS = new ErrorCode(1_003_001_100, "导入成功");

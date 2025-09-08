@@ -19,9 +19,12 @@ public class WebAuthLoginReqVO extends CaptchaVerificationReqVO {
     @NotBlank(message = "学号或手机号不能为空")
     private String username;
 
-    @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "123456")
-    @NotBlank(message = "密码不能为空")
+    @Schema(description = "密码（当配置开启密码登录时必填）", example = "123456")
     private String password;
+
+    @Schema(description = "学生姓名", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
+    @NotBlank(message = "学生姓名不能为空")
+    private String studentName;
 
     @Schema(description = "是否为家长登录", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
     @InEnum(LoginTypeEnum.class)

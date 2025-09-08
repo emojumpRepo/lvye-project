@@ -12,9 +12,7 @@ import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.system.api.logger.dto.LoginLogCreateReqDTO;
 import cn.iocoder.yudao.module.system.api.social.dto.SocialUserBindReqDTO;
-import cn.iocoder.yudao.module.system.controller.admin.auth.vo.AuthLoginRespVO;
 import cn.iocoder.yudao.module.system.controller.admin.auth.vo.CaptchaVerificationReqVO;
-import cn.iocoder.yudao.module.system.convert.auth.AuthConvert;
 import cn.iocoder.yudao.module.system.dal.dataobject.oauth2.OAuth2AccessTokenDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
@@ -84,6 +82,11 @@ public class WebAuthServiceImpl implements WebAuthService {
     @Resource
     private StudentProfileService studentProfileService;
 
+    @Resource
+    private cn.iocoder.yudao.module.infra.api.config.ConfigApi configApi;
+
+    private static final String KEY_ENABLE_PASSWORD_LOGIN = "student.enablePasswordLogin";
+
 
     @Override
     public WebAuthLoginRespVO login(WebAuthLoginReqVO reqVO) {
@@ -94,11 +97,34 @@ public class WebAuthServiceImpl implements WebAuthService {
             log.warn("学生档案不存在，学号: {}, 租户ID: {}", reqVO.getUsername(), TenantContextHolder.getTenantId());
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
+        // 校验学生姓名是否匹配：请求姓名需同时匹配档案姓名与账号昵称
+        AdminUserDO account = userMapper.selectByUsername(reqVO.getUsername());
+        String reqName = reqVO.getStudentName();
+        boolean accountMatch = account != null && reqName != null && reqName.equals(account.getNickname());
+        if (!accountMatch) {
+            log.warn("学生姓名不匹配，学号: {}, 请求姓名: {}, 档案姓名: {}, 账号昵称: {}",
+                    reqVO.getUsername(), reqName, studentProfile.getName(), account == null ? null : account.getNickname());
+            throw exception(ErrorCodeConstants.STUDENT_NAME_NOT_MATCH);
+        }
         log.info("找到学生档案: {}", studentProfile.getId());
         // 校验验证码
         validateCaptcha(reqVO);
-        // 使用账号密码，进行登录
-        AdminUserDO user = authService.authenticate(reqVO.getUsername(), reqVO.getPassword());
+        // 根据配置决定是否使用密码登录
+        boolean enablePwdLogin = Boolean.parseBoolean(configApi.getConfigValueByKey(KEY_ENABLE_PASSWORD_LOGIN));
+        AdminUserDO user;
+        if (enablePwdLogin) {
+            // 要求密码，进行账号密码认证
+            user = authService.authenticate(reqVO.getUsername(), reqVO.getPassword());
+        } else {
+            // 不要求密码，仅校验用户存在和状态
+            user = userMapper.selectByUsername(reqVO.getUsername());
+            if (user == null) {
+                throw exception(cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_NOT_EXISTS);
+            }
+            if (cn.iocoder.yudao.framework.common.enums.CommonStatusEnum.DISABLE.getStatus().equals(user.getStatus())) {
+                throw exception(cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_IS_DISABLE, user.getNickname());
+            }
+        }
         // 如果 socialType 非空，说明需要绑定社交用户
         if (reqVO.getSocialType() != null) {
             socialUserService.bindSocialUser(new SocialUserBindReqDTO(user.getId(), getUserType().getValue(),
