@@ -230,7 +230,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             // 生成新的字段值
             String newTitle = StringUtils.hasText(externalSurvey.getTitle()) ? externalSurvey.getTitle() : "未命名问卷";
             String newDescription = SurveyDataConverter.generateDescription(externalSurvey);
-            String newExternalLink = SurveyDataConverter.generateSurveyLink(externalSurvey, surveySystemProperties.getBaseUrl());
+            String newExternalLink = externalSurvey.getSurveyPath();
             Integer newQuestionnaireType = SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType());
             Integer newStatus = SurveyDataConverter.convertStatus(externalSurvey);
             Integer newTargetAudience = SurveyDataConverter.generateTargetAudience(externalSurvey);
