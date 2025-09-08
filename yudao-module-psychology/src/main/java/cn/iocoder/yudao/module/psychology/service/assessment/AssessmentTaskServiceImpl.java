@@ -726,14 +726,22 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             gradeMap.put(RiskLevelEnum.WARNING.getLevel(), 0);
             gradeMap.put(RiskLevelEnum.HIGH_RISK.getLevel(), 0);
             List<RiskLevelStatisticsVO> riskLevelGradeStatisticsList = new ArrayList<>();
+            // 按年级统计
             for (RiskLevelDeptStatisticsVO statistics : riskLevelDeptStatisticsList){
                 if (statistics.getRiskLevel() != null && statistics.getGradeDeptId().equals(gradeDeptId)){
                     Integer count = gradeMap.get(RiskLevelEnum.fromLevel(statistics.getRiskLevel()).getLevel()) + 1;
                     gradeMap.put(RiskLevelEnum.fromLevel(statistics.getRiskLevel()).getLevel(),count);
                 }
             }
-            //map转对象
-            for (Map.Entry<Integer, Integer> entry : map.entrySet()){
+            // 参与总人数（该年级）
+            int gradeTotal = 0;
+            for (RiskLevelDeptStatisticsVO statistics : riskLevelDeptStatisticsList){
+                if (statistics.getGradeDeptId() != null && statistics.getGradeDeptId().equals(gradeDeptId)) {
+                    gradeTotal++;
+                }
+            }
+            // map转对象（该年级）
+            for (Map.Entry<Integer, Integer> entry : gradeMap.entrySet()){
                 RiskLevelStatisticsVO riskLevelStatisticsVO = new RiskLevelStatisticsVO();
                 riskLevelStatisticsVO.setRiskLevel(entry.getKey());
                 riskLevelStatisticsVO.setCount(entry.getValue());
@@ -742,7 +750,57 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             RiskLevelGradeStatisticsVO riskLevelGradeStatisticsVO = new RiskLevelGradeStatisticsVO();
             riskLevelGradeStatisticsVO.setGradeDeptId(gradeDeptId);
             riskLevelGradeStatisticsVO.setGradeName(deptService.getDept(gradeDeptId).getName());
+            riskLevelGradeStatisticsVO.setTotal(gradeTotal);
             riskLevelGradeStatisticsVO.setRiskLevelList(riskLevelGradeStatisticsList);
+            // 统计班级列表
+            Map<Long, Map<Integer, Integer>> classRiskMap = new HashMap<>();
+            Map<Long, Integer> classTotalMap = new HashMap<>();
+            Set<Long> classIds = new HashSet<>();
+            for (RiskLevelDeptStatisticsVO statistics : riskLevelDeptStatisticsList){
+                if (statistics.getGradeDeptId() != null && statistics.getGradeDeptId().equals(gradeDeptId)) {
+                    Long classId = statistics.getClassDeptId();
+                    classIds.add(classId);
+                    classTotalMap.put(classId, classTotalMap.getOrDefault(classId, 0) + 1);
+                    if (statistics.getRiskLevel() != null) {
+                        Map<Integer, Integer> cr = classRiskMap.computeIfAbsent(classId, k -> {
+                            Map<Integer, Integer> init = new HashMap<>();
+                            init.put(RiskLevelEnum.NORMAL.getLevel(), 0);
+                            init.put(RiskLevelEnum.ATTENTION.getLevel(), 0);
+                            init.put(RiskLevelEnum.WARNING.getLevel(), 0);
+                            init.put(RiskLevelEnum.HIGH_RISK.getLevel(), 0);
+                            return init;
+                        });
+                        Integer c = cr.get(RiskLevelEnum.fromLevel(statistics.getRiskLevel()).getLevel()) + 1;
+                        cr.put(RiskLevelEnum.fromLevel(statistics.getRiskLevel()).getLevel(), c);
+                    }
+                }
+            }
+            List<RiskLevelClassStatisticsVO> classList = new ArrayList<>();
+            for (Long classId : classIds) {
+                Map<Integer, Integer> cr = classRiskMap.getOrDefault(classId, new HashMap<>());
+                if (cr.isEmpty()) {
+                    cr.put(RiskLevelEnum.NORMAL.getLevel(), 0);
+                    cr.put(RiskLevelEnum.ATTENTION.getLevel(), 0);
+                    cr.put(RiskLevelEnum.WARNING.getLevel(), 0);
+                    cr.put(RiskLevelEnum.HIGH_RISK.getLevel(), 0);
+                }
+                List<RiskLevelStatisticsVO> clsRiskList = new ArrayList<>();
+                for (Map.Entry<Integer, Integer> entry : cr.entrySet()) {
+                    RiskLevelStatisticsVO r = new RiskLevelStatisticsVO();
+                    r.setRiskLevel(entry.getKey());
+                    r.setCount(entry.getValue());
+                    clsRiskList.add(r);
+                }
+                RiskLevelClassStatisticsVO cls = new RiskLevelClassStatisticsVO();
+                cls.setClassDeptId(classId);
+                DeptDO classDept = deptService.getDept(classId);
+                cls.setClassName(classDept != null ? classDept.getName() : "未知班级");
+                cls.setTotal(classTotalMap.getOrDefault(classId, 0));
+                cls.setRiskLevelList(clsRiskList);
+                classList.add(cls);
+            }
+            // 挂到年级节点
+            riskLevelGradeStatisticsVO.setClassList(classList);
             gradeList.add(riskLevelGradeStatisticsVO);
         }
         assessmentTaskRiskLevelStatisticsVO.setGradeList(gradeList);

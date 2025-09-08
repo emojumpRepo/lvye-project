@@ -14,7 +14,13 @@ public class RiskLevelGradeStatisticsVO {
     @Schema(description = "年级名称", requiredMode = Schema.RequiredMode.REQUIRED)
     private String gradeName;
 
+    @Schema(description = "参与总人数", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer total;
+
     @Schema(description = "年级风险分布", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<RiskLevelStatisticsVO> riskLevelList;
+
+    @Schema(description = "班级列表", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<RiskLevelClassStatisticsVO> classList;
 
 }

@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
+
 import jakarta.annotation.Resource;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +31,9 @@ public class AssessmentScenarioServiceImplTest extends BaseDbUnitTest {
     private AssessmentScenarioMapper scenarioMapper;
 
     @Resource
+    @MockitoBean
+    private QuestionnaireService questionnaireService;
+
     private AssessmentScenarioSlotMapper scenarioSlotMapper;
 
     @Test
