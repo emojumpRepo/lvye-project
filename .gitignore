@@ -66,3 +66,5 @@ application-my.yaml
 .env*
 
 node_modules/
+
+lvye-project-new/
