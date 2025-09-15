@@ -6,10 +6,10 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.*;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisEventAssessmentDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisEventProcessDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisInterventionDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventAssessmentMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventProcessMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisInterventionMapper;
@@ -111,7 +111,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     @Transactional(rollbackFor = Exception.class)
     public void adjustStudentLevel(Long studentProfileId, StudentLevelAdjustReqVO adjustReqVO) {
         // 验证学生是否存在
-        StudentProfileDO student = studentProfileService.getStudentProfile(studentProfileId);
+        StudentProfileVO student = studentProfileService.getStudentProfile(studentProfileId);
         if (student == null) {
             throw ServiceExceptionUtil.exception(STUDENT_PROFILE_NOT_EXISTS);
         }
@@ -125,7 +125,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     @Transactional(rollbackFor = Exception.class)
     public Long createCrisisEvent(CrisisEventCreateReqVO createReqVO) {
         // 验证学生是否存在
-        StudentProfileDO student = studentProfileService.getStudentProfile(createReqVO.getStudentProfileId());
+        StudentProfileVO student = studentProfileService.getStudentProfile(createReqVO.getStudentProfileId());
         if (student == null) {
             throw ServiceExceptionUtil.exception(STUDENT_PROFILE_NOT_EXISTS);
         }
@@ -388,9 +388,15 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             .map(CrisisInterventionDO::getStudentProfileId)
             .distinct()
             .collect(Collectors.toList());
-        List<StudentProfileDO> students = studentProfileService.getStudentProfileList(studentIds);
-        Map<Long, StudentProfileDO> studentMap = students.stream()
-            .collect(Collectors.toMap(StudentProfileDO::getId, s -> s));
+        
+        // 逐个获取学生信息（因为现有接口不支持批量查询）
+        Map<Long, StudentProfileVO> studentMap = new HashMap<>();
+        for (Long studentId : studentIds) {
+            StudentProfileVO student = studentProfileService.getStudentProfile(studentId);
+            if (student != null) {
+                studentMap.put(studentId, student);
+            }
+        }
 
         // 批量获取用户信息
         Set<Long> userIds = new HashSet<>();
@@ -405,10 +411,10 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             CrisisEventRespVO vo = BeanUtils.toBean(event, CrisisEventRespVO.class);
 
             // 填充学生信息
-            StudentProfileDO student = studentMap.get(event.getStudentProfileId());
+            StudentProfileVO student = studentMap.get(event.getStudentProfileId());
             if (student != null) {
                 vo.setStudentName(student.getName());
-                vo.setStudentNumber(student.getStudentNumber());
+                vo.setStudentNumber(student.getStudentNo());
                 vo.setClassName(student.getClassName());
             }
 

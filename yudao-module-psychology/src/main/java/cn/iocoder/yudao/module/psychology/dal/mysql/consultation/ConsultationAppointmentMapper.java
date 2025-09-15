@@ -38,13 +38,10 @@ public interface ConsultationAppointmentMapper extends BaseMapperX<ConsultationA
     }
 
     default boolean hasTimeConflict(Long counselorUserId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
-        LambdaQueryWrapperX<ConsultationAppointmentDO> wrapper = new LambdaQueryWrapperX<ConsultationAppointmentDO>()
-                .eq(ConsultationAppointmentDO::getCounselorUserId, counselorUserId)
-                .ne(ConsultationAppointmentDO::getStatus, 4) // 排除已取消的
-                .and(w -> w.between(ConsultationAppointmentDO::getAppointmentTime, startTime, endTime)
-                        .or()
-                        .le(ConsultationAppointmentDO::getAppointmentTime, startTime)
-                        .apply("DATE_ADD(appointment_time, INTERVAL duration_minutes MINUTE) > {0}", startTime));
+        LambdaQueryWrapperX<ConsultationAppointmentDO> wrapper = new LambdaQueryWrapperX<>();
+        wrapper.eq(ConsultationAppointmentDO::getCounselorUserId, counselorUserId);
+        wrapper.ne(ConsultationAppointmentDO::getStatus, 4); // 排除已取消的
+        wrapper.apply("( (appointment_time BETWEEN {0} AND {1}) OR (appointment_time <= {0} AND DATE_ADD(appointment_time, INTERVAL duration_minutes MINUTE) > {0}) )", startTime, endTime);
         
         if (excludeId != null) {
             wrapper.ne(ConsultationAppointmentDO::getId, excludeId);

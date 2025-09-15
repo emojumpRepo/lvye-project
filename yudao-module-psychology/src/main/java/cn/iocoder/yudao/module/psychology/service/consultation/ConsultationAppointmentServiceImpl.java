@@ -6,9 +6,10 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.consultation.vo.appointment.*;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfilePageReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.ConsultationAppointmentDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.ConsultationAssessmentDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAppointmentMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAssessmentMapper;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
@@ -52,7 +53,7 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
     @Transactional(rollbackFor = Exception.class)
     public Long createAppointment(ConsultationAppointmentCreateReqVO createReqVO) {
         // 验证学生是否存在
-        StudentProfileDO student = studentProfileService.getStudentProfile(createReqVO.getStudentProfileId());
+        StudentProfileVO student = studentProfileService.getStudentProfile(createReqVO.getStudentProfileId());
         if (student == null) {
             throw ServiceExceptionUtil.exception(STUDENT_PROFILE_NOT_EXISTS);
         }
@@ -283,9 +284,15 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
             .map(ConsultationAppointmentDO::getStudentProfileId)
             .distinct()
             .collect(Collectors.toList());
-        List<StudentProfileDO> students = studentProfileService.getStudentProfileList(studentIds);
-        Map<Long, StudentProfileDO> studentMap = students.stream()
-            .collect(Collectors.toMap(StudentProfileDO::getId, s -> s));
+        
+        // 逐个获取学生信息（因为现有接口不支持批量查询）
+        Map<Long, StudentProfileVO> studentMap = new HashMap<>();
+        for (Long studentId : studentIds) {
+            StudentProfileVO student = studentProfileService.getStudentProfile(studentId);
+            if (student != null) {
+                studentMap.put(studentId, student);
+            }
+        }
         
         // 批量获取用户信息
         List<Long> userIds = appointments.stream()
@@ -294,11 +301,12 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
             .collect(Collectors.toList());
         Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(userIds);
         
-        // 批量获取评估信息
+        // 批量获取评估信息  
         List<Long> appointmentIds = appointments.stream()
             .map(ConsultationAppointmentDO::getId)
             .collect(Collectors.toList());
-        List<ConsultationAssessmentDO> assessments = assessmentMapper.selectBatchIds(appointmentIds);
+        List<ConsultationAssessmentDO> assessments = assessmentMapper.selectList(
+            ConsultationAssessmentDO::getAppointmentId, appointmentIds);
         Map<Long, ConsultationAssessmentDO> assessmentMap = assessments.stream()
             .collect(Collectors.toMap(ConsultationAssessmentDO::getAppointmentId, a -> a));
         
@@ -307,10 +315,10 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
             ConsultationAppointmentRespVO vo = BeanUtils.toBean(appointment, ConsultationAppointmentRespVO.class);
             
             // 填充学生信息
-            StudentProfileDO student = studentMap.get(appointment.getStudentProfileId());
+            StudentProfileVO student = studentMap.get(appointment.getStudentProfileId());
             if (student != null) {
                 vo.setStudentName(student.getName());
-                vo.setStudentNumber(student.getStudentNumber());
+                vo.setStudentNumber(student.getStudentNo());
                 vo.setClassName(student.getClassName());
             }
             

@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.consultation.vo.asses
 import cn.iocoder.yudao.module.psychology.controller.admin.consultation.vo.assessment.ConsultationAssessmentSaveReqVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.ConsultationAppointmentDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.ConsultationAssessmentDO;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAppointmentMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAssessmentMapper;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
@@ -66,10 +66,10 @@ public class ConsultationAssessmentServiceImpl implements ConsultationAssessment
             vo.setAppointmentTime(appointment.getAppointmentTime());
             
             // 填充学生信息
-            StudentProfileDO student = studentProfileService.getStudentProfile(appointment.getStudentProfileId());
+            StudentProfileVO student = studentProfileService.getStudentProfile(appointment.getStudentProfileId());
             if (student != null) {
                 vo.setStudentName(student.getName());
-                vo.setStudentNumber(student.getStudentNumber());
+                vo.setStudentNumber(student.getStudentNo());
                 vo.setClassName(student.getClassName());
             }
             
@@ -80,10 +80,10 @@ public class ConsultationAssessmentServiceImpl implements ConsultationAssessment
         ConsultationAssessmentRespVO vo = BeanUtils.toBean(assessment, ConsultationAssessmentRespVO.class);
         
         // 填充学生信息
-        StudentProfileDO student = studentProfileService.getStudentProfile(assessment.getStudentProfileId());
+        StudentProfileVO student = studentProfileService.getStudentProfile(assessment.getStudentProfileId());
         if (student != null) {
             vo.setStudentName(student.getName());
-            vo.setStudentNumber(student.getStudentNumber());
+            vo.setStudentNumber(student.getStudentNo());
             vo.setClassName(student.getClassName());
         }
         
