@@ -33,7 +33,9 @@ public class CrisisInterventionDO extends TenantBaseDO {
     /** 风险等级（字典：risk_level） */
     private Integer riskLevel;
 
-    /** 状态（字典：intervention_status） */
+    /** 状态（字典：intervention_status） 
+     * 1-已上报、2-已分配、3-处理中、4-已结案、5-持续关注
+     */
     private Integer status;
 
     /** 处理人管理员编号 */
@@ -50,6 +52,31 @@ public class CrisisInterventionDO extends TenantBaseDO {
 
     /** 紧急程度（快速上报特有），与 riskLevel 区分：前者为主观紧急，后者为评估风险 */
     private Integer urgencyLevel;
+    
+    /** 优先级（字典：priority_level）
+     * 1-高、2-中、3-低
+     */
+    private Integer priority;
+    
+    /** 事发地点 */
+    private String location;
+    
+    /** 处理方式（字典：process_method）
+     * 1-心理访谈、2-量表评估、3-持续关注、4-直接解决
+     */
+    private Integer processMethod;
+    
+    /** 处理原因说明 */
+    private String processReason;
+    
+    /** 结案总结 */
+    private String closureSummary;
+    
+    /** 处理进度百分比 */
+    private Integer progress;
+    
+    /** 是否自动分配 */
+    private Boolean autoAssigned;
 }
 
 

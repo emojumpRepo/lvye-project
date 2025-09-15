@@ -51,6 +51,11 @@ public interface ErrorCodeConstants {
     // ========== 心理咨询相关 1-003-005-000 ==========
     ErrorCode CONSULTATION_RECORD_NOT_EXISTS = new ErrorCode(1_003_005_000, "咨询记录不存在");
     ErrorCode CONSULTATION_APPOINTMENT_CONFLICT = new ErrorCode(1_003_005_001, "咨询预约时间冲突");
+    ErrorCode CONSULTATION_APPOINTMENT_NOT_EXISTS = new ErrorCode(1_003_005_002, "咨询预约不存在");
+    ErrorCode CONSULTATION_TIME_CONFLICT = new ErrorCode(1_003_005_003, "咨询时间冲突");
+    ErrorCode CONSULTATION_STATUS_ERROR = new ErrorCode(1_003_005_004, "咨询状态不正确");
+    ErrorCode CONSULTATION_ASSESSMENT_NOT_EXISTS = new ErrorCode(1_003_005_005, "咨询评估不存在");
+    ErrorCode CONSULTATION_ASSESSMENT_ALREADY_EXISTS = new ErrorCode(1_003_005_006, "咨询评估已存在");
 
     // ========== 危机干预相关 1-003-006-000 ==========
     ErrorCode CRISIS_INTERVENTION_NOT_EXISTS = new ErrorCode(1_003_006_000, "危机干预事件不存在");
