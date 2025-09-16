@@ -179,7 +179,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
                                 String level, Integer count, Integer total) {
         InterventionDashboardSummaryVO.LevelDetail detail = new InterventionDashboardSummaryVO.LevelDetail();
         detail.setCount(count);
-        detail.setPercentage(total > 0 ? (count * 100.0 / total) : 0);
+        // 计算百分比并保留2位小数
+        double percentage = total > 0 ? (count * 100.0 / total) : 0;
+        detail.setPercentage(Math.round(percentage * 100.0) / 100.0);
         detail.setChange(0); // TODO: 计算环比变化
         details.put(level, detail);
     }
