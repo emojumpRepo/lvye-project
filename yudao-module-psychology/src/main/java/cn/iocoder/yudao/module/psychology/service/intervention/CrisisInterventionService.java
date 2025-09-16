@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.*;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,6 +30,16 @@ public interface CrisisInterventionService {
      * @return 统计数据
      */
     InterventionDashboardSummaryVO getDashboardSummary(Long classId, Long counselorUserId);
+
+    /**
+     * 获取五级干预看板统计数据
+     *
+     * @param classId 班级ID（可选）
+     * @param counselorUserId 咨询师ID（可选）
+     * @param pageSize 每个等级返回的学生数量限制（可选，默认10）
+     * @return 各等级统计数据列表
+     */
+    List<InterventionDashboardLevelVO> getDashboardLevels(Long classId, Long counselorUserId, Integer pageSize);
 
     /**
      * 获取指定干预等级的学生列表

@@ -77,30 +77,32 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         }
         
         // 获取统计数据（这里需要根据查询条件过滤）
-        summary.setMajorCount(getCountByRiskLevelWithFilter(1, reqVO));
-        summary.setSevereCount(getCountByRiskLevelWithFilter(2, reqVO));
-        summary.setGeneralCount(getCountByRiskLevelWithFilter(3, reqVO));
-        summary.setObservationCount(getCountByRiskLevelWithFilter(4, reqVO));
-        summary.setNormalCount(getCountByRiskLevelWithFilter(5, reqVO));
-        summary.setPendingAssessmentCount(getPendingAssessmentCountWithFilter(reqVO));
+        // 字典类型：crisis_level (1:待评, 2:持续观察, 3:一般, 4:严重, 5:重大)
+        summary.setPendingAssessmentCount(getCountByRiskLevelWithFilter(1, reqVO)); // 待评
+        summary.setObservationCount(getCountByRiskLevelWithFilter(2, reqVO));      // 持续观察
+        summary.setGeneralCount(getCountByRiskLevelWithFilter(3, reqVO));          // 一般
+        summary.setSevereCount(getCountByRiskLevelWithFilter(4, reqVO));           // 严重
+        summary.setMajorCount(getCountByRiskLevelWithFilter(5, reqVO));            // 重大
+        summary.setNormalCount(0); // 不再使用正常状态
         
         // 计算总数
-        int total = summary.getMajorCount() + summary.getSevereCount() + 
-                   summary.getGeneralCount() + summary.getObservationCount() + 
-                   summary.getNormalCount() + summary.getPendingAssessmentCount();
+        int total = summary.getPendingAssessmentCount() + summary.getObservationCount() + 
+                   summary.getGeneralCount() + summary.getSevereCount() + 
+                   summary.getMajorCount();
         summary.setTotalCount(total);
         
         // 构建详细统计
         Map<String, InterventionDashboardSummaryVO.LevelDetail> details = new HashMap<>();
-        addLevelDetail(details, "major", summary.getMajorCount(), total);
-        addLevelDetail(details, "severe", summary.getSevereCount(), total);
-        addLevelDetail(details, "general", summary.getGeneralCount(), total);
-        addLevelDetail(details, "observation", summary.getObservationCount(), total);
-        addLevelDetail(details, "normal", summary.getNormalCount(), total);
-        addLevelDetail(details, "pending", summary.getPendingAssessmentCount(), total);
+        addLevelDetail(details, "pending", summary.getPendingAssessmentCount(), total); // 待评
+        addLevelDetail(details, "observation", summary.getObservationCount(), total);   // 持续观察
+        addLevelDetail(details, "general", summary.getGeneralCount(), total);           // 一般
+        addLevelDetail(details, "severe", summary.getSevereCount(), total);             // 严重
+        addLevelDetail(details, "major", summary.getMajorCount(), total);               // 重大
         summary.setLevelDetails(details);
         
-        // 获取学生分页列表
+        // 根据是否指定风险等级来获取学生列表
+        // 如果指定了风险等级，只返回该等级的学生（用于分页点击）
+        // 如果没有指定，返回所有学生（用于首次加载）
         PageResult<InterventionStudentRespVO> studentPage = getStudentPageByFilter(reqVO);
         summary.setStudentPage(studentPage);
         
@@ -150,17 +152,23 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         return new PageResult<>(students, total);
     }
     
+    private PageResult<InterventionStudentRespVO> getPendingStudentPageByFilter(InterventionDashboardReqVO reqVO) {
+        // 设置查询待评估状态
+        reqVO.setRiskLevel(1); // 1 表示待评
+        return getStudentPageByFilter(reqVO);
+    }
+    
     private String[] generateStudentTags(InterventionStudentRespVO student) {
         List<String> tags = new ArrayList<>();
         
-        // 根据风险等级添加标签
+        // 根据风险等级添加标签 (字典类型：crisis_level)
         if (student.getCurrentRiskLevel() != null) {
             switch (student.getCurrentRiskLevel()) {
-                case 1: tags.add("重大风险"); break;
-                case 2: tags.add("严重风险"); break;
-                case 3: tags.add("一般风险"); break;
-                case 4: tags.add("观察"); break;
-                case 5: tags.add("正常"); break;
+                case 1: tags.add("待评"); break;
+                case 2: tags.add("持续观察"); break;
+                case 3: tags.add("一般"); break;
+                case 4: tags.add("严重"); break;
+                case 5: tags.add("重大"); break;
             }
         }
         
@@ -188,14 +196,185 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Override
     public InterventionDashboardSummaryVO getDashboardSummary(Long classId, Long counselorUserId) {
-        // 转换为新的查询对象
+        // 转换为新的查询对象，用于获取首屏全部数据
         InterventionDashboardReqVO reqVO = new InterventionDashboardReqVO();
         reqVO.setClassId(classId);
         reqVO.setCounselorUserId(counselorUserId);
         reqVO.setPageNo(1);
-        reqVO.setPageSize(10); // 默认返回前10条
+        reqVO.setPageSize(1000); // 返回所有数据，不分页
         
-        return getDashboardSummaryWithPage(reqVO);
+        InterventionDashboardSummaryVO summary = new InterventionDashboardSummaryVO();
+        
+        // 获取统计数据
+        // 字典类型：crisis_level (1:一般, 2:严重, 3:重大, 4:持续观察, 5:待评)
+        summary.setGeneralCount(getCountByRiskLevelWithFilter(1, reqVO));      // 一般
+        summary.setSevereCount(getCountByRiskLevelWithFilter(2, reqVO));       // 严重
+        summary.setMajorCount(getCountByRiskLevelWithFilter(3, reqVO));        // 重大
+        summary.setObservationCount(getCountByRiskLevelWithFilter(4, reqVO));  // 持续观察
+        summary.setPendingAssessmentCount(getCountByRiskLevelWithFilter(5, reqVO)); // 待评
+        summary.setNormalCount(0); // 不再使用正常状态
+        
+        // 计算总数
+        int total = summary.getPendingAssessmentCount() + summary.getObservationCount() + 
+                   summary.getGeneralCount() + summary.getSevereCount() + 
+                   summary.getMajorCount();
+        summary.setTotalCount(total);
+        
+        // 构建详细统计
+        Map<String, InterventionDashboardSummaryVO.LevelDetail> details = new HashMap<>();
+        addLevelDetail(details, "pending", summary.getPendingAssessmentCount(), total); // 待评
+        addLevelDetail(details, "observation", summary.getObservationCount(), total);   // 持续观察
+        addLevelDetail(details, "general", summary.getGeneralCount(), total);           // 一般
+        addLevelDetail(details, "severe", summary.getSevereCount(), total);             // 严重
+        addLevelDetail(details, "major", summary.getMajorCount(), total);               // 重大
+        summary.setLevelDetails(details);
+        
+        // 获取所有等级的学生列表（不分页，返回完整数据）
+        Map<String, PageResult<InterventionStudentRespVO>> allLevelStudents = new HashMap<>();
+        
+        // 获取每个风险等级的学生列表
+        if (summary.getPendingAssessmentCount() > 0) {
+            reqVO.setRiskLevel(1);
+            allLevelStudents.put("pending", getStudentPageByFilter(reqVO));
+        }
+        if (summary.getObservationCount() > 0) {
+            reqVO.setRiskLevel(2);
+            allLevelStudents.put("observation", getStudentPageByFilter(reqVO));
+        }
+        if (summary.getGeneralCount() > 0) {
+            reqVO.setRiskLevel(3);
+            allLevelStudents.put("general", getStudentPageByFilter(reqVO));
+        }
+        if (summary.getSevereCount() > 0) {
+            reqVO.setRiskLevel(4);
+            allLevelStudents.put("severe", getStudentPageByFilter(reqVO));
+        }
+        if (summary.getMajorCount() > 0) {
+            reqVO.setRiskLevel(5);
+            allLevelStudents.put("major", getStudentPageByFilter(reqVO));
+        }
+        
+        // 将所有学生合并为一个列表返回（为了兼容性）
+        List<InterventionStudentRespVO> allStudents = new ArrayList<>();
+        Long totalStudents = 0L;
+        for (PageResult<InterventionStudentRespVO> page : allLevelStudents.values()) {
+            allStudents.addAll(page.getList());
+            totalStudents += page.getTotal();
+        }
+        summary.setStudentPage(new PageResult<>(allStudents, totalStudents));
+        
+        return summary;
+    }
+
+    public List<InterventionDashboardLevelVO> getDashboardLevels(Long classId, Long counselorUserId) {
+        // 调用重载方法，使用默认pageSize
+        return getDashboardLevels(classId, counselorUserId, 10);
+    }
+    
+    @Override
+    public List<InterventionDashboardLevelVO> getDashboardLevels(Long classId, Long counselorUserId, Integer pageSize) {
+        // 设置默认值
+        if (pageSize == null || pageSize <= 0) {
+            pageSize = 10;
+        }
+        
+        // 转换为新的查询对象，用于获取首屏全部数据
+        InterventionDashboardReqVO reqVO = new InterventionDashboardReqVO();
+        reqVO.setClassId(classId);
+        reqVO.setCounselorUserId(counselorUserId);
+        reqVO.setPageNo(1);
+        reqVO.setPageSize(pageSize); // 使用传入的pageSize限制每个等级返回的学生数量
+        
+        // 获取各等级统计数据
+        List<InterventionDashboardLevelVO> levels = new ArrayList<>();
+        
+        // 字典类型：crisis_level (1:待评, 2:持续观察, 3:一般, 4:严重, 5:重大)
+        // 获取各等级学生数量
+        Integer pendingCount = getCountByRiskLevelWithFilter(1, reqVO);
+        Integer observationCount = getCountByRiskLevelWithFilter(2, reqVO);
+        Integer generalCount = getCountByRiskLevelWithFilter(3, reqVO);
+        Integer severeCount = getCountByRiskLevelWithFilter(4, reqVO);
+        Integer majorCount = getCountByRiskLevelWithFilter(5, reqVO);
+        
+        // 计算总数
+        int total = pendingCount + observationCount + generalCount + severeCount + majorCount;
+        
+        // 创建待评等级
+        InterventionDashboardLevelVO pending = new InterventionDashboardLevelVO();
+        pending.setType("pending");
+        pending.setLabel("待评");
+        pending.setDictValue(1); // 字典值：1
+        pending.setCount(pendingCount);
+        pending.setPercentage(total > 0 ? Math.round(pendingCount * 100.0 / total * 100.0) / 100.0 : 0.0);
+        if (pendingCount > 0) {
+            reqVO.setRiskLevel(1);
+            pending.setStudentPage(getStudentPageByFilter(reqVO));
+        } else {
+            pending.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
+        }
+        levels.add(pending);
+        
+        // 创建持续观察等级
+        InterventionDashboardLevelVO observation = new InterventionDashboardLevelVO();
+        observation.setType("observation");
+        observation.setLabel("持续观察");
+        observation.setDictValue(2); // 字典值：2
+        observation.setCount(observationCount);
+        observation.setPercentage(total > 0 ? Math.round(observationCount * 100.0 / total * 100.0) / 100.0 : 0.0);
+        if (observationCount > 0) {
+            reqVO.setRiskLevel(2);
+            observation.setStudentPage(getStudentPageByFilter(reqVO));
+        } else {
+            observation.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
+        }
+        levels.add(observation);
+        
+        // 创建一般等级
+        InterventionDashboardLevelVO general = new InterventionDashboardLevelVO();
+        general.setType("general");
+        general.setLabel("一般");
+        general.setDictValue(3); // 字典值：3
+        general.setCount(generalCount);
+        general.setPercentage(total > 0 ? Math.round(generalCount * 100.0 / total * 100.0) / 100.0 : 0.0);
+        if (generalCount > 0) {
+            reqVO.setRiskLevel(3);
+            general.setStudentPage(getStudentPageByFilter(reqVO));
+        } else {
+            general.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
+        }
+        levels.add(general);
+        
+        // 创建严重等级
+        InterventionDashboardLevelVO severe = new InterventionDashboardLevelVO();
+        severe.setType("severe");
+        severe.setLabel("严重");
+        severe.setDictValue(4); // 字典值：4
+        severe.setCount(severeCount);
+        severe.setPercentage(total > 0 ? Math.round(severeCount * 100.0 / total * 100.0) / 100.0 : 0.0);
+        if (severeCount > 0) {
+            reqVO.setRiskLevel(4);
+            severe.setStudentPage(getStudentPageByFilter(reqVO));
+        } else {
+            severe.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
+        }
+        levels.add(severe);
+        
+        // 创建重大等级
+        InterventionDashboardLevelVO major = new InterventionDashboardLevelVO();
+        major.setType("major");
+        major.setLabel("重大");
+        major.setDictValue(5); // 字典值：5
+        major.setCount(majorCount);
+        major.setPercentage(total > 0 ? Math.round(majorCount * 100.0 / total * 100.0) / 100.0 : 0.0);
+        if (majorCount > 0) {
+            reqVO.setRiskLevel(5);
+            major.setStudentPage(getStudentPageByFilter(reqVO));
+        } else {
+            major.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
+        }
+        levels.add(major);
+        
+        return levels;
     }
 
     @Override
@@ -223,7 +402,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 获取当前风险等级
         Integer currentLevel = student.getRiskLevel();
         if (currentLevel == null) {
-            currentLevel = 5; // 默认为正常
+            currentLevel = 1; // 默认为待评
         }
 
         // 如果等级没有变化，直接返回
@@ -255,8 +434,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
                 levelChange, 
                 adjustReqVO.getReason());
 
-        // 如果风险等级升高到重大或严重（1或2），自动创建关注记录
-        if (targetLevel <= 2 && currentLevel > targetLevel) {
+        // 如果风险等级升高到严重或重大（4或5），自动创建关注记录
+        if ((targetLevel == 4 || targetLevel == 5) && currentLevel < targetLevel) {
             createAutoInterventionRecord(studentProfileId, targetLevel, adjustReqVO.getReason());
         }
 
@@ -653,13 +832,13 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     }
 
     private String getRiskLevelName(Integer level) {
-        // TODO: 从字典获取
+        // 字典类型：crisis_level
         switch (level) {
-            case 1: return "重大";
-            case 2: return "严重";
+            case 1: return "待评";
+            case 2: return "持续观察";
             case 3: return "一般";
-            case 4: return "观察";
-            case 5: return "正常";
+            case 4: return "严重";
+            case 5: return "重大";
             default: return "未知";
         }
     }
@@ -689,8 +868,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             event.setTitle("风险等级调整");
             event.setDescription("风险等级调整至" + getRiskLevelName(riskLevel) + "：" + reason);
             event.setRiskLevel(riskLevel);
-            event.setUrgencyLevel(riskLevel <= 2 ? 1 : 2); // 重大和严重设为高紧急度
-            event.setPriority(riskLevel <= 2 ? 1 : 2); // 重大和严重设为高优先级
+            event.setUrgencyLevel(riskLevel == 5 ? 1 : 2); // 重大设为高紧急度，严重设为中紧急度
+            event.setPriority(riskLevel == 5 ? 1 : 2); // 重大设为高优先级，严重设为中优先级
             event.setStatus(1); // 已上报
             event.setReporterUserId(SecurityFrameworkUtils.getLoginUserId());
             event.setReportedAt(LocalDateTime.now());

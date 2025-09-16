@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -32,16 +33,17 @@ public class CrisisInterventionController {
     // ========== 五级干预看板 ==========
 
     @GetMapping("/dashboard/summary")
-    @Operation(summary = "获取五级干预看板统计数据（旧接口，保持兼容）")
+    @Operation(summary = "获取五级干预看板统计数据")
     @DataPermission(enable = false)
-    public CommonResult<InterventionDashboardSummaryVO> getDashboardSummary(
+    public CommonResult<List<InterventionDashboardLevelVO>> getDashboardSummary(
             @RequestParam(value = "classId", required = false) Long classId,
-            @RequestParam(value = "counselorUserId", required = false) Long counselorUserId) {
-        return success(interventionService.getDashboardSummary(classId, counselorUserId));
+            @RequestParam(value = "counselorUserId", required = false) Long counselorUserId,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize) {
+        return success(interventionService.getDashboardLevels(classId, counselorUserId, pageSize));
     }
 
     @PostMapping("/dashboard/summary/page")
-    @Operation(summary = "获取五级干预看板统计数据（支持分页和查询）")
+    @Operation(summary = "获取五级干预看板统计数据")
     @DataPermission(enable = false)
     public CommonResult<InterventionDashboardSummaryVO> getDashboardSummaryWithPage(
             @Valid @RequestBody InterventionDashboardReqVO reqVO) {
