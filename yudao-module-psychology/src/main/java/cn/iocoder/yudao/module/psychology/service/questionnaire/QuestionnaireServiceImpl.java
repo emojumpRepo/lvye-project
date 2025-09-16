@@ -50,6 +50,10 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         questionnaire.setAccessCount(0);
         questionnaire.setCompletionCount(0);
         questionnaire.setSyncStatus(0);
+        // 设置默认支持独立使用
+        if (questionnaire.getSupportIndependentUse() == null) {
+            questionnaire.setSupportIndependentUse(1);
+        }
         
         // 插入数据库
         questionnaireMapper.insert(questionnaire);
@@ -116,6 +120,14 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    @Override
+    public List<QuestionnaireSimpleRespVO> getSimpleQuestionnaireList(Integer supportIndependentUse) {
+        List<QuestionnaireDO> list = questionnaireMapper.selectIndependentUseQuestionnaires(supportIndependentUse);
+        return list.stream()
+                .map(this::convertToSimpleRespVO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     /**
      * 手动转换 QuestionnaireDO 到 QuestionnaireSimpleRespVO
      */
@@ -133,7 +145,8 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         simple.setQuestionCount(questionnaire.getQuestionCount());
         simple.setEstimatedDuration(questionnaire.getEstimatedDuration());
         simple.setStatus(questionnaire.getStatus());
-        
+        simple.setSupportIndependentUse(questionnaire.getSupportIndependentUse());
+
         // 转换测评维度为标签
         simple.setAssessmentDimensionLabels(convertAssessmentDimensionToLabels(questionnaire.getAssessmentDimension()));
         

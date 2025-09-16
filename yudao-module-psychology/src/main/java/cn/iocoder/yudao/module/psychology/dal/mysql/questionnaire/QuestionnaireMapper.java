@@ -26,6 +26,7 @@ public interface QuestionnaireMapper extends BaseMapperX<QuestionnaireDO> {
                 .eqIfPresent(QuestionnaireDO::getTargetAudience, reqVO.getTargetAudience())
                 .eqIfPresent(QuestionnaireDO::getStatus, reqVO.getStatus())
                 .eqIfPresent(QuestionnaireDO::getIsOpen, reqVO.getIsOpen())
+                .eqIfPresent(QuestionnaireDO::getSupportIndependentUse, reqVO.getSupportIndependentUse())
                 .betweenIfPresent(QuestionnaireDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(QuestionnaireDO::getId));
     }
@@ -52,6 +53,17 @@ public interface QuestionnaireMapper extends BaseMapperX<QuestionnaireDO> {
                 .eq(QuestionnaireDO::getStatus, 1) // 已发布状态
                 .eqIfPresent(QuestionnaireDO::getQuestionnaireType, questionnaireType)
                 .eqIfPresent(QuestionnaireDO::getTargetAudience, targetAudience)
+                .orderByDesc(QuestionnaireDO::getId));
+    }
+
+    /**
+     * 查询支持独立使用的问卷列表
+     */
+    default List<QuestionnaireDO> selectIndependentUseQuestionnaires(Integer supportIndependentUse) {
+        return selectList(new LambdaQueryWrapperX<QuestionnaireDO>()
+                .eq(QuestionnaireDO::getStatus, 1) // 已发布状态
+                .eq(QuestionnaireDO::getIsOpen, 1) // 开放状态
+                .eqIfPresent(QuestionnaireDO::getSupportIndependentUse, supportIndependentUse)
                 .orderByDesc(QuestionnaireDO::getId));
     }
 

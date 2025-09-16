@@ -95,6 +95,11 @@ public class QuestionnaireDO extends TenantBaseDO {
     private Integer isOpen;
 
     /**
+     * 是否支持独立使用：0-否，1-是
+     */
+    private Integer supportIndependentUse;
+
+    /**
      * 访问次数
      */
     private Integer accessCount;

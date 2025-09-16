@@ -54,4 +54,7 @@ public class QuestionnaireBaseVO {
     @Schema(description = "结果报告模板（JSON格式）")
     private String resultTemplate;
 
+    @Schema(description = "是否支持独立使用", example = "1")
+    private Integer supportIndependentUse;
+
 }

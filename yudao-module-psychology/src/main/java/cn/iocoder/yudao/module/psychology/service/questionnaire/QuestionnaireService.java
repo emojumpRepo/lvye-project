@@ -67,6 +67,14 @@ public interface QuestionnaireService {
     List<QuestionnaireSimpleRespVO> getSimpleQuestionnaireList();
 
     /**
+     * 获得支持独立使用的问卷精简信息列表
+     *
+     * @param supportIndependentUse 是否支持独立使用
+     * @return 问卷精简列表
+     */
+    List<QuestionnaireSimpleRespVO> getSimpleQuestionnaireList(Integer supportIndependentUse);
+
+    /**
      * 发布问卷到外部系统
      *
      * @param id 问卷编号

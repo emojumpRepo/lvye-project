@@ -36,4 +36,7 @@ public class QuestionnaireSimpleRespVO {
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
+    @Schema(description = "是否支持独立使用", example = "1")
+    private Integer supportIndependentUse;
+
 }

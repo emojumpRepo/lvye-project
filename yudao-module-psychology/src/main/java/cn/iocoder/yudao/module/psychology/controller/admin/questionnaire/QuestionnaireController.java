@@ -105,8 +105,15 @@ public class QuestionnaireController {
 
     @GetMapping("/list-all-simple")
     @Operation(summary = "获取问卷精简信息列表", description = "只包含被开启的问卷，主要用于前端的下拉选项")
-    public CommonResult<List<QuestionnaireSimpleRespVO>> getSimpleQuestionnaireList() {
-        List<QuestionnaireSimpleRespVO> list = questionnaireService.getSimpleQuestionnaireList();
+    @Parameter(name = "supportIndependentUse", description = "是否支持独立使用", example = "1")
+    public CommonResult<List<QuestionnaireSimpleRespVO>> getSimpleQuestionnaireList(
+            @RequestParam(value = "supportIndependentUse", required = false) Integer supportIndependentUse) {
+        List<QuestionnaireSimpleRespVO> list;
+        if (supportIndependentUse != null) {
+            list = questionnaireService.getSimpleQuestionnaireList(supportIndependentUse);
+        } else {
+            list = questionnaireService.getSimpleQuestionnaireList();
+        }
         return success(list);
     }
 
