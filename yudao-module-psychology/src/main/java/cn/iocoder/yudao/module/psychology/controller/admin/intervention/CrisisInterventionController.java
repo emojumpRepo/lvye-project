@@ -32,12 +32,20 @@ public class CrisisInterventionController {
     // ========== 五级干预看板 ==========
 
     @GetMapping("/dashboard/summary")
-    @Operation(summary = "获取五级干预看板统计数据")
+    @Operation(summary = "获取五级干预看板统计数据（旧接口，保持兼容）")
     @DataPermission(enable = false)
     public CommonResult<InterventionDashboardSummaryVO> getDashboardSummary(
             @RequestParam(value = "classId", required = false) Long classId,
             @RequestParam(value = "counselorUserId", required = false) Long counselorUserId) {
         return success(interventionService.getDashboardSummary(classId, counselorUserId));
+    }
+
+    @PostMapping("/dashboard/summary/page")
+    @Operation(summary = "获取五级干预看板统计数据（支持分页和查询）")
+    @DataPermission(enable = false)
+    public CommonResult<InterventionDashboardSummaryVO> getDashboardSummaryWithPage(
+            @Valid @RequestBody InterventionDashboardReqVO reqVO) {
+        return success(interventionService.getDashboardSummaryWithPage(reqVO));
     }
 
     @GetMapping("/dashboard/students/page")
@@ -63,6 +71,7 @@ public class CrisisInterventionController {
 
     @PostMapping("/event/create")
     @Operation(summary = "上报危机事件")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:create')")
     @DataPermission(enable = false)
     public CommonResult<Long> createCrisisEvent(@Valid @RequestBody CrisisEventCreateReqVO createReqVO) {
         return success(interventionService.createCrisisEvent(createReqVO));
@@ -70,6 +79,7 @@ public class CrisisInterventionController {
 
     @GetMapping("/event/page")
     @Operation(summary = "获取危机事件分页")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
     @DataPermission(enable = false)
     public CommonResult<PageResult<CrisisEventRespVO>> getCrisisEventPage(@Valid CrisisEventPageReqVO pageReqVO) {
         return success(interventionService.getCrisisEventPage(pageReqVO));
@@ -77,6 +87,7 @@ public class CrisisInterventionController {
 
     @GetMapping("/event/statistics")
     @Operation(summary = "获取危机事件统计")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
     @DataPermission(enable = false)
     public CommonResult<Map<String, Long>> getCrisisEventStatistics() {
         return success(interventionService.getCrisisEventStatistics());
@@ -85,6 +96,7 @@ public class CrisisInterventionController {
     @GetMapping("/event/{id}")
     @Operation(summary = "获取危机事件详情")
     @Parameter(name = "id", description = "事件ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
     @DataPermission(enable = false)
     public CommonResult<CrisisEventRespVO> getCrisisEvent(@PathVariable("id") Long id) {
         return success(interventionService.getCrisisEvent(id));
@@ -92,6 +104,7 @@ public class CrisisInterventionController {
 
     @PutMapping("/event/{id}/assign")
     @Operation(summary = "分配事件负责人")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
     @DataPermission(enable = false)
     public CommonResult<Boolean> assignHandler(
             @PathVariable("id") Long id,
@@ -102,6 +115,7 @@ public class CrisisInterventionController {
 
     @PutMapping("/event/{id}/reassign")
     @Operation(summary = "更改事件负责人")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
     @DataPermission(enable = false)
     public CommonResult<Boolean> reassignHandler(
             @PathVariable("id") Long id,
@@ -112,6 +126,7 @@ public class CrisisInterventionController {
 
     @PutMapping("/event/{id}/process")
     @Operation(summary = "选择事件处理方式")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
     @DataPermission(enable = false)
     public CommonResult<Boolean> processCrisisEvent(
             @PathVariable("id") Long id,
@@ -122,6 +137,7 @@ public class CrisisInterventionController {
 
     @PutMapping("/event/{id}/close")
     @Operation(summary = "结案危机事件")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
     @DataPermission(enable = false)
     public CommonResult<Boolean> closeCrisisEvent(
             @PathVariable("id") Long id,
@@ -132,6 +148,7 @@ public class CrisisInterventionController {
 
     @PostMapping("/event/{id}/stage-assessment")
     @Operation(summary = "提交阶段性评估")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
     @DataPermission(enable = false)
     public CommonResult<Boolean> submitStageAssessment(
             @PathVariable("id") Long id,

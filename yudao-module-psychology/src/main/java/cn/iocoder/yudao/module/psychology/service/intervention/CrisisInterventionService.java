@@ -14,6 +14,14 @@ import java.util.Map;
 public interface CrisisInterventionService {
 
     /**
+     * 获取五级干预看板统计数据（带分页和查询）
+     *
+     * @param reqVO 查询参数
+     * @return 统计数据和学生列表
+     */
+    InterventionDashboardSummaryVO getDashboardSummaryWithPage(InterventionDashboardReqVO reqVO);
+
+    /**
      * 获取五级干预看板统计数据
      *
      * @param classId 班级ID（可选）

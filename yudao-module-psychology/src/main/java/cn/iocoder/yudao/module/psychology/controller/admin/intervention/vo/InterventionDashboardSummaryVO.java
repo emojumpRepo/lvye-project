@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo;
 
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -32,6 +33,9 @@ public class InterventionDashboardSummaryVO {
 
     @Schema(description = "各等级详细统计")
     private Map<String, LevelDetail> levelDetails;
+    
+    @Schema(description = "学生列表分页数据")
+    private PageResult<InterventionStudentRespVO> studentPage;
 
     @Data
     public static class LevelDetail {

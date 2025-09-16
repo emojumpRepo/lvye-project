@@ -60,6 +60,8 @@ public interface ErrorCodeConstants {
     // ========== 危机干预相关 1-003-006-000 ==========
     ErrorCode CRISIS_INTERVENTION_NOT_EXISTS = new ErrorCode(1_003_006_000, "危机干预事件不存在");
     ErrorCode CRISIS_INTERVENTION_ALREADY_HANDLED = new ErrorCode(1_003_006_001, "危机干预事件已处理");
+    ErrorCode INVALID_RISK_LEVEL = new ErrorCode(1_003_006_002, "无效的风险等级，必须在1-5之间");
+    ErrorCode STUDENT_PROFILE_UPDATE_FAILED = new ErrorCode(1_003_006_003, "学生档案更新失败");
 
     // ========== 通知相关 1-003-007-000 ==========
     ErrorCode NOTIFICATION_NOT_EXISTS = new ErrorCode(1_003_007_000, "通知不存在");

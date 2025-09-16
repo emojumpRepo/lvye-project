@@ -4,15 +4,20 @@ import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.*;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisEventAssessmentDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisEventProcessDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisInterventionDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.intervention.InterventionLevelHistoryDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventAssessmentMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventProcessMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisInterventionMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.intervention.InterventionLevelHistoryMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentInterventionMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
@@ -49,6 +54,12 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Resource
     private StudentProfileService studentProfileService;
+    
+    @Resource
+    private StudentInterventionMapper studentInterventionMapper;
+    
+    @Resource
+    private InterventionLevelHistoryMapper levelHistoryMapper;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -57,18 +68,21 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     private static String assignmentMode = "manual";
 
     @Override
-    public InterventionDashboardSummaryVO getDashboardSummary(Long classId, Long counselorUserId) {
+    public InterventionDashboardSummaryVO getDashboardSummaryWithPage(InterventionDashboardReqVO reqVO) {
         InterventionDashboardSummaryVO summary = new InterventionDashboardSummaryVO();
         
-        // 获取各风险等级的学生数
-        summary.setMajorCount(crisisInterventionMapper.countByRiskLevel(1).intValue());
-        summary.setSevereCount(crisisInterventionMapper.countByRiskLevel(2).intValue());
-        summary.setGeneralCount(crisisInterventionMapper.countByRiskLevel(3).intValue());
-        summary.setObservationCount(crisisInterventionMapper.countByRiskLevel(4).intValue());
-        summary.setNormalCount(crisisInterventionMapper.countByRiskLevel(5).intValue());
+        // 如果是只看我负责的
+        if (Boolean.TRUE.equals(reqVO.getOnlyMine())) {
+            reqVO.setCounselorUserId(SecurityFrameworkUtils.getLoginUserId());
+        }
         
-        // TODO: 获取待评估学生数（需要关联学生档案表）
-        summary.setPendingAssessmentCount(0);
+        // 获取统计数据（这里需要根据查询条件过滤）
+        summary.setMajorCount(getCountByRiskLevelWithFilter(1, reqVO));
+        summary.setSevereCount(getCountByRiskLevelWithFilter(2, reqVO));
+        summary.setGeneralCount(getCountByRiskLevelWithFilter(3, reqVO));
+        summary.setObservationCount(getCountByRiskLevelWithFilter(4, reqVO));
+        summary.setNormalCount(getCountByRiskLevelWithFilter(5, reqVO));
+        summary.setPendingAssessmentCount(getPendingAssessmentCountWithFilter(reqVO));
         
         // 计算总数
         int total = summary.getMajorCount() + summary.getSevereCount() + 
@@ -78,17 +92,87 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         
         // 构建详细统计
         Map<String, InterventionDashboardSummaryVO.LevelDetail> details = new HashMap<>();
-        
         addLevelDetail(details, "major", summary.getMajorCount(), total);
         addLevelDetail(details, "severe", summary.getSevereCount(), total);
         addLevelDetail(details, "general", summary.getGeneralCount(), total);
         addLevelDetail(details, "observation", summary.getObservationCount(), total);
         addLevelDetail(details, "normal", summary.getNormalCount(), total);
         addLevelDetail(details, "pending", summary.getPendingAssessmentCount(), total);
-        
         summary.setLevelDetails(details);
         
+        // 获取学生分页列表
+        PageResult<InterventionStudentRespVO> studentPage = getStudentPageByFilter(reqVO);
+        summary.setStudentPage(studentPage);
+        
         return summary;
+    }
+
+    private Integer getCountByRiskLevelWithFilter(Integer riskLevel, InterventionDashboardReqVO reqVO) {
+        Long count = studentInterventionMapper.countByRiskLevelWithFilter(
+            riskLevel, 
+            reqVO.getClassId(), 
+            reqVO.getGradeId(), 
+            reqVO.getCounselorUserId()
+        );
+        return count != null ? count.intValue() : 0;
+    }
+
+    private Integer getPendingAssessmentCountWithFilter(InterventionDashboardReqVO reqVO) {
+        Long count = studentInterventionMapper.countPendingAssessmentWithFilter(
+            reqVO.getClassId(), 
+            reqVO.getGradeId(), 
+            reqVO.getCounselorUserId()
+        );
+        return count != null ? count.intValue() : 0;
+    }
+
+    private PageResult<InterventionStudentRespVO> getStudentPageByFilter(InterventionDashboardReqVO reqVO) {
+        // 计算分页偏移量
+        Integer offset = (reqVO.getPageNo() - 1) * reqVO.getPageSize();
+        
+        // 查询学生列表
+        List<InterventionStudentRespVO> students = studentInterventionMapper.selectInterventionStudentPage(
+            reqVO, offset, reqVO.getPageSize()
+        );
+        
+        // 查询总数
+        Long total = studentInterventionMapper.countInterventionStudent(reqVO);
+        
+        // 填充额外信息（如负责心理老师等）
+        if (CollUtil.isNotEmpty(students)) {
+            // TODO: 批量获取心理老师信息
+            for (InterventionStudentRespVO student : students) {
+                // 设置默认标签
+                student.setTags(generateStudentTags(student));
+            }
+        }
+        
+        return new PageResult<>(students, total);
+    }
+    
+    private String[] generateStudentTags(InterventionStudentRespVO student) {
+        List<String> tags = new ArrayList<>();
+        
+        // 根据风险等级添加标签
+        if (student.getCurrentRiskLevel() != null) {
+            switch (student.getCurrentRiskLevel()) {
+                case 1: tags.add("重大风险"); break;
+                case 2: tags.add("严重风险"); break;
+                case 3: tags.add("一般风险"); break;
+                case 4: tags.add("观察"); break;
+                case 5: tags.add("正常"); break;
+            }
+        }
+        
+        // 根据危机事件和咨询次数添加标签
+        if (student.getCrisisEventCount() != null && student.getCrisisEventCount() > 0) {
+            tags.add("有危机事件");
+        }
+        if (student.getConsultationCount() != null && student.getConsultationCount() >= 3) {
+            tags.add("频繁咨询");
+        }
+        
+        return tags.toArray(new String[0]);
     }
 
     private void addLevelDetail(Map<String, InterventionDashboardSummaryVO.LevelDetail> details, 
@@ -98,6 +182,18 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         detail.setPercentage(total > 0 ? (count * 100.0 / total) : 0);
         detail.setChange(0); // TODO: 计算环比变化
         details.put(level, detail);
+    }
+
+    @Override
+    public InterventionDashboardSummaryVO getDashboardSummary(Long classId, Long counselorUserId) {
+        // 转换为新的查询对象
+        InterventionDashboardReqVO reqVO = new InterventionDashboardReqVO();
+        reqVO.setClassId(classId);
+        reqVO.setCounselorUserId(counselorUserId);
+        reqVO.setPageNo(1);
+        reqVO.setPageSize(10); // 默认返回前10条
+        
+        return getDashboardSummaryWithPage(reqVO);
     }
 
     @Override
@@ -116,9 +212,54 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             throw ServiceExceptionUtil.exception(STUDENT_PROFILE_NOT_EXISTS);
         }
 
-        // TODO: 更新学生的风险等级
-        // 记录等级变更历史
-        log.info("调整学生 {} 的风险等级为 {}", studentProfileId, adjustReqVO.getTargetLevel());
+        // 验证风险等级值范围（1-5）
+        Integer targetLevel = adjustReqVO.getTargetLevel();
+        if (targetLevel == null || targetLevel < 1 || targetLevel > 5) {
+            throw ServiceExceptionUtil.exception(INVALID_RISK_LEVEL);
+        }
+
+        // 获取当前风险等级
+        Integer currentLevel = student.getRiskLevel();
+        if (currentLevel == null) {
+            currentLevel = 5; // 默认为正常
+        }
+
+        // 如果等级没有变化，直接返回
+        if (currentLevel.equals(targetLevel)) {
+            log.info("学生 {} 的风险等级未发生变化，当前等级为 {}", studentProfileId, currentLevel);
+            return;
+        }
+
+        // 更新学生档案中的风险等级
+        studentProfileService.updateStudentRiskLevel(studentProfileId, targetLevel);
+
+        // 记录风险等级变更历史
+        InterventionLevelHistoryDO history = InterventionLevelHistoryDO.builder()
+                .studentProfileId(studentProfileId)
+                .oldLevel(currentLevel)
+                .newLevel(targetLevel)
+                .changeReason(adjustReqVO.getReason())
+                .operatorUserId(SecurityFrameworkUtils.getLoginUserId())
+                .build();
+        levelHistoryMapper.insert(history);
+
+        // 记录操作日志
+        String levelChange = String.format("%s -> %s", 
+                getRiskLevelName(currentLevel), 
+                getRiskLevelName(targetLevel));
+        log.info("用户 {} 调整学生 {} 的风险等级：{}，原因：{}", 
+                SecurityFrameworkUtils.getLoginUserId(), 
+                studentProfileId, 
+                levelChange, 
+                adjustReqVO.getReason());
+
+        // 如果风险等级升高到重大或严重（1或2），自动创建关注记录
+        if (targetLevel <= 2 && currentLevel > targetLevel) {
+            createAutoInterventionRecord(studentProfileId, targetLevel, adjustReqVO.getReason());
+        }
+
+        // TODO: 发送通知给相关负责人（班主任、心理老师等）
+        // notificationService.sendRiskLevelChangeNotification(studentProfileId, currentLevel, targetLevel);
     }
 
     @Override
@@ -136,13 +277,21 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             log.warn("学生 {} 在24小时内已有危机事件上报", createReqVO.getStudentProfileId());
         }
 
+        // 调试：打印当前登录用户ID
+        Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
+        log.info("创建危机事件，当前登录用户ID: {}", currentUserId);
+
         // 创建危机事件
         CrisisInterventionDO event = BeanUtils.toBean(createReqVO, CrisisInterventionDO.class);
         event.setStatus(1); // 已上报
-        event.setReporterUserId(SecurityFrameworkUtils.getLoginUserId());
+        event.setReporterUserId(currentUserId);
         event.setReportedAt(LocalDateTime.now());
         event.setProgress(0);
         event.setAutoAssigned(false);
+        
+        // 不要手动设置creator和updater，让框架自动填充
+        // event.setCreator(null);
+        // event.setUpdater(null);
 
         crisisInterventionMapper.insert(event);
 
@@ -510,6 +659,52 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             case 4: return "观察";
             case 5: return "正常";
             default: return "未知";
+        }
+    }
+
+    /**
+     * 自动创建干预记录
+     * 当风险等级升高到重大或严重时自动创建
+     */
+    private void createAutoInterventionRecord(Long studentProfileId, Integer riskLevel, String reason) {
+        try {
+            // 检查是否已有未结案的危机事件
+            List<CrisisInterventionDO> activeEvents = crisisInterventionMapper.selectList(
+                    new LambdaQueryWrapperX<CrisisInterventionDO>()
+                            .eq(CrisisInterventionDO::getStudentProfileId, studentProfileId)
+                            .in(CrisisInterventionDO::getStatus, Arrays.asList(1, 2, 3, 5)) // 未结案状态
+                            .orderByDesc(CrisisInterventionDO::getCreateTime)
+            );
+
+            if (CollUtil.isNotEmpty(activeEvents)) {
+                log.info("学生 {} 已有未结案的危机事件，跳过自动创建", studentProfileId);
+                return;
+            }
+
+            // 创建新的危机事件记录
+            CrisisInterventionDO event = new CrisisInterventionDO();
+            event.setStudentProfileId(studentProfileId);
+            event.setTitle("风险等级调整");
+            event.setDescription("风险等级调整至" + getRiskLevelName(riskLevel) + "：" + reason);
+            event.setRiskLevel(riskLevel);
+            event.setUrgencyLevel(riskLevel <= 2 ? 1 : 2); // 重大和严重设为高紧急度
+            event.setPriority(riskLevel <= 2 ? 1 : 2); // 重大和严重设为高优先级
+            event.setStatus(1); // 已上报
+            event.setReporterUserId(SecurityFrameworkUtils.getLoginUserId());
+            event.setReportedAt(LocalDateTime.now());
+            event.setProgress(0);
+            event.setAutoAssigned(true);
+            event.setSourceType(1); // 系统自动
+
+            crisisInterventionMapper.insert(event);
+
+            // 记录事件处理历史
+            recordEventProcess(event.getId(), "系统自动创建", 
+                    "因风险等级调整至" + getRiskLevelName(riskLevel) + "自动创建危机事件");
+
+            log.info("为学生 {} 自动创建危机事件，ID: {}", studentProfileId, event.getId());
+        } catch (Exception e) {
+            log.error("自动创建干预记录失败，学生ID: {}", studentProfileId, e);
         }
     }
 }
