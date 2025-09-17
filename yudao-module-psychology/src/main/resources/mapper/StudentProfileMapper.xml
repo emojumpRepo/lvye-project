@@ -6,7 +6,7 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
         SELECT a.id, a.user_id, a.student_no, a.name,
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
-               a.home_address, b.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.home_address, b.sex, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
                a.create_time, a.update_time,
                b.mobile, c.name AS gradeName, d.name AS className
@@ -48,7 +48,7 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
         SELECT a.id, a.user_id, a.student_no, a.name,
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
-               a.home_address, b.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.home_address, b.sex, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
                a.create_time, a.update_time,
                b.mobile, c.name AS gradeName, d.name AS className,

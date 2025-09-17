@@ -42,6 +42,12 @@ public class StudentProfileVO {
     @Schema(description = "手机号", example = "13800138000")
     private String mobile;
 
+    @Schema(description = "身份证号", example = "110101200801012345")
+    private String idCard;
+
+    @Schema(description = "届别（入学年份）", example = "2024")
+    private Integer enrollmentYear;
+
     @Schema(description = "年级部门编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "年级部门编号不能为空")
     private Long gradeDeptId;

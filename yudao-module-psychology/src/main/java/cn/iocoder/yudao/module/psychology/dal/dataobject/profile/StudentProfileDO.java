@@ -109,6 +109,16 @@ public class StudentProfileDO extends TenantBaseDO {
     private String specialMarks;
 
     /**
+     * 身份证号
+     */
+    private String idCard;
+
+    /**
+     * 届别（入学年份）
+     */
+    private Integer enrollmentYear;
+
+    /**
      * 备注
      */
     private String remark;

@@ -57,6 +57,15 @@ public class StudentProfileBaseVO {
     @Length(max = 11, message = "手机号不能超过11")
     private String mobile;
 
+    @Schema(description = "身份证号", requiredMode = Schema.RequiredMode.REQUIRED, example = "110101200801012345")
+    @NotBlank(message = "身份证号不能为空")
+    @Length(min = 18, max = 18, message = "身份证号必须为18位")
+    private String idCard;
+
+    @Schema(description = "届别（入学年份）", requiredMode = Schema.RequiredMode.REQUIRED, example = "2024")
+    @NotNull(message = "届别不能为空")
+    private Integer enrollmentYear;
+
     @Schema(description = "年级部门编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "年级部门编号不能为空")
     private Long gradeDeptId;
