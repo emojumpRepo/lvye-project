@@ -109,6 +109,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     public Long createStudentProfile(@Valid StudentProfileSaveReqVO createReqVO) {
         // 校验学号唯一性
         validateStudentNoUnique(null, createReqVO.getStudentNo());
+        // 校验身份证唯一性
+        validateIdCardUnique(null, createReqVO.getIdCard());
         //插入用户表
         AdminUserDO adminUserDO = new AdminUserDO();
         adminUserDO.setUsername(createReqVO.getStudentNo());
@@ -126,7 +128,11 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         studentProfileMapper.insert(studentProfile);
         //设置学生角色
         Set<Long> roles = new HashSet<>();
-        roles.add(roleMapper.selectOne(RoleDO::getName, "学生").getId());
+        RoleDO studentRole = roleMapper.selectOne(RoleDO::getName, "学生");
+        if (studentRole == null) {
+            throw exception(ErrorCodeConstants.STUDENT_ROLE_ASSIGN_FAILED);
+        }
+        roles.add(studentRole.getId());
         permissionService.assignUserRole(adminUserDO.getId(), roles);
         //插入学生历史记录表
         String schoolYear = configApi.getConfigValueByKey(SCHOOL_YEAR);
@@ -149,6 +155,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         StudentProfileDO studentProfileDO = validateStudentProfileExists(updateReqVO.getId());
         // 校验学号唯一性
         validateStudentNoUnique(updateReqVO.getId(), updateReqVO.getStudentNo());
+        // 校验身份证唯一性
+        validateIdCardUnique(updateReqVO.getId(), updateReqVO.getIdCard());
         // 更新学生表
         StudentProfileDO updateObj = BeanUtils.toBean(updateReqVO, StudentProfileDO.class);
         studentProfileMapper.updateById(updateObj);
@@ -209,6 +217,24 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         }
         if (!Objects.equals(studentProfile.getId(), id)) {
             throw exception(ErrorCodeConstants.STUDENT_NO_DUPLICATE);
+        }
+    }
+
+    private void validateIdCardUnique(Long id, String idCard) {
+        // 如果身份证为空或空字符串，则不校验（由前端验证处理）
+        if (idCard == null || idCard.trim().isEmpty()) {
+            return;
+        }
+        StudentProfileDO studentProfile = studentProfileMapper.selectByIdCard(idCard.trim());
+        if (studentProfile == null) {
+            return;
+        }
+        // 如果 id 为空，说明不用比较是否为相同 id 的学生档案
+        if (id == null) {
+            throw exception(ErrorCodeConstants.STUDENT_IDCARD_DUPLICATE);
+        }
+        if (!Objects.equals(studentProfile.getId(), id)) {
+            throw exception(ErrorCodeConstants.STUDENT_IDCARD_DUPLICATE);
         }
     }
 

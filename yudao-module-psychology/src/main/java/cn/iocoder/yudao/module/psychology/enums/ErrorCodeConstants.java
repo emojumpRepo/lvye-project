@@ -13,12 +13,14 @@ public interface ErrorCodeConstants {
     ErrorCode STUDENT_PROFILE_NOT_EXISTS = new ErrorCode(1_003_001_000, "学生档案不存在");
     ErrorCode STUDENT_PROFILE_ALREADY_EXISTS = new ErrorCode(1_003_001_001, "学生档案已存在");
     ErrorCode STUDENT_NO_DUPLICATE = new ErrorCode(1_003_001_002, "学号已存在");
-    ErrorCode STUDENT_PROFILE_GRADUATED = new ErrorCode(1_003_001_003, "学生已毕业，无法操作");
-    ErrorCode PARENT_INFO_REQUIRED = new ErrorCode(1_003_001_004, "家长信息为必填项");
-    ErrorCode STUDENT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_001_005, "导入用户数据不能为空！");
-    ErrorCode STUDENT_GRADE_OR_CLASS_IS_EMPTY = new ErrorCode(1_003_001_005, "年级/班级数据不能为空！");
-    ErrorCode STUDENT_GRADE_OR_CLASS_NOT_MATCH = new ErrorCode(1_003_001_005, "年级/班级数据不匹配！");
-    ErrorCode STUDENT_NAME_NOT_MATCH = new ErrorCode(1_003_001_006, "学生姓名与学号不匹配");
+    ErrorCode STUDENT_IDCARD_DUPLICATE = new ErrorCode(1_003_001_003, "身份证号已存在");
+    ErrorCode STUDENT_PROFILE_GRADUATED = new ErrorCode(1_003_001_004, "学生已毕业，无法操作");
+    ErrorCode PARENT_INFO_REQUIRED = new ErrorCode(1_003_001_005, "家长信息为必填项");
+    ErrorCode STUDENT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_001_006, "导入用户数据不能为空！");
+    ErrorCode STUDENT_GRADE_OR_CLASS_IS_EMPTY = new ErrorCode(1_003_001_007, "年级/班级数据不能为空！");
+    ErrorCode STUDENT_GRADE_OR_CLASS_NOT_MATCH = new ErrorCode(1_003_001_008, "年级/班级数据不匹配！");
+    ErrorCode STUDENT_NAME_NOT_MATCH = new ErrorCode(1_003_001_009, "学生姓名与学号不匹配");
+    ErrorCode STUDENT_ROLE_ASSIGN_FAILED = new ErrorCode(1_003_001_010, "学生分配角色失败");
 
     // ========== 学生档案-单条导入专用码（保持唯一且不与既有冲突） ==========
     ErrorCode STUDENT_IMPORT_ONE_SUCCESS = new ErrorCode(1_003_001_100, "导入成功");

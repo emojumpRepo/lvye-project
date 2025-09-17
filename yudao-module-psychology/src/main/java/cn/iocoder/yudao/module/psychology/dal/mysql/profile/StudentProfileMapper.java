@@ -38,6 +38,10 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
         return selectOne(StudentProfileDO::getUserId, userId);
     }
 
+    default StudentProfileDO selectByIdCard(String idCard) {
+        return selectOne(StudentProfileDO::getIdCard, idCard);
+    }
+
     default int updateRiskLevel(Long id, Integer riskLevel) {
         return update(new LambdaUpdateWrapper<StudentProfileDO>()
                 .eq(StudentProfileDO::getId, id)
