@@ -61,9 +61,15 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         // 获取当前用户作为咨询师
         Long counselorUserId = SecurityFrameworkUtils.getLoginUserId();
         
+        // 验证时间逻辑：结束时间必须晚于开始时间
+        if (createReqVO.getAppointmentEndTime().isBefore(createReqVO.getAppointmentStartTime()) ||
+            createReqVO.getAppointmentEndTime().isEqual(createReqVO.getAppointmentStartTime())) {
+            throw ServiceExceptionUtil.exception(CONSULTATION_TIME_INVALID);
+        }
+        
         // 检查时间冲突
-        LocalDateTime endTime = createReqVO.getAppointmentTime().plusMinutes(createReqVO.getDurationMinutes());
-        if (appointmentMapper.hasTimeConflict(counselorUserId, createReqVO.getAppointmentTime(), endTime, null)) {
+        if (appointmentMapper.hasTimeConflict(counselorUserId, createReqVO.getAppointmentStartTime(), 
+            createReqVO.getAppointmentEndTime(), null)) {
             throw ServiceExceptionUtil.exception(CONSULTATION_TIME_CONFLICT);
         }
 
@@ -72,6 +78,13 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         appointment.setCounselorUserId(counselorUserId);
         appointment.setStatus(1); // 已预约
         appointment.setOverdue(false);
+        
+        // 如果没有传递durationMinutes，则根据开始时间和结束时间计算
+        if (appointment.getDurationMinutes() == null) {
+            long minutes = java.time.Duration.between(createReqVO.getAppointmentStartTime(), 
+                createReqVO.getAppointmentEndTime()).toMinutes();
+            appointment.setDurationMinutes((int) minutes);
+        }
         
         appointmentMapper.insert(appointment);
         
@@ -88,22 +101,40 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         // 校验存在
         ConsultationAppointmentDO appointment = validateAppointmentExists(updateReqVO.getId());
         
-        // 如果修改了时间，需要检查时间冲突
-        if (updateReqVO.getAppointmentTime() != null && 
-            !updateReqVO.getAppointmentTime().equals(appointment.getAppointmentTime())) {
+        // 确定要使用的开始时间和结束时间
+        LocalDateTime startTime = updateReqVO.getAppointmentStartTime() != null ? 
+            updateReqVO.getAppointmentStartTime() : appointment.getAppointmentStartTime();
+        LocalDateTime endTime = updateReqVO.getAppointmentEndTime() != null ? 
+            updateReqVO.getAppointmentEndTime() : appointment.getAppointmentEndTime();
+        
+        // 如果修改了开始时间或结束时间，需要验证逻辑和冲突
+        if ((updateReqVO.getAppointmentStartTime() != null && 
+             !updateReqVO.getAppointmentStartTime().equals(appointment.getAppointmentStartTime())) ||
+            (updateReqVO.getAppointmentEndTime() != null && 
+             !updateReqVO.getAppointmentEndTime().equals(appointment.getAppointmentEndTime()))) {
             
-            Integer duration = updateReqVO.getDurationMinutes() != null ? 
-                updateReqVO.getDurationMinutes() : appointment.getDurationMinutes();
-            LocalDateTime endTime = updateReqVO.getAppointmentTime().plusMinutes(duration);
+            // 验证时间逻辑：结束时间必须晚于开始时间
+            if (endTime.isBefore(startTime) || endTime.isEqual(startTime)) {
+                throw ServiceExceptionUtil.exception(CONSULTATION_TIME_INVALID);
+            }
             
+            // 检查时间冲突
             if (appointmentMapper.hasTimeConflict(appointment.getCounselorUserId(), 
-                updateReqVO.getAppointmentTime(), endTime, updateReqVO.getId())) {
+                startTime, endTime, updateReqVO.getId())) {
                 throw ServiceExceptionUtil.exception(CONSULTATION_TIME_CONFLICT);
             }
         }
         
         // 更新
         ConsultationAppointmentDO updateObj = BeanUtils.toBean(updateReqVO, ConsultationAppointmentDO.class);
+        
+        // 如果没有传递durationMinutes但修改了时间，则重新计算时长
+        if (updateObj.getDurationMinutes() == null && 
+            (updateReqVO.getAppointmentStartTime() != null || updateReqVO.getAppointmentEndTime() != null)) {
+            long minutes = java.time.Duration.between(startTime, endTime).toMinutes();
+            updateObj.setDurationMinutes((int) minutes);
+        }
+        
         appointmentMapper.updateById(updateObj);
     }
 
@@ -193,15 +224,18 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
             throw ServiceExceptionUtil.exception(CONSULTATION_STATUS_ERROR);
         }
         
+        // 基于原时长计算新的结束时间
+        LocalDateTime newEndTime = adjustReqVO.getNewAppointmentTime().plusMinutes(appointment.getDurationMinutes());
+        
         // 检查时间冲突
-        LocalDateTime endTime = adjustReqVO.getNewAppointmentTime().plusMinutes(appointment.getDurationMinutes());
         if (appointmentMapper.hasTimeConflict(appointment.getCounselorUserId(), 
-            adjustReqVO.getNewAppointmentTime(), endTime, id)) {
+            adjustReqVO.getNewAppointmentTime(), newEndTime, id)) {
             throw ServiceExceptionUtil.exception(CONSULTATION_TIME_CONFLICT);
         }
         
-        // 更新时间
-        appointment.setAppointmentTime(adjustReqVO.getNewAppointmentTime());
+        // 更新开始和结束时间
+        appointment.setAppointmentStartTime(adjustReqVO.getNewAppointmentTime());
+        appointment.setAppointmentEndTime(newEndTime);
         appointmentMapper.updateById(appointment);
         
         // TODO: 发送通知给学生
@@ -313,6 +347,9 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         // 转换为VO
         return appointments.stream().map(appointment -> {
             ConsultationAppointmentRespVO vo = BeanUtils.toBean(appointment, ConsultationAppointmentRespVO.class);
+            
+            // BeanUtils.toBean已经自动复制了appointmentStartTime和appointmentEndTime字段
+            // 无需额外设置
             
             // 填充学生信息
             StudentProfileVO student = studentMap.get(appointment.getStudentProfileId());

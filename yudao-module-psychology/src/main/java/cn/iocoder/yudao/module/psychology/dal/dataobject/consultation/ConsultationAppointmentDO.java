@@ -40,7 +40,12 @@ public class ConsultationAppointmentDO extends TenantBaseDO {
     /**
      * 预约咨询的开始时间
      */
-    private LocalDateTime appointmentTime;
+    private LocalDateTime appointmentStartTime;
+
+    /**
+     * 预约咨询的结束时间
+     */
+    private LocalDateTime appointmentEndTime;
 
     /**
      * 咨询时长（分钟）
@@ -51,7 +56,7 @@ public class ConsultationAppointmentDO extends TenantBaseDO {
      * 咨询类型（字典：consultation_type）
      * 初次咨询、复诊咨询、紧急咨询、家长咨询
      */
-    private Integer consultationType;
+    private String consultationType;
 
     /**
      * 咨询地点

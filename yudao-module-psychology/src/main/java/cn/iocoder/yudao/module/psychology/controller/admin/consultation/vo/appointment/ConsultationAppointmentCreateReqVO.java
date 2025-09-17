@@ -14,16 +14,20 @@ public class ConsultationAppointmentCreateReqVO {
     @NotNull(message = "学生档案不能为空")
     private Long studentProfileId;
 
-    @Schema(description = "预约时间", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "预约时间不能为空")
-    private LocalDateTime appointmentTime;
+    @Schema(description = "预约开始时间", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "预约开始时间不能为空")
+    private LocalDateTime appointmentStartTime;
+
+    @Schema(description = "预约结束时间", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "预约结束时间不能为空")
+    private LocalDateTime appointmentEndTime;
 
     @Schema(description = "咨询时长（分钟）", example = "60")
-    private Integer durationMinutes = 60;
+    private Integer durationMinutes;
 
-    @Schema(description = "咨询类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "咨询类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "初次咨询")
     @NotNull(message = "咨询类型不能为空")
-    private Integer consultationType;
+    private String consultationType;
 
     @Schema(description = "咨询地点", example = "心理咨询室201")
     private String location;

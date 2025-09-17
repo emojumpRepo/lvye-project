@@ -23,7 +23,7 @@ public interface ConsultationAppointmentMapper extends BaseMapperX<ConsultationA
                 .eqIfPresent(ConsultationAppointmentDO::getStudentProfileId, reqVO.getStudentProfileId())
                 .eqIfPresent(ConsultationAppointmentDO::getCounselorUserId, reqVO.getCounselorUserId())
                 .eqIfPresent(ConsultationAppointmentDO::getStatus, reqVO.getStatus())
-                .betweenIfPresent(ConsultationAppointmentDO::getAppointmentTime, reqVO.getStartTime(), reqVO.getEndTime())
+                .betweenIfPresent(ConsultationAppointmentDO::getAppointmentStartTime, reqVO.getStartTime(), reqVO.getEndTime())
                 .orderByDesc(ConsultationAppointmentDO::getId));
     }
 
@@ -33,15 +33,15 @@ public interface ConsultationAppointmentMapper extends BaseMapperX<ConsultationA
         
         return selectList(new LambdaQueryWrapperX<ConsultationAppointmentDO>()
                 .eq(ConsultationAppointmentDO::getCounselorUserId, counselorUserId)
-                .between(ConsultationAppointmentDO::getAppointmentTime, startOfDay, endOfDay)
-                .orderByAsc(ConsultationAppointmentDO::getAppointmentTime));
+                .between(ConsultationAppointmentDO::getAppointmentStartTime, startOfDay, endOfDay)
+                .orderByAsc(ConsultationAppointmentDO::getAppointmentStartTime));
     }
 
     default boolean hasTimeConflict(Long counselorUserId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
         LambdaQueryWrapperX<ConsultationAppointmentDO> wrapper = new LambdaQueryWrapperX<>();
         wrapper.eq(ConsultationAppointmentDO::getCounselorUserId, counselorUserId);
         wrapper.ne(ConsultationAppointmentDO::getStatus, 4); // 排除已取消的
-        wrapper.apply("( (appointment_time BETWEEN {0} AND {1}) OR (appointment_time <= {0} AND DATE_ADD(appointment_time, INTERVAL duration_minutes MINUTE) > {0}) )", startTime, endTime);
+        wrapper.apply("( (appointment_start_time BETWEEN {0} AND {1}) OR (appointment_start_time <= {0} AND appointment_end_time > {0}) OR (appointment_start_time < {1} AND appointment_end_time >= {1}) )", startTime, endTime);
         
         if (excludeId != null) {
             wrapper.ne(ConsultationAppointmentDO::getId, excludeId);

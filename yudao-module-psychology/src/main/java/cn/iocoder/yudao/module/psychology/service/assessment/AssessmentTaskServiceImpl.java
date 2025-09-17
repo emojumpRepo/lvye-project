@@ -345,7 +345,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Override
     public PageResult<AssessmentTaskVO> getAssessmentTaskPage(AssessmentTaskPageReqVO pageReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        List<Long> taskNos = new ArrayList<>();
+        List<String> taskNos = new ArrayList<>();
         DeptDataPermissionRespDTO deptDataPermissionRespDTO = permissionApi.getDeptDataPermission(userId);
         if (!deptDataPermissionRespDTO.getAll()) {
             taskNos = deptTaskMapper.selectTaskListByDeptIds(deptDataPermissionRespDTO.getDeptIds());

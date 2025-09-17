@@ -56,6 +56,7 @@ public interface ErrorCodeConstants {
     ErrorCode CONSULTATION_STATUS_ERROR = new ErrorCode(1_003_005_004, "咨询状态不正确");
     ErrorCode CONSULTATION_ASSESSMENT_NOT_EXISTS = new ErrorCode(1_003_005_005, "咨询评估不存在");
     ErrorCode CONSULTATION_ASSESSMENT_ALREADY_EXISTS = new ErrorCode(1_003_005_006, "咨询评估已存在");
+    ErrorCode CONSULTATION_TIME_INVALID = new ErrorCode(1_003_005_007, "预约时间无效，结束时间必须晚于开始时间");
 
     // ========== 危机干预相关 1-003-006-000 ==========
     ErrorCode CRISIS_INTERVENTION_NOT_EXISTS = new ErrorCode(1_003_006_000, "危机干预事件不存在");

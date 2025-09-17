@@ -63,7 +63,7 @@ public class ConsultationAssessmentServiceImpl implements ConsultationAssessment
             ConsultationAssessmentRespVO vo = new ConsultationAssessmentRespVO();
             vo.setAppointmentId(appointmentId);
             vo.setStudentProfileId(appointment.getStudentProfileId());
-            vo.setAppointmentTime(appointment.getAppointmentTime());
+            vo.setAppointmentTime(appointment.getAppointmentStartTime());
             
             // 填充学生信息
             StudentProfileVO student = studentProfileService.getStudentProfile(appointment.getStudentProfileId());
@@ -93,7 +93,7 @@ public class ConsultationAssessmentServiceImpl implements ConsultationAssessment
             vo.setCounselorName(counselor.getNickname());
         }
         
-        vo.setAppointmentTime(appointment.getAppointmentTime());
+        vo.setAppointmentTime(appointment.getAppointmentStartTime());
         
         return vo;
     }

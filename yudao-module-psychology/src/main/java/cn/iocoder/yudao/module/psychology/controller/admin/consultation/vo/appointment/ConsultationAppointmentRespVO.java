@@ -30,14 +30,17 @@ public class ConsultationAppointmentRespVO {
     @Schema(description = "咨询师姓名", example = "李老师")
     private String counselorName;
 
-    @Schema(description = "预约时间")
-    private LocalDateTime appointmentTime;
+    @Schema(description = "预约开始时间")
+    private LocalDateTime appointmentStartTime;
+
+    @Schema(description = "预约结束时间")
+    private LocalDateTime appointmentEndTime;
 
     @Schema(description = "咨询时长（分钟）", example = "60")
     private Integer durationMinutes;
 
-    @Schema(description = "咨询类型", example = "1")
-    private Integer consultationType;
+    @Schema(description = "咨询类型", example = "初次咨询")
+    private String consultationType;
 
     @Schema(description = "咨询地点", example = "心理咨询室201")
     private String location;
