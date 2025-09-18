@@ -146,6 +146,14 @@ public interface CrisisInterventionService {
     Boolean checkDuplicateEvent(Long studentProfileId);
 
     /**
+     * 更新危机事件描述
+     *
+     * @param id 事件ID
+     * @param description 事件描述
+     */
+    void updateCrisisEventDescription(Long id, String description);
+
+    /**
      * 获取/设置危机事件分配模式
      */
     String getAssignmentMode();

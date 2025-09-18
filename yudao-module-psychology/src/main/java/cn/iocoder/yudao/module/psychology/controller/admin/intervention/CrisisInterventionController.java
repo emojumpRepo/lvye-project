@@ -193,4 +193,15 @@ public class CrisisInterventionController {
         interventionService.setAssignmentMode(mode);
         return success(true);
     }
+
+    @PutMapping("/event/{id}/description")
+    @Operation(summary = "更新危机事件描述")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> updateCrisisEventDescription(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CrisisEventUpdateDescriptionReqVO updateReqVO) {
+        interventionService.updateCrisisEventDescription(id, updateReqVO.getDescription());
+        return success(true);
+    }
 }
