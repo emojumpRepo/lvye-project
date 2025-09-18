@@ -348,7 +348,14 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         List<String> taskNos = new ArrayList<>();
         DeptDataPermissionRespDTO deptDataPermissionRespDTO = permissionApi.getDeptDataPermission(userId);
         if (!deptDataPermissionRespDTO.getAll()) {
+            // 空集合时直接返回空分页，避免生成非法 SQL
+            if (deptDataPermissionRespDTO.getDeptIds() == null || deptDataPermissionRespDTO.getDeptIds().isEmpty()) {
+                return new PageResult<>(java.util.Collections.emptyList(), 0L);
+            }
             taskNos = deptTaskMapper.selectTaskListByDeptIds(deptDataPermissionRespDTO.getDeptIds());
+            if (taskNos == null || taskNos.isEmpty()) {
+                return new PageResult<>(java.util.Collections.emptyList(), 0L);
+            }
         }
         IPage<AssessmentTaskVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
         assessmentTaskMapper.selectPageList(page, pageReqVO, taskNos);

@@ -4,11 +4,16 @@
 
     <select id="selectTaskListByDeptIds" resultType="java.lang.String">
         select DISTINCT task_no from lvye_assessment_dept_task
-        where deleted = 0 and
-        dept_id in
-        <foreach collection="deptIds" item="deptId" open="(" close=")" separator=",">
-            #{deptId}
-        </foreach>
+        where deleted = 0
+        <if test="deptIds != null and deptIds.size > 0">
+            and dept_id in
+            <foreach collection="deptIds" item="deptId" open="(" close=")" separator=",">
+                #{deptId}
+            </foreach>
+        </if>
+        <if test="deptIds == null or deptIds.size == 0">
+            and 1 = 0
+        </if>
     </select>
 
 

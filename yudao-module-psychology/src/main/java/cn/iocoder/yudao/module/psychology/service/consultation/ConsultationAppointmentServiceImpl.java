@@ -58,8 +58,8 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
             throw ServiceExceptionUtil.exception(STUDENT_PROFILE_NOT_EXISTS);
         }
 
-        // 获取当前用户作为咨询师
-        Long counselorUserId = SecurityFrameworkUtils.getLoginUserId();
+        // 使用入参指定的咨询师用户ID
+        Long counselorUserId = createReqVO.getCounselorUserId();
         
         // 验证时间逻辑：结束时间必须晚于开始时间
         if (createReqVO.getAppointmentEndTime().isBefore(createReqVO.getAppointmentStartTime()) ||
