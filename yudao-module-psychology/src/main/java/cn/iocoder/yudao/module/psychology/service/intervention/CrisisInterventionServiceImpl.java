@@ -965,4 +965,24 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             log.error("自动创建干预记录失败，学生ID: {}", studentProfileId, e);
         }
     }
+
+    @Override
+    public void updateCrisisEventDescription(Long id, String description) {
+        // 校验事件是否存在
+        CrisisInterventionDO event = crisisInterventionMapper.selectById(id);
+        if (event == null) {
+            throw ServiceExceptionUtil.exception(CRISIS_INTERVENTION_NOT_EXISTS);
+        }
+
+        // 更新描述
+        CrisisInterventionDO updateObj = new CrisisInterventionDO();
+        updateObj.setId(id);
+        updateObj.setDescription(description);
+        crisisInterventionMapper.updateById(updateObj);
+
+        // 记录处理历史
+        recordEventProcess(id, "更新描述", "更新事件描述：" + description);
+
+        log.info("更新危机事件描述，ID: {}, 描述: {}", id, description);
+    }
 }
