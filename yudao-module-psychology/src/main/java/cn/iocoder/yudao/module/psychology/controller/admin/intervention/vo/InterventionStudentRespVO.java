@@ -33,6 +33,9 @@ public class InterventionStudentRespVO {
     @Schema(description = "负责心理老师姓名")
     private String counselorName;
 
+    @Schema(description = "最后更新时间")
+    private LocalDateTime lastUpdateTime;
+
     @Schema(description = "最近评估时间")
     private LocalDateTime lastAssessmentTime;
 

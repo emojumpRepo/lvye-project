@@ -22,11 +22,29 @@ public class CrisisEventProcessHistoryVO {
     @Schema(description = "操作人姓名", example = "李老师")
     private String operatorName;
 
-    @Schema(description = "操作类型")
+    @Schema(description = "操作类型", example = "ASSIGN_HANDLER")
     private String action;
 
-    @Schema(description = "操作内容")
+    @Schema(description = "操作类型名称", example = "分配负责人")
+    private String actionName;
+
+    @Schema(description = "操作内容（如处理方式、评估内容等）")
     private String content;
+
+    @Schema(description = "操作原因")
+    private String reason;
+
+    @Schema(description = "涉及用户ID（如新负责人ID）", example = "2")
+    private Long relatedUserId;
+
+    @Schema(description = "涉及用户姓名（如新负责人姓名）", example = "张老师")
+    private String relatedUserName;
+
+    @Schema(description = "原用户ID（如原负责人ID）", example = "3")
+    private Long originalUserId;
+
+    @Schema(description = "原用户姓名（如原负责人姓名）", example = "王老师")
+    private String originalUserName;
 
     @Schema(description = "附件列表")
     private List<String> attachments;
