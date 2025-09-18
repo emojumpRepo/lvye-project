@@ -22,7 +22,6 @@ public interface QuestionnaireConvert {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "isOpen", ignore = true)
     @Mapping(target = "accessCount", ignore = true)
     @Mapping(target = "completionCount", ignore = true)
     @Mapping(target = "syncStatus", ignore = true)
@@ -37,7 +36,6 @@ public interface QuestionnaireConvert {
     QuestionnaireDO convert(QuestionnaireCreateReqVO bean);
 
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "isOpen", ignore = true)
     @Mapping(target = "accessCount", ignore = true)
     @Mapping(target = "completionCount", ignore = true)
     @Mapping(target = "syncStatus", ignore = true)
@@ -73,7 +71,7 @@ public interface QuestionnaireConvert {
     @Mapping(target = "accessible", ignore = true)
     @Mapping(target = "startTime", ignore = true)
     @Mapping(target = "endTime", ignore = true)
-    @Mapping(target = "isOpen", expression = "java(bean.getIsOpen() != null && bean.getIsOpen() == 1)")
+    @Mapping(target = "isOpen", expression = "java(bean.getSupportIndependentUse() != null && bean.getSupportIndependentUse() == 1)")
     AppQuestionnaireSimpleRespVO convertToAppSimpleRespVO(QuestionnaireDO bean);
 
     List<AppQuestionnaireSimpleRespVO> convertToAppSimpleRespVOList(List<QuestionnaireDO> list);

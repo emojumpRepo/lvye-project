@@ -29,9 +29,6 @@ public class QuestionnairePageReqVO extends PageParam {
     @Schema(description = "状态", example = "1")
     private Integer status;
 
-    @Schema(description = "是否开放", example = "1")
-    private Integer isOpen;
-
     @Schema(description = "是否支持独立使用", example = "1")
     private Integer supportIndependentUse;
 

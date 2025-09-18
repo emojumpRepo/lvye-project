@@ -136,6 +136,35 @@ public class UserController {
         return success(UserConvert.INSTANCE.convert(user, dept));
     }
 
+    @GetMapping("/list-by-role-code")
+    @Operation(summary = "根据角色编码获取用户列表")
+    @Parameter(name = "roleCode", description = "角色编码", required = true, example = "admin")
+    @PreAuthorize("@ss.hasPermission('system:user:query')")
+    public CommonResult<List<UserSimpleRespVO>> getUserListByRoleCode(@RequestParam("roleCode") String roleCode) {
+        List<AdminUserDO> list = userService.getUserListByRoleCode(roleCode);
+        Map<Long, DeptDO> deptMap = deptService.getDeptMap(
+                convertList(list, AdminUserDO::getDeptId));
+        return success(UserConvert.INSTANCE.convertSimpleList(list, deptMap));
+    }
+
+    @GetMapping("/list-teachers")
+    @Operation(summary = "获取老师列表（角色：psychology_teacher、teacher）")
+    @PreAuthorize("@ss.hasPermission('system:user:query')")
+    public CommonResult<List<UserSimpleRespVO>> getTeacherList() {
+        // 获取两个角色的用户，并进行去重
+        List<AdminUserDO> list1 = userService.getUserListByRoleCode("psychology_teacher");
+        List<AdminUserDO> list2 = userService.getUserListByRoleCode("teacher");
+        // 使用用户ID去重并保持顺序
+        Map<Long, AdminUserDO> userMap = new java.util.LinkedHashMap<>();
+        list1.forEach(u -> userMap.put(u.getId(), u));
+        list2.forEach(u -> userMap.put(u.getId(), u));
+        List<AdminUserDO> users = new java.util.ArrayList<>(userMap.values());
+
+        Map<Long, DeptDO> deptMap = deptService.getDeptMap(
+                convertList(users, AdminUserDO::getDeptId));
+        return success(UserConvert.INSTANCE.convertSimpleList(users, deptMap));
+    }
+
     @GetMapping("/export-excel")
     @Operation(summary = "导出用户")
     @PreAuthorize("@ss.hasPermission('system:user:export')")

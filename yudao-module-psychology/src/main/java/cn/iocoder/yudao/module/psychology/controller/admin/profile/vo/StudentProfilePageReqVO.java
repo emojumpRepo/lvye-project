@@ -15,10 +15,10 @@ import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_
 @ToString(callSuper = true)
 public class StudentProfilePageReqVO extends PageParam {
 
-    @Schema(description = "学号", example = "2024001")
+    @Schema(description = "学号（支持模糊查询）", example = "2024001")
     private String studentNo;
 
-    @Schema(description = "姓名", example = "张三")
+    @Schema(description = "姓名（支持模糊查询）", example = "张三")
     private String name;
 
     @Schema(description = "性别", example = "1")

@@ -90,13 +90,9 @@ public class QuestionnaireDO extends TenantBaseDO {
     private Integer status;
 
     /**
-     * 是否开放：0-否，1-是
+     * 是否支持独立使用：0-否，1-是（对应数据库字段 is_open）
      */
-    private Integer isOpen;
-
-    /**
-     * 是否支持独立使用：0-否，1-是
-     */
+    @com.baomidou.mybatisplus.annotation.TableField("is_open")
     private Integer supportIndependentUse;
 
     /**

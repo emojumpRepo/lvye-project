@@ -222,4 +222,12 @@ public interface AdminUserService {
      */
     AdminUserDO getUserByMobileAndNickName(String mobile, String nickName);
 
+    /**
+     * 根据角色编码获取用户列表（仅返回未被逻辑删除的用户）
+     *
+     * @param roleCode 角色编码
+     * @return 用户列表
+     */
+    List<AdminUserDO> getUserListByRoleCode(String roleCode);
+
 }

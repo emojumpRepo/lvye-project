@@ -19,8 +19,8 @@ public class QuestionnaireRespVO extends QuestionnaireBaseVO {
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
-    @Schema(description = "是否开放", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    private Integer isOpen;
+    @Schema(description = "是否支持独立使用", example = "1")
+    private Integer supportIndependentUse;
 
     @Schema(description = "访问次数", requiredMode = Schema.RequiredMode.REQUIRED, example = "100")
     private Integer accessCount;

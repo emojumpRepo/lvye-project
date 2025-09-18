@@ -69,14 +69,12 @@ public class QuestionnaireServiceTest {
         questionnaire1.setTitle("支持独立使用的问卷");
         questionnaire1.setSupportIndependentUse(1);
         questionnaire1.setStatus(1);
-        questionnaire1.setIsOpen(1);
 
         QuestionnaireDO questionnaire2 = new QuestionnaireDO();
         questionnaire2.setId(2L);
         questionnaire2.setTitle("不支持独立使用的问卷");
         questionnaire2.setSupportIndependentUse(0);
         questionnaire2.setStatus(1);
-        questionnaire2.setIsOpen(1);
 
         when(questionnaireMapper.selectIndependentUseQuestionnaires(1))
             .thenReturn(Arrays.asList(questionnaire1));

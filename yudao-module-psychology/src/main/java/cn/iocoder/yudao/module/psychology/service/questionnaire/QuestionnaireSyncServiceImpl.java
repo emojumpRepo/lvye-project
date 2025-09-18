@@ -167,7 +167,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             questionnaire.setEstimatedDuration(SurveyDataConverter.estimateDuration(externalSurvey.getSurveyType()));
             questionnaire.setAccessCount(0);
             questionnaire.setCompletionCount(externalSurvey.getSubmitCount() != null ? externalSurvey.getSubmitCount() : 0);
-            questionnaire.setIsOpen(SurveyDataConverter.isOpen(externalSurvey));
+            questionnaire.setSupportIndependentUse(1);
             questionnaire.setCreateTime(LocalDateTime.now());
             questionnaire.setUpdateTime(LocalDateTime.now());
             questionnaire.setSyncStatus(1); // 设置为已同步
@@ -196,7 +196,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
                 failedQuestionnaire.setQuestionnaireType(1); // 默认类型
                 failedQuestionnaire.setTargetAudience(1); // 默认学生
                 failedQuestionnaire.setStatus(0); // 草稿状态
-                failedQuestionnaire.setIsOpen(0); // 不开放
+                failedQuestionnaire.setSupportIndependentUse(1); // 不开放
                 failedQuestionnaire.setAccessCount(0);
                 failedQuestionnaire.setCompletionCount(0);
                 failedQuestionnaire.setCreateTime(LocalDateTime.now());
@@ -252,7 +252,6 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
                 !Objects.equals(localQuestionnaire.getTargetAudience(), newTargetAudience) ||
                 !Objects.equals(localQuestionnaire.getEstimatedDuration(), newEstimatedDuration) ||
                 !Objects.equals(localQuestionnaire.getCompletionCount(), newCompletionCount) ||
-                !Objects.equals(localQuestionnaire.getIsOpen(), newIsOpen) ||
                 !Objects.equals(localQuestionnaire.getQuestionCount(), newQuestionCount)
             ) {
 
@@ -269,7 +268,6 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
                 localQuestionnaire.setTargetAudience(newTargetAudience);
                 localQuestionnaire.setEstimatedDuration(newEstimatedDuration);
                 localQuestionnaire.setCompletionCount(newCompletionCount);
-                localQuestionnaire.setIsOpen(newIsOpen);
                 localQuestionnaire.setUpdateTime(LocalDateTime.now());
                 localQuestionnaire.setSyncStatus(1); // 更新同步状态
                 localQuestionnaire.setLastSyncTime(LocalDateTime.now());

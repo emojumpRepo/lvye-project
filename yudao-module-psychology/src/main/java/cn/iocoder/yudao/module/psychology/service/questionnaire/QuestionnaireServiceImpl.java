@@ -46,7 +46,6 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         
         // 设置默认值
         questionnaire.setStatus(QuestionnaireStatusEnum.DRAFT.getStatus());
-        questionnaire.setIsOpen(0);
         questionnaire.setAccessCount(0);
         questionnaire.setCompletionCount(0);
         questionnaire.setSyncStatus(0);

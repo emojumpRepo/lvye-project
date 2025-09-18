@@ -17,10 +17,10 @@
         <where>
             a.deleted = 0
             <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
-                AND a.student_no = #{pageReqVO.studentNo}
+                AND a.student_no LIKE CONCAT('%', #{pageReqVO.studentNo}, '%')
             </if>
             <if test="pageReqVO.name != null and pageReqVO.name !=''">
-                AND a.name = #{pageReqVO.name}
+                AND a.name LIKE CONCAT('%', #{pageReqVO.name}, '%')
             </if>
             <if test="pageReqVO.sex != null">
                 AND b.sex = #{pageReqVO.sex}
