@@ -46,9 +46,24 @@ public class CrisisEventProcessDO extends TenantBaseDO {
     private String action;
 
     /**
-     * 处理内容记录
+     * 处理内容记录（用于存储处理方式、评估内容等文本信息）
      */
     private String content;
+
+    /**
+     * 操作原因
+     */
+    private String reason;
+
+    /**
+     * 涉及的用户ID（如新负责人ID、原负责人ID等）
+     */
+    private Long relatedUserId;
+
+    /**
+     * 原用户ID（用于记录变更前的负责人等）
+     */
+    private Long originalUserId;
 
     /**
      * 附件URL列表（JSON数组）

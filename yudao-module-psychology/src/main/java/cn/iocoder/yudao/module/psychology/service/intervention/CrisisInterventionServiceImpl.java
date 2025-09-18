@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.psychology.service.intervention;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
@@ -477,7 +478,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         crisisInterventionMapper.insert(event);
 
         // 记录上报动作
-        recordEventProcess(event.getId(), "上报事件", "危机事件已上报：" + createReqVO.getDescription());
+        recordEventProcessWithUsers(event.getId(), "REPORT", createReqVO.getDescription(),
+            "风险等级：" + getRiskLevelName(createReqVO.getRiskLevel()),
+            null, null);
 
         // 自动分配处理人（如果是自动模式）
         if ("auto".equals(assignmentMode)) {
@@ -558,12 +561,11 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         event.setStatus(2); // 已分配
         crisisInterventionMapper.updateById(event);
 
-        // 记录分配动作
-        String content = "分配负责人：" + adminUserApi.getUser(assignReqVO.getHandlerUserId()).getNickname();
-        if (assignReqVO.getAssignReason() != null) {
-            content += "，原因：" + assignReqVO.getAssignReason();
-        }
-        recordEventProcess(id, "分配负责人", content);
+        // 使用结构化方式记录分配动作
+        recordEventProcessWithUsers(id, "ASSIGN_HANDLER", null,
+            assignReqVO.getAssignReason(),
+            assignReqVO.getHandlerUserId(),
+            null); // 初次分配，没有原负责人
     }
 
     @Override
@@ -579,12 +581,11 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         event.setHandlerUserId(reassignReqVO.getNewHandlerUserId());
         crisisInterventionMapper.updateById(event);
 
-        // 记录变更动作
-        String content = String.format("负责人变更：%s -> %s，原因：%s",
-            oldHandlerId != null ? adminUserApi.getUser(oldHandlerId).getNickname() : "无",
-            adminUserApi.getUser(reassignReqVO.getNewHandlerUserId()).getNickname(),
-            reassignReqVO.getReason());
-        recordEventProcess(id, "更改负责人", content);
+        // 使用结构化方式记录变更
+        recordEventProcessWithUsers(id, "REASSIGN_HANDLER", null, 
+            reassignReqVO.getReason(), 
+            reassignReqVO.getNewHandlerUserId(), 
+            oldHandlerId);
     }
 
     @Override
@@ -602,7 +603,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
         // 记录处理动作
         String methodName = getProcessMethodName(processReqVO.getProcessMethod());
-        recordEventProcess(id, "选择处理方式", "处理方式：" + methodName + "，原因：" + processReqVO.getProcessReason());
+        recordEventProcessWithUsers(id, "CHOOSE_PROCESS", methodName,
+            processReqVO.getProcessReason(),
+            null, null);
     }
 
     @Override
@@ -628,8 +631,10 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         assessment.setContent(closeReqVO.getSummary());
         eventAssessmentMapper.insert(assessment);
 
-        // 记录结案动作
-        recordEventProcess(id, "结案", "事件已结案：" + closeReqVO.getSummary());
+        // 使用结构化方式记录结案动作
+        recordEventProcessWithUsers(id, "CLOSE", closeReqVO.getSummary(),
+            "风险等级：" + getRiskLevelName(closeReqVO.getRiskLevel()),
+            null, null);
     }
 
     @Override
@@ -650,7 +655,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         crisisInterventionMapper.updateById(event);
 
         // 记录评估动作
-        recordEventProcess(id, "阶段性评估", "完成阶段性评估，风险等级：" + getRiskLevelName(assessmentReqVO.getRiskLevel()));
+        recordEventProcessWithUsers(id, "STAGE_ASSESSMENT", assessmentReqVO.getContent(),
+            "风险等级：" + getRiskLevelName(assessmentReqVO.getRiskLevel()),
+            null, null);
 
         // 根据后续建议决定下一步
         if (assessmentReqVO.getFollowUpSuggestion() == 4) { // 问题基本解决
@@ -699,6 +706,19 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         process.setOperatorUserId(SecurityFrameworkUtils.getLoginUserId());
         process.setAction(action);
         process.setContent(content);
+        eventProcessMapper.insert(process);
+    }
+
+    private void recordEventProcessWithUsers(Long eventId, String action, String content, 
+                                            String reason, Long relatedUserId, Long originalUserId) {
+        CrisisEventProcessDO process = new CrisisEventProcessDO();
+        process.setEventId(eventId);
+        process.setOperatorUserId(SecurityFrameworkUtils.getLoginUserId());
+        process.setAction(action);
+        process.setContent(content);
+        process.setReason(reason);
+        process.setRelatedUserId(relatedUserId);
+        process.setOriginalUserId(originalUserId);
         eventProcessMapper.insert(process);
     }
 
@@ -801,20 +821,60 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             return new ArrayList<>();
         }
 
-        // 批量获取操作人信息
-        List<Long> userIds = processList.stream()
-            .map(CrisisEventProcessDO::getOperatorUserId)
-            .distinct()
-            .collect(Collectors.toList());
-        Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(userIds);
+        // 收集所有需要查询的用户ID
+        Set<Long> allUserIds = new HashSet<>();
+        for (CrisisEventProcessDO process : processList) {
+            if (process.getOperatorUserId() != null) {
+                allUserIds.add(process.getOperatorUserId());
+            }
+            if (process.getRelatedUserId() != null) {
+                allUserIds.add(process.getRelatedUserId());
+            }
+            if (process.getOriginalUserId() != null) {
+                allUserIds.add(process.getOriginalUserId());
+            }
+        }
+        
+        // 批量获取用户信息
+        Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(new ArrayList<>(allUserIds));
 
         return processList.stream().map(process -> {
-            CrisisEventProcessHistoryVO vo = BeanUtils.toBean(process, CrisisEventProcessHistoryVO.class);
+            CrisisEventProcessHistoryVO vo = new CrisisEventProcessHistoryVO();
+            vo.setId(process.getId());
+            vo.setEventId(process.getEventId());
+            vo.setOperatorUserId(process.getOperatorUserId());
+            vo.setAction(process.getAction());
+            vo.setContent(process.getContent());
+            vo.setReason(process.getReason());
+            vo.setRelatedUserId(process.getRelatedUserId());
+            vo.setOriginalUserId(process.getOriginalUserId());
+            vo.setAttachments(process.getAttachments());
+            vo.setCreateTime(process.getCreateTime());
 
+            // 设置操作人姓名
             AdminUserRespDTO operator = userMap.get(process.getOperatorUserId());
             if (operator != null) {
                 vo.setOperatorName(operator.getNickname());
             }
+
+            // 设置涉及用户姓名
+            if (process.getRelatedUserId() != null) {
+                AdminUserRespDTO relatedUser = userMap.get(process.getRelatedUserId());
+                if (relatedUser != null) {
+                    vo.setRelatedUserName(relatedUser.getNickname());
+                }
+            }
+
+            // 设置原用户姓名
+            if (process.getOriginalUserId() != null) {
+                AdminUserRespDTO originalUser = userMap.get(process.getOriginalUserId());
+                if (originalUser != null) {
+                    vo.setOriginalUserName(originalUser.getNickname());
+                }
+            }
+
+            // 设置操作类型名称
+            vo.setActionName(getActionName(process.getAction()));
 
             return vo;
         }).collect(Collectors.toList());
@@ -828,6 +888,23 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             case 3: return "持续关注";
             case 4: return "直接解决";
             default: return "未知";
+        }
+    }
+
+    private String getActionName(String action) {
+        // TODO: 从字典获取操作类型名称
+        if (StrUtil.isBlank(action)) {
+            return "";
+        }
+        switch (action) {
+            case "REPORT": return "上报事件";
+            case "ASSIGN_HANDLER": return "分配负责人";
+            case "REASSIGN_HANDLER": return "更改负责人";
+            case "CHOOSE_PROCESS": return "选择处理方式";
+            case "STAGE_ASSESSMENT": return "阶段性评估";
+            case "CLOSE": return "结案";
+            case "REOPEN": return "重新开启";
+            default: return action;
         }
     }
 
@@ -887,5 +964,25 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         } catch (Exception e) {
             log.error("自动创建干预记录失败，学生ID: {}", studentProfileId, e);
         }
+    }
+
+    @Override
+    public void updateCrisisEventDescription(Long id, String description) {
+        // 校验事件是否存在
+        CrisisInterventionDO event = crisisInterventionMapper.selectById(id);
+        if (event == null) {
+            throw ServiceExceptionUtil.exception(CRISIS_INTERVENTION_NOT_EXISTS);
+        }
+
+        // 更新描述
+        CrisisInterventionDO updateObj = new CrisisInterventionDO();
+        updateObj.setId(id);
+        updateObj.setDescription(description);
+        crisisInterventionMapper.updateById(updateObj);
+
+        // 记录处理历史
+        recordEventProcess(id, "更新描述", "更新事件描述：" + description);
+
+        log.info("更新危机事件描述，ID: {}, 描述: {}", id, description);
     }
 }
