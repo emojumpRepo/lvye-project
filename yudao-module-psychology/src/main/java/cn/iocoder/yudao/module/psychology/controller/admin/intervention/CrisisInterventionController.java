@@ -182,15 +182,15 @@ public class CrisisInterventionController {
     @GetMapping("/admin/settings/intervention-assignment-mode")
     @Operation(summary = "获取危机事件分配模式")
     @PreAuthorize("@ss.hasPermission('psychology:settings:query')")
-    public CommonResult<String> getAssignmentMode() {
-        return success(interventionService.getAssignmentMode());
+    public CommonResult<InterventionAssignmentSettingVO> getAssignmentMode() {
+        return success(interventionService.getAssignmentSettings());
     }
 
     @PutMapping("/admin/settings/intervention-assignment-mode")
     @Operation(summary = "设置危机事件分配模式")
     @PreAuthorize("@ss.hasPermission('psychology:settings:update')")
-    public CommonResult<Boolean> setAssignmentMode(@RequestParam("mode") String mode) {
-        interventionService.setAssignmentMode(mode);
+    public CommonResult<Boolean> setAssignmentMode(@Valid @RequestBody InterventionAssignmentSettingVO settingVO) {
+        interventionService.setAssignmentSettings(settingVO);
         return success(true);
     }
 

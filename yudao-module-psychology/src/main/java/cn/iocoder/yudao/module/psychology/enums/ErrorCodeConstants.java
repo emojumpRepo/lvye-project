@@ -122,4 +122,8 @@ public interface ErrorCodeConstants {
     ErrorCode TEACHER_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_015_003, "导入用户数据不能为空！");
     ErrorCode MOBILE_NO_DUPLICATE = new ErrorCode(1_003_015_004, "手机号已存在");
     ErrorCode DEPT_NOT_EXISTS = new ErrorCode(1_003_015_005, "班级/年级不存在");
+
+    // ========== 咨询师分配相关 1-003-016-000 ==========
+    ErrorCode COUNSELOR_ASSIGNMENT_NOT_EXISTS = new ErrorCode(1_003_016_000, "咨询师分配记录不存在");
+    ErrorCode COUNSELOR_ASSIGNMENT_DATE_INVALID = new ErrorCode(1_003_016_001, "分配日期无效，结束日期必须晚于开始日期");
 }
