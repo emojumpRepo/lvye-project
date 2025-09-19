@@ -97,11 +97,17 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         if (assessmentUserTaskDO.getStatus().equals(ParticipantCompletionStatusEnum.COMPLETED.getStatus())) {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_PARTICIPANT_EXISTS);
         }
+        
+        // 只有当状态从NOT_STARTED变为IN_PROGRESS时才记录时间线
+        boolean isFirstStart = assessmentUserTaskDO.getStatus().equals(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus());
+        
         //更新参与测评状态
         userTaskMapper.updateStatusById(assessmentUserTaskDO.getId(), ParticipantCompletionStatusEnum.IN_PROGRESS.getStatus());
         
-        // 记录开始测评的时间线
-        Map<String, Object> meta = new HashMap<>();
+        // 只在第一次开始时记录时间线
+        if (isFirstStart) {
+            // 记录开始测评的时间线
+            Map<String, Object> meta = new HashMap<>();
         meta.put("taskNo", taskNo);
         meta.put("taskName", assessmentTask.getTaskName());
         meta.put("taskId", assessmentTask.getId());
@@ -121,12 +127,13 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         String content = String.format("开始参与测评任务「%s」，共%d份问卷", 
             assessmentTask.getTaskName(), questionnaireIds.size());
         
-        studentTimelineService.saveTimelineWithMeta(studentProfile.getId(),
-            TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), // 使用同一个类型，通过meta区分开始/完成
-            "开始测评",
-            "assessment_start_" + taskNo,
-            content,
-            meta);
+            studentTimelineService.saveTimelineWithMeta(studentProfile.getId(),
+                TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), // 使用同一个类型，通过meta区分开始/完成
+                "开始测评",
+                "assessment_start_" + taskNo,
+                content,
+                meta);
+        }
     }
 
     @Override
