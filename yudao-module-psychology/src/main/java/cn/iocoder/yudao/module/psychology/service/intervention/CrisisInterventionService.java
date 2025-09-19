@@ -154,8 +154,12 @@ public interface CrisisInterventionService {
     void updateCrisisEventDescription(Long id, String description);
 
     /**
-     * 获取/设置危机事件分配模式
+     * 获取危机事件分配设置
      */
-    String getAssignmentMode();
-    void setAssignmentMode(String mode);
+    InterventionAssignmentSettingVO getAssignmentSettings();
+    
+    /**
+     * 设置危机事件分配设置
+     */
+    void setAssignmentSettings(InterventionAssignmentSettingVO settingVO);
 }

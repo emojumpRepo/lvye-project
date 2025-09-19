@@ -24,6 +24,7 @@ import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
+import cn.iocoder.yudao.module.psychology.service.counselor.StudentCounselorAssignmentService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -69,9 +70,13 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Resource
     private StudentTimelineService studentTimelineService;
+    
+    @Resource
+    private StudentCounselorAssignmentService studentCounselorAssignmentService;
 
     // TODO: 从系统配置中读取
     private static String assignmentMode = "manual";
+    private static Long defaultHandlerUserId = null;
 
     @Override
     public InterventionDashboardSummaryVO getDashboardSummaryWithPage(InterventionDashboardReqVO reqVO) {
@@ -791,14 +796,28 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     }
 
     @Override
-    public String getAssignmentMode() {
-        return assignmentMode;
+    public InterventionAssignmentSettingVO getAssignmentSettings() {
+        InterventionAssignmentSettingVO settingVO = new InterventionAssignmentSettingVO();
+        settingVO.setMode(assignmentMode);
+        settingVO.setDefaultHandlerUserId(defaultHandlerUserId);
+        
+        // 获取默认处理人名称
+        if (defaultHandlerUserId != null) {
+            AdminUserRespDTO user = adminUserApi.getUser(defaultHandlerUserId);
+            if (user != null) {
+                settingVO.setDefaultHandlerName(user.getNickname());
+            }
+        }
+        
+        return settingVO;
     }
 
     @Override
-    public void setAssignmentMode(String mode) {
-        assignmentMode = mode;
-        log.info("危机事件分配模式已设置为：{}", mode);
+    public void setAssignmentSettings(InterventionAssignmentSettingVO settingVO) {
+        assignmentMode = settingVO.getMode();
+        defaultHandlerUserId = settingVO.getDefaultHandlerUserId();
+        log.info("危机事件分配模式已设置为：{}，默认处理人ID：{}", 
+                assignmentMode, defaultHandlerUserId);
     }
 
     private CrisisInterventionDO validateEventExists(Long id) {
@@ -832,9 +851,55 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     }
 
     private void autoAssignHandler(CrisisInterventionDO event) {
-        // TODO: 实现自动分配逻辑
-        // 根据学生绑定的心理老师或班主任自动分配
-        log.info("自动分配处理人，事件ID：{}", event.getId());
+        // 获取学生的主责咨询师，如果没有则使用默认处理人
+        Long handlerUserId = studentCounselorAssignmentService.getCounselorUserIdOrDefault(
+                event.getStudentProfileId(), defaultHandlerUserId);
+        
+        String assignReason = "自动分配";
+        if (studentCounselorAssignmentService.hasPrimaryCounselor(event.getStudentProfileId())) {
+            assignReason = "自动分配给学生的责任心理老师";
+        } else if (handlerUserId != null) {
+            assignReason = "自动分配给默认心理老师";
+        }
+        
+        // 如果找到了合适的处理人，进行分配
+        if (handlerUserId != null) {
+            // 更新事件处理人和状态
+            event.setHandlerUserId(handlerUserId);
+            event.setStatus(2); // 已分配
+            event.setAutoAssigned(true);
+            crisisInterventionMapper.updateById(event);
+            
+            // 记录分配动作
+            recordEventProcessWithUsers(event.getId(), "AUTO_ASSIGN", assignReason,
+                    assignReason, handlerUserId, null);
+            
+            // 添加时间线记录
+            AdminUserRespDTO handler = adminUserApi.getUser(handlerUserId);
+            Map<String, Object> meta = new HashMap<>();
+            meta.put("eventId", event.getId());
+            meta.put("handlerUserId", handlerUserId);
+            meta.put("handlerName", handler != null ? handler.getNickname() : "未知");
+            meta.put("assignReason", assignReason);
+            meta.put("status", "已分配");
+            meta.put("autoAssigned", true);
+            
+            String content = String.format("危机事件已自动分配给 %s 处理", 
+                handler != null ? handler.getNickname() : "未知");
+            studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+                "危机事件自动分配",
+                "crisis_event_" + event.getId(),
+                content,
+                meta
+            );
+            
+            log.info("自动分配处理人成功，事件ID：{}，处理人ID：{}，分配原因：{}", 
+                    event.getId(), handlerUserId, assignReason);
+        } else {
+            log.warn("自动分配处理人失败，事件ID：{}，未找到合适的处理人", event.getId());
+        }
     }
 
     private List<CrisisEventRespVO> convertToRespVOList(List<CrisisInterventionDO> events) {

@@ -79,7 +79,8 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
     public void startAssessment(String taskNo, Long userId) {
         Integer isParent = WebFrameworkUtils.getIsParent();
         // 校验任务存在
-        if (assessmentTaskService.getAssessmentTask(taskNo) == null) {
+        AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTask(taskNo);
+        if (assessmentTask == null) {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
         }
         // 获取学生档案
@@ -96,8 +97,43 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         if (assessmentUserTaskDO.getStatus().equals(ParticipantCompletionStatusEnum.COMPLETED.getStatus())) {
             throw exception(ErrorCodeConstants.ASSESSMENT_TASK_PARTICIPANT_EXISTS);
         }
+        
+        // 只有当状态从NOT_STARTED变为IN_PROGRESS时才记录时间线
+        boolean isFirstStart = assessmentUserTaskDO.getStatus().equals(ParticipantCompletionStatusEnum.NOT_STARTED.getStatus());
+        
         //更新参与测评状态
         userTaskMapper.updateStatusById(assessmentUserTaskDO.getId(), ParticipantCompletionStatusEnum.IN_PROGRESS.getStatus());
+        
+        // 只在第一次开始时记录时间线
+        if (isFirstStart) {
+            // 记录开始测评的时间线
+            Map<String, Object> meta = new HashMap<>();
+        meta.put("taskNo", taskNo);
+        meta.put("taskName", assessmentTask.getTaskName());
+        meta.put("taskId", assessmentTask.getId());
+        meta.put("targetAudience", assessmentTask.getTargetAudience());
+        meta.put("scenarioId", assessmentTask.getScenarioId());
+        meta.put("studentId", studentProfile.getId());
+        meta.put("studentNo", studentProfile.getStudentNo());
+        meta.put("studentName", studentProfile.getName());
+        meta.put("isParent", isParent);
+        meta.put("startTime", new Date());
+        
+        // 获取问卷数量
+        List<Long> questionnaireIds = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(taskNo, TenantContextHolder.getTenantId());
+        meta.put("questionnaireCount", questionnaireIds.size());
+        meta.put("questionnaireIds", questionnaireIds);
+        
+        String content = String.format("开始参与测评任务「%s」，共%d份问卷", 
+            assessmentTask.getTaskName(), questionnaireIds.size());
+        
+            studentTimelineService.saveTimelineWithMeta(studentProfile.getId(),
+                TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), // 使用同一个类型，通过meta区分开始/完成
+                "开始测评",
+                "assessment_start_" + taskNo,
+                content,
+                meta);
+        }
     }
 
     @Override
@@ -144,15 +180,41 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         Long fishishQuestionnaire = questionnaireResultMapper.selectCountByTaskNoAndUserId(taskNo, userId);
         if (Long.valueOf(questionnaireIds.size()).equals(fishishQuestionnaire)) {
             userTaskMapper.updateFinishTask(taskNo, userId);
+            
+            // 获取测评任务信息
+            AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTaskByNo(taskNo);
+            
             //登记时间线（添加meta数据）
             Map<String, Object> meta = new HashMap<>();
+            // 任务信息
+            meta.put("taskNo", taskNo);
+            if (assessmentTask != null) {
+                meta.put("taskName", assessmentTask.getTaskName());
+                meta.put("taskId", assessmentTask.getId());
+                meta.put("scenarioId", assessmentTask.getScenarioId());
+                meta.put("targetAudience", assessmentTask.getTargetAudience());
+            }
+            // 问卷信息
             meta.put("questionnaireCount", questionnaireIds.size());
+            meta.put("questionnaireIds", questionnaireIds);
+            // 学生信息
+            meta.put("studentId", studentProfile.getId());
+            meta.put("studentNo", studentProfile.getStudentNo());
+            meta.put("studentName", studentProfile.getName());
+            // 测评结果信息
             if (questionnaireResultDO != null) {
                 meta.put("riskLevel", questionnaireResultDO.getRiskLevel());
                 meta.put("evaluate", questionnaireResultDO.getEvaluate());
                 meta.put("suggestions", questionnaireResultDO.getSuggestions());
+                meta.put("score", questionnaireResultDO.getScore());
+                meta.put("resultId", questionnaireResultDO.getId());
             }
-            String content = String.format("完成了%d份问卷的测评", questionnaireIds.size());
+            // 完成时间
+            meta.put("completedAt", new Date());
+            
+            String content = String.format("完成测评任务「%s」，包含%d份问卷", 
+                assessmentTask != null ? assessmentTask.getTaskName() : taskNo, 
+                questionnaireIds.size());
             studentTimelineService.saveTimelineWithMeta(studentProfile.getId(), 
                 TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), 
                 TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(), 

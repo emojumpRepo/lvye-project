@@ -142,8 +142,31 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         studentProfileRecordDO.setGradeDeptId(createReqVO.getGradeDeptId());
         studentProfileRecordDO.setClassDeptId(createReqVO.getClassDeptId());
         studentProfileRecordMapper.insert(studentProfileRecordDO);
-        //登记时间线
-        studentTimelineService.saveTimeline(studentProfile.getId(), TimelineEventTypeEnum.PROFILE_CREATED.getType(), TimelineEventTypeEnum.PROFILE_CREATED.getName(), String.valueOf(studentProfile.getId()));
+        
+        //登记时间线（添加meta数据）
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("profileId", studentProfile.getId());
+        meta.put("studentNo", studentProfile.getStudentNo());
+        meta.put("studentName", studentProfile.getName());
+        meta.put("idCard", studentProfile.getIdCard());
+        meta.put("gradeDeptId", createReqVO.getGradeDeptId());
+        meta.put("classDeptId", createReqVO.getClassDeptId());
+        meta.put("userId", studentProfile.getUserId());
+        meta.put("sex", studentProfile.getSex());
+        meta.put("enrollmentYear", studentProfile.getEnrollmentYear());
+        meta.put("createType", "manual"); // 手动创建
+        meta.put("creatorId", SecurityFrameworkUtils.getLoginUserId());
+        meta.put("schoolYear", schoolYear);
+        
+        String content = String.format("创建学生档案：%s（%s）", 
+            studentProfile.getName(), studentProfile.getStudentNo());
+        
+        studentTimelineService.saveTimelineWithMeta(studentProfile.getId(), 
+            TimelineEventTypeEnum.PROFILE_CREATED.getType(), 
+            TimelineEventTypeEnum.PROFILE_CREATED.getName(), 
+            "profile_" + studentProfile.getId(),
+            content,
+            meta);
         // 返回
         return studentProfile.getId();
     }

@@ -15,6 +15,9 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileRecordMapper;
 import cn.iocoder.yudao.module.psychology.enums.ContactEnum;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
+import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
@@ -79,6 +82,9 @@ public class DataImportService {
 
     @Resource
     private StudentProfileRecordMapper studentProfileRecordMapper;
+    
+    @Resource
+    private StudentTimelineService studentTimelineService;
 
     /**
      * 保存老师信息
@@ -187,6 +193,35 @@ public class DataImportService {
         studentProfileRecordDO.setGradeDeptId(gradeDept.getId());
         studentProfileRecordDO.setClassDeptId(classDept.getId());
         studentProfileRecordMapper.insert(studentProfileRecordDO);
+        
+        // 登记时间线（导入的学生档案）
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("profileId", studentProfile.getId());
+        meta.put("studentNo", studentProfile.getStudentNo());
+        meta.put("studentName", studentProfile.getName());
+        meta.put("idCard", studentProfile.getIdCard());
+        meta.put("gradeDeptId", gradeDept.getId());
+        meta.put("gradeName", gradeDept.getName());
+        meta.put("classDeptId", classDept.getId());
+        meta.put("className", classDept.getName());
+        meta.put("userId", studentProfile.getUserId());
+        meta.put("sex", studentProfile.getSex());
+        meta.put("enrollmentYear", studentProfile.getEnrollmentYear());
+        meta.put("createType", "import"); // 导入创建
+        meta.put("importerId", SecurityFrameworkUtils.getLoginUserId());
+        meta.put("schoolYear", schoolYear);
+        meta.put("mobile", student.getMobile());
+        
+        String content = String.format("导入学生档案：%s（%s）", 
+            studentProfile.getName(), studentProfile.getStudentNo());
+        
+        studentTimelineService.saveTimelineWithMeta(studentProfile.getId(),
+            TimelineEventTypeEnum.PROFILE_CREATED.getType(),
+            "档案导入",
+            "import_profile_" + studentProfile.getId(),
+            content,
+            meta);
+        
         //插入学生家长信息
         ParentContactDO parentContactDO = new ParentContactDO();
         parentContactDO.setStudentProfileId(studentProfile.getId());
