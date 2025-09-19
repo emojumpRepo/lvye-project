@@ -17,6 +17,7 @@ CREATE TABLE `lvye_questionnaire` (
     `target_audience` TINYINT NOT NULL COMMENT '目标对象：1-学生，2-家长',
     `external_id` VARCHAR(100) COMMENT '外部系统问卷ID',
     `external_link` VARCHAR(500) COMMENT '外部问卷链接',
+    `survey_code` VARCHAR(128) COMMENT '问卷编码',
     `question_count` INT COMMENT '题目数量',
     `estimated_duration` INT COMMENT '预计用时（分钟）',
     `content` LONGTEXT COMMENT '问卷内容（题目、选项等）',
