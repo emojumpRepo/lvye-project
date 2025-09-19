@@ -8,14 +8,12 @@
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
                a.home_address, b.sex, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
-               a.counselor_user_id, coun.nickname AS counselorName,
                a.create_time, a.update_time,
                b.mobile, c.name AS gradeName, d.name AS className
         FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
-        LEFT JOIN system_users coun ON a.counselor_user_id = coun.id
         <where>
             a.deleted = 0
             <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
@@ -52,7 +50,6 @@
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
                a.home_address, b.sex, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
-               a.counselor_user_id, coun.nickname AS counselorName,
                a.create_time, a.update_time,
                b.mobile, c.name AS gradeName, d.name AS className,
                e.nickname AS updater
@@ -61,7 +58,6 @@
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
         LEFT JOIN system_users e ON a.updater = e.id
-        LEFT JOIN system_users coun ON a.counselor_user_id = coun.id
         <where>
             a.deleted = 0 and a.id = #{studentProfileId}
         </where>
@@ -69,13 +65,11 @@
 
     <select id="selectInfoByUserId"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
-        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className,
-               coun.nickname AS counselorName 
+        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className
         FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
-        LEFT JOIN system_users coun ON a.counselor_user_id = coun.id
         <where>
             a.deleted = 0 and a.user_id = #{userId}
         </where>
