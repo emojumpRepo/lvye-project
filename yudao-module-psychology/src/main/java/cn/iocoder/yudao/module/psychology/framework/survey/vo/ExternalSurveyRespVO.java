@@ -52,6 +52,12 @@ public class ExternalSurveyRespVO {
     private String surveyPath;
 
     /**
+     * 问卷编码
+     */
+    @JsonProperty("surveyCode")
+    private String surveyCode;
+
+    /**
      * 当前状态
      */
     @JsonProperty("curStatus")

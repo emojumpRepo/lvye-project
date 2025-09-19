@@ -60,6 +60,11 @@ public class QuestionnaireDO extends TenantBaseDO {
     private String externalLink;
 
     /**
+     * 问卷编码（外部系统提供的编码）
+     */
+    private String surveyCode;
+
+    /**
      * 题目数量
      */
     private Integer questionCount;

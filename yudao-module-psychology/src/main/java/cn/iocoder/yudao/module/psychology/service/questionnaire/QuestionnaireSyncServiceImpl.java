@@ -158,6 +158,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             questionnaire.setDescription(SurveyDataConverter.generateDescription(externalSurvey));
             questionnaire.setExternalLink(SurveyDataConverter.generateSurveyLink(externalSurvey, surveySystemProperties.getBaseUrl()));
             questionnaire.setExternalId(externalSurvey.getSurveyMetaId());
+            questionnaire.setSurveyCode(externalSurvey.getSurveyCode());
 
             // 设置其他字段，使用转换工具类
             questionnaire.setQuestionnaireType(SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType()));
@@ -231,6 +232,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             String newTitle = StringUtils.hasText(externalSurvey.getTitle()) ? externalSurvey.getTitle() : "未命名问卷";
             String newDescription = SurveyDataConverter.generateDescription(externalSurvey);
             String newExternalLink = externalSurvey.getSurveyPath();
+            String newSurveyCode = externalSurvey.getSurveyCode();
             Integer newQuestionnaireType = SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType());
             Integer newStatus = SurveyDataConverter.convertStatus(externalSurvey);
             Integer newTargetAudience = SurveyDataConverter.generateTargetAudience(externalSurvey);
@@ -247,6 +249,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             if (!Objects.equals(localQuestionnaire.getTitle(), newTitle) ||
                 !Objects.equals(localQuestionnaire.getDescription(), newDescription) ||
                 !Objects.equals(localQuestionnaire.getExternalLink(), newExternalLink) ||
+                !Objects.equals(localQuestionnaire.getSurveyCode(), newSurveyCode) ||
                 !Objects.equals(localQuestionnaire.getQuestionnaireType(), newQuestionnaireType) ||
                 !Objects.equals(localQuestionnaire.getStatus(), newStatus) ||
                 !Objects.equals(localQuestionnaire.getTargetAudience(), newTargetAudience) ||
@@ -272,6 +275,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
                 localQuestionnaire.setSyncStatus(1); // 更新同步状态
                 localQuestionnaire.setLastSyncTime(LocalDateTime.now());
                 localQuestionnaire.setQuestionCount(newQuestionCount);
+                localQuestionnaire.setSurveyCode(newSurveyCode);
 
                 questionnaireMapper.updateById(localQuestionnaire);
 

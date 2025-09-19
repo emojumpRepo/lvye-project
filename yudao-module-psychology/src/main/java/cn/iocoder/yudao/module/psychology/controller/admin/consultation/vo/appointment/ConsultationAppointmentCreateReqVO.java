@@ -44,7 +44,7 @@ public class ConsultationAppointmentCreateReqVO {
     @Schema(description = "提前提醒时间（分钟）", example = "30")
     private Integer remindTime = 30;
 
-    @Schema(description = "咨询师用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1001")
-    @NotNull(message = "咨询师用户不能为空")
+    @Schema(description = "咨询老师用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1001")
+    @NotNull(message = "咨询老师用户不能为空")
     private Long counselorUserId;
 }
