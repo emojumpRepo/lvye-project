@@ -30,7 +30,9 @@ import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 
@@ -142,8 +144,19 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         Long fishishQuestionnaire = questionnaireResultMapper.selectCountByTaskNoAndUserId(taskNo, userId);
         if (Long.valueOf(questionnaireIds.size()).equals(fishishQuestionnaire)) {
             userTaskMapper.updateFinishTask(taskNo, userId);
-            //登记时间线
-            studentTimelineService.saveTimeline(studentProfile.getId(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(), taskNo);
+            //登记时间线（添加meta数据）
+            Map<String, Object> meta = new HashMap<>();
+            meta.put("questionnaireCount", questionnaireIds.size());
+            if (questionnaireResultDO != null) {
+                meta.put("riskLevel", questionnaireResultDO.getRiskLevel());
+                meta.put("evaluate", questionnaireResultDO.getEvaluate());
+                meta.put("suggestions", questionnaireResultDO.getSuggestions());
+            }
+            String content = String.format("完成了%d份问卷的测评", questionnaireIds.size());
+            studentTimelineService.saveTimelineWithMeta(studentProfile.getId(), 
+                TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(), 
+                TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(), 
+                taskNo, content, meta);
             try {
                 // 问卷全部完成后，触发组合测评结果生成并保存
                 assessmentResultService.generateAndSaveCombinedResult(taskNo, studentProfile.getId());

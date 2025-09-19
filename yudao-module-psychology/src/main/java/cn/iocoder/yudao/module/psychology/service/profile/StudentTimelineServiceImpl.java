@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author: MinGoo
@@ -29,15 +30,24 @@ public class StudentTimelineServiceImpl implements StudentTimelineService {
     @Override
     @Async
     public void saveTimeline(Long studentProfileId, Integer eventType, String title, String bizId){
-        Long userId = SecurityFrameworkUtils.getLoginUserId();;
+        // 调用新方法，保持兼容
+        saveTimelineWithMeta(studentProfileId, eventType, title, bizId, null, null);
+    }
+
+    @Override
+    @Async
+    public void saveTimelineWithMeta(Long studentProfileId, Integer eventType, String title, 
+                                     String bizId, String content, Map<String, Object> meta){
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
         AdminUserDO userDO = adminUserMapper.selectById(userId);
         StudentTimelineDO studentTimelineDO = new StudentTimelineDO();
         studentTimelineDO.setStudentProfileId(studentProfileId);
         studentTimelineDO.setEventType(eventType);
         studentTimelineDO.setTitle(title);
-        studentTimelineDO.setContent(null);
+        studentTimelineDO.setContent(content);
         studentTimelineDO.setBizId(bizId);
         studentTimelineDO.setOperator(userDO != null ? userDO.getNickname() : "");
+        studentTimelineDO.setMeta(meta);
         studentTimelineMapper.insert(studentTimelineDO);
     }
 

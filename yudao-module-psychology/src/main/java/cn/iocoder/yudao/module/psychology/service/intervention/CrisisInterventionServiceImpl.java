@@ -19,7 +19,9 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisIntervent
 import cn.iocoder.yudao.module.psychology.dal.mysql.intervention.InterventionLevelHistoryMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentInterventionMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
+import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import jakarta.annotation.Resource;
@@ -64,6 +66,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Resource
     private AdminUserApi adminUserApi;
+
+    @Resource
+    private StudentTimelineService studentTimelineService;
 
     // TODO: 从系统配置中读取
     private static String assignmentMode = "manual";
@@ -481,6 +486,25 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         recordEventProcessWithUsers(event.getId(), "REPORT", createReqVO.getDescription(),
             "风险等级：" + getRiskLevelName(createReqVO.getRiskLevel()),
             null, null);
+        
+        // 添加时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("eventId", event.getId());
+        meta.put("riskLevel", createReqVO.getRiskLevel());
+        meta.put("riskLevelName", getRiskLevelName(createReqVO.getRiskLevel()));
+        meta.put("reporterUserId", currentUserId);
+        meta.put("description", createReqVO.getDescription());
+        meta.put("status", "已上报");
+        
+        String content = String.format("上报了危机事件，风险等级：%s", getRiskLevelName(createReqVO.getRiskLevel()));
+        studentTimelineService.saveTimelineWithMeta(
+            createReqVO.getStudentProfileId(),
+            TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+            "危机事件上报",
+            "crisis_event_" + event.getId(),
+            content,
+            meta
+        );
 
         // 自动分配处理人（如果是自动模式）
         if ("auto".equals(assignmentMode)) {
@@ -566,6 +590,26 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             assignReqVO.getAssignReason(),
             assignReqVO.getHandlerUserId(),
             null); // 初次分配，没有原负责人
+        
+        // 添加时间线记录
+        AdminUserRespDTO handler = adminUserApi.getUser(assignReqVO.getHandlerUserId());
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("eventId", id);
+        meta.put("handlerUserId", assignReqVO.getHandlerUserId());
+        meta.put("handlerName", handler != null ? handler.getNickname() : "未知");
+        meta.put("assignReason", assignReqVO.getAssignReason());
+        meta.put("status", "已分配");
+        
+        String content = String.format("危机事件已分配给 %s 处理", 
+            handler != null ? handler.getNickname() : "未知");
+        studentTimelineService.saveTimelineWithMeta(
+            event.getStudentProfileId(),
+            TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+            "危机事件分配",
+            "crisis_event_" + id,
+            content,
+            meta
+        );
     }
 
     @Override
@@ -586,6 +630,30 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             reassignReqVO.getReason(), 
             reassignReqVO.getNewHandlerUserId(), 
             oldHandlerId);
+        
+        // 添加时间线记录
+        AdminUserRespDTO oldHandler = oldHandlerId != null ? adminUserApi.getUser(oldHandlerId) : null;
+        AdminUserRespDTO newHandler = adminUserApi.getUser(reassignReqVO.getNewHandlerUserId());
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("eventId", id);
+        meta.put("oldHandlerUserId", oldHandlerId);
+        meta.put("oldHandlerName", oldHandler != null ? oldHandler.getNickname() : "未知");
+        meta.put("newHandlerUserId", reassignReqVO.getNewHandlerUserId());
+        meta.put("newHandlerName", newHandler != null ? newHandler.getNickname() : "未知");
+        meta.put("reason", reassignReqVO.getReason());
+        
+        String content = String.format("危机事件负责人从 %s 变更为 %s，原因：%s",
+            oldHandler != null ? oldHandler.getNickname() : "未知",
+            newHandler != null ? newHandler.getNickname() : "未知",
+            reassignReqVO.getReason());
+        studentTimelineService.saveTimelineWithMeta(
+            event.getStudentProfileId(),
+            TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+            "危机事件负责人变更",
+            "crisis_event_" + id,
+            content,
+            meta
+        );
     }
 
     @Override
@@ -606,6 +674,25 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         recordEventProcessWithUsers(id, "CHOOSE_PROCESS", methodName,
             processReqVO.getProcessReason(),
             null, null);
+        
+        // 添加时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("eventId", id);
+        meta.put("processMethod", processReqVO.getProcessMethod());
+        meta.put("processMethodName", methodName);
+        meta.put("processReason", processReqVO.getProcessReason());
+        meta.put("status", "处理中");
+        meta.put("progress", 25);
+        
+        String content = String.format("开始处理危机事件，处理方式：%s", methodName);
+        studentTimelineService.saveTimelineWithMeta(
+            event.getStudentProfileId(),
+            TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+            "危机事件处理",
+            "crisis_event_" + id,
+            content,
+            meta
+        );
     }
 
     @Override
@@ -630,6 +717,28 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         assessment.setFollowUpSuggestion(closeReqVO.getFollowUpSuggestion());
         assessment.setContent(closeReqVO.getSummary());
         eventAssessmentMapper.insert(assessment);
+        
+        // 添加时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("eventId", id);
+        meta.put("finalRiskLevel", closeReqVO.getRiskLevel());
+        meta.put("finalRiskLevelName", getRiskLevelName(closeReqVO.getRiskLevel()));
+        meta.put("problemTypes", closeReqVO.getProblemTypes());
+        meta.put("followUpSuggestion", closeReqVO.getFollowUpSuggestion());
+        meta.put("summary", closeReqVO.getSummary());
+        meta.put("status", "已结案");
+        meta.put("progress", 100);
+        
+        String content = String.format("危机事件已结案，最终风险等级：%s", 
+            getRiskLevelName(closeReqVO.getRiskLevel()));
+        studentTimelineService.saveTimelineWithMeta(
+            event.getStudentProfileId(),
+            TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+            "危机事件结案",
+            "crisis_event_" + id,
+            content,
+            meta
+        );
 
         // 使用结构化方式记录结案动作
         recordEventProcessWithUsers(id, "CLOSE", closeReqVO.getSummary(),

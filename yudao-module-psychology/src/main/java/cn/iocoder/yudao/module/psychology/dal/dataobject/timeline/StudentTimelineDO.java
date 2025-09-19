@@ -1,9 +1,13 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.timeline;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.*;
+
+import java.util.Map;
 
 /**
  * 学生综合时间线事件 DO
@@ -52,6 +56,13 @@ public class StudentTimelineDO extends TenantBaseDO {
      * 操作者
      */
     private String operator;
+
+    /**
+     * 扩展元数据（JSON格式）
+     * 用于存储不同类型事件的特定信息
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, Object> meta;
 }
 
 
