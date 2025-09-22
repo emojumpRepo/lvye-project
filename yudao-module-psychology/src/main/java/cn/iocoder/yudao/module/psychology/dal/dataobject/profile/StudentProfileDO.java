@@ -109,6 +109,11 @@ public class StudentProfileDO extends TenantBaseDO {
     private String specialMarks;
 
     /**
+     * 监护人手机号
+     */
+    private String guardianMobile;
+
+    /**
      * 身份证号
      */
     private String idCard;

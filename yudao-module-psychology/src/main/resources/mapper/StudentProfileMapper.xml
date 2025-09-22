@@ -6,7 +6,7 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
         SELECT a.id, a.user_id, a.student_no, a.name,
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
-               a.home_address, b.sex, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.home_address, a.sex, a.ethnicity, a.guardian_mobile, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
                a.create_time, a.update_time,
                b.mobile, c.name AS gradeName, d.name AS className
@@ -23,7 +23,10 @@
                 AND a.name LIKE CONCAT('%', #{pageReqVO.name}, '%')
             </if>
             <if test="pageReqVO.sex != null">
-                AND b.sex = #{pageReqVO.sex}
+                AND a.sex = #{pageReqVO.sex}
+            </if>
+            <if test="pageReqVO.ethnicity != null">
+                AND a.ethnicity = #{pageReqVO.ethnicity}
             </if>
             <if test="pageReqVO.gradeDeptId != null">
                 AND a.grade_dept_id = #{pageReqVO.gradeDeptId}
@@ -48,7 +51,7 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
         SELECT a.id, a.user_id, a.student_no, a.name,
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
-               a.home_address, b.sex, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.home_address, a.sex, a.ethnicity, a.guardian_mobile, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
                a.create_time, a.update_time,
                b.mobile, c.name AS gradeName, d.name AS className,
@@ -65,7 +68,7 @@
 
     <select id="selectInfoByUserId"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
-        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className
+        SELECT a.*,b.mobile,c.name AS gradeName, d.name AS className
         FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id

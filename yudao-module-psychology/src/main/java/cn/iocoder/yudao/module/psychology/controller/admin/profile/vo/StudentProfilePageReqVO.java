@@ -24,6 +24,9 @@ public class StudentProfilePageReqVO extends PageParam {
     @Schema(description = "性别", example = "1")
     private Integer sex;
 
+    @Schema(description = "民族", example = "1")
+    private Integer ethnicity;
+
     @Schema(description = "年级部门编号", example = "1")
     private Long gradeDeptId;
 
