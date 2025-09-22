@@ -264,6 +264,19 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
             score = score + answerItem.getScore();
         }
         resultDO.setScore(new BigDecimal(score));
+        
+        // 提取并保存维度分数
+        Map<String, BigDecimal> dimensionScores = new HashMap<>();
+        for (QuestionnaireResultVO answerResult : answerResultList) {
+            if (answerResult.getDimensionName() != null && !answerResult.getDimensionName().isEmpty()) {
+                dimensionScores.put(answerResult.getDimensionName(), new BigDecimal(answerResult.getScore()));
+            }
+        }
+        if (!dimensionScores.isEmpty()) {
+            resultDO.setDimensionScores(JSON.toJSONString(dimensionScores));
+            log.info("问卷ID={} 保存维度分数: {}", questionnaireId, dimensionScores);
+        }
+        
         //统计不正常的因子总数，计算风险登记
         int isAbnormalCount = 0;
         for (QuestionnaireResultVO answerResult : answerResultList) {

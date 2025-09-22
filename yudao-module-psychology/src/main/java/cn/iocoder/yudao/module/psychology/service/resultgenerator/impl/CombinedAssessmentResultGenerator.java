@@ -400,19 +400,33 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
         // 统计低于界值的维度数量
         int belowThresholdCount = 0;
         Map<String, BigDecimal> dimensionScores = phcssResult.getDimensionScores();
+        
+        log.info("PHCSS维度分析开始，共{}个维度", dimensionScores.size());
 
         for (Map.Entry<String, BigDecimal> entry : dimensionScores.entrySet()) {
             String dimensionKey = entry.getKey();
             BigDecimal score = entry.getValue();
             BigDecimal threshold = phcssThresholds.get(dimensionKey);
 
-            if (threshold != null && score != null && score.compareTo(threshold) < 0) {
-                belowThresholdCount++;
-                log.debug("PHCSS维度 {} 得分 {} 低于界值 {}", dimensionKey, score, threshold);
+            if (threshold != null && score != null) {
+                if (score.compareTo(threshold) < 0) {
+                    belowThresholdCount++;
+                    log.info("PHCSS维度 [{}] 得分={} < 临界值={} (低于临界值)", 
+                        dimensionKey, score, threshold);
+                } else {
+                    log.info("PHCSS维度 [{}] 得分={} >= 临界值={} (正常)", 
+                        dimensionKey, score, threshold);
+                }
+            } else {
+                if (threshold == null) {
+                    log.warn("PHCSS维度 [{}] 未找到对应的临界值配置，得分={}", dimensionKey, score);
+                } else {
+                    log.warn("PHCSS维度 [{}] 得分为空", dimensionKey);
+                }
             }
         }
 
-        log.info("PHCSS规则：共{}个维度低于界值", belowThresholdCount);
+        log.info("PHCSS规则判定：共{}个维度低于临界值", belowThresholdCount);
 
         // 根据低于界值的维度数量映射风险等级
         return mapPhcssCountToRiskLevel(belowThresholdCount);
@@ -424,13 +438,25 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
      */
     private Map<String, BigDecimal> getPhcssThresholds() {
         Map<String, BigDecimal> thresholds = new HashMap<>();
-        // 硬编码PHCSS 6个维度的阈值，后续可配置化
-        thresholds.put("dimension1", new BigDecimal("50")); // 示例维度1阈值
-        thresholds.put("dimension2", new BigDecimal("50")); // 示例维度2阈值
-        thresholds.put("dimension3", new BigDecimal("50")); // 示例维度3阈值
-        thresholds.put("dimension4", new BigDecimal("50")); // 示例维度4阈值
-        thresholds.put("dimension5", new BigDecimal("50")); // 示例维度5阈值
-        thresholds.put("dimension6", new BigDecimal("50")); // 示例维度6阈值
+        // PHCSS量表6个维度的临界值配置
+        // 注：这里的维度名称需要与实际问卷返回的维度名称保持一致
+        // 如果实际维度名称不同，需要根据实际情况调整
+        thresholds.put("躯体化", new BigDecimal("2.0"));         // 躯体化维度临界值
+        thresholds.put("强迫", new BigDecimal("2.0"));          // 强迫维度临界值
+        thresholds.put("人际关系敏感", new BigDecimal("2.0"));   // 人际关系敏感维度临界值
+        thresholds.put("抑郁", new BigDecimal("2.0"));          // 抑郁维度临界值
+        thresholds.put("焦虑", new BigDecimal("2.0"));          // 焦虑维度临界值
+        thresholds.put("敌对", new BigDecimal("2.0"));          // 敌对维度临界值
+        
+        // 如果维度名称是英文或其他格式，添加映射
+        // 例如：
+        thresholds.put("somatization", new BigDecimal("2.0"));       // 躯体化英文
+        thresholds.put("obsession", new BigDecimal("2.0"));          // 强迫英文
+        thresholds.put("interpersonal", new BigDecimal("2.0"));      // 人际关系敏感英文
+        thresholds.put("depression", new BigDecimal("2.0"));         // 抑郁英文
+        thresholds.put("anxiety", new BigDecimal("2.0"));            // 焦虑英文
+        thresholds.put("hostility", new BigDecimal("2.0"));          // 敌对英文
+        
         return thresholds;
     }
 
