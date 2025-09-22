@@ -10,11 +10,7 @@
     "build:frontend": "cd yudao-ui/lvye-project-frontend && pnpm build:admin && pnpm build:web",
     "build:all": "npm run build:backend && npm run build:frontend",
     "release": "node script/release.mjs",
-    "release:v2": "node script/release-v2.mjs",
-    "release:patch": "node script/release.mjs --patch",
-    "release:minor": "node script/release.mjs --minor",
-    "release:major": "node script/release.mjs --major",
-    "release:auto": "node script/release.mjs --auto",
+    "release:deploy": "node script/release-with-deploy.mjs",
     "test:dify": "node script/test-dify.mjs"
   },
   "dependencies": {
