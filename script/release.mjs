@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * 绿叶项目统一发布工具
+ * 心之旅项目统一发布工具
  * 功能：构建、部署、生成日志、发送通知
- * 使用：npm run release 或 node scripts/release.mjs
+ * 使用：npm run release 或 node script/release.mjs
  */
 
 import { execSync } from 'child_process';
@@ -36,9 +36,39 @@ const CONFIG = {
 };
 
 console.log(chalk.cyan('========================================'));
-console.log(chalk.cyan('      绿叶项目统一发布工具 v1.0.0'));
+console.log(chalk.cyan('      心之旅项目统一发布工具 v1.0.0'));
 console.log(chalk.cyan('========================================'));
 console.log();
+
+// 检查当前分支必须是 master
+try {
+  const currentBranch = execSync('git branch --show-current', {
+    encoding: 'utf-8',
+    cwd: PROJECT_ROOT
+  }).trim();
+  
+  if (currentBranch !== 'master') {
+    console.log(chalk.red('❌ 错误：发布必须在 master 分支进行'));
+    console.log(chalk.yellow(`   当前分支：${currentBranch}`));
+    console.log(chalk.gray('   请先切换到 master 分支：git checkout master'));
+    process.exit(1);
+  }
+  
+  console.log(chalk.green('✓ 当前分支：master'));
+  
+  // 拉取最新代码
+  console.log(chalk.blue('正在同步最新代码...'));
+  execSync('git pull origin master', {
+    stdio: 'inherit',
+    cwd: PROJECT_ROOT
+  });
+  console.log(chalk.green('✓ 代码已同步'));
+  console.log();
+  
+} catch (error) {
+  console.error(chalk.red('Git 操作失败:'), error.message);
+  process.exit(1);
+}
 
 // 检查是否在项目根目录
 if (!fs.existsSync(path.join(PROJECT_ROOT, 'pom.xml'))) {
@@ -321,26 +351,36 @@ function createGitTag(version) {
 // 生成发布日志（调用 Dify Workflow API）
 async function generateReleaseNotes(version, changes, releaseType = 'patch') {
   try {
-    // 获取提交记录 - 优先获取两个tag之间的commits，否则获取最近10条
+    // 获取提交记录 - 智能判断获取方式
     let commits = '';
     try {
-      // 尝试获取最新的两个tag
-      const tags = execSync('git tag -l "v*" --sort=-version:refname | head -2', { 
+      // 获取所有版本 tags
+      const allTags = execSync('git tag -l "v*" --sort=-version:refname', { 
         encoding: 'utf-8', 
         cwd: PROJECT_ROOT 
-      }).trim().split('\n');
+      }).trim().split('\n').filter(tag => tag);
       
-      if (tags.length >= 2 && tags[0] && tags[1]) {
-        // 获取两个tag之间的提交
-        console.log(chalk.blue(`获取 ${tags[1]} 到 ${tags[0]} 之间的提交`));
-        commits = execSync(`git log ${tags[1]}..${tags[0]} --oneline`, { 
+      const currentTag = `v${version}`;
+      
+      if (allTags.length > 0 && !allTags.includes(currentTag)) {
+        // 准备发布新版本，获取最新 tag 到 HEAD 的提交
+        const latestTag = allTags[0];
+        console.log(chalk.blue(`获取 ${latestTag} 到 HEAD 之间的提交`));
+        commits = execSync(`git log ${latestTag}..HEAD --oneline`, { 
+          encoding: 'utf-8', 
+          cwd: PROJECT_ROOT 
+        });
+      } else if (allTags.length >= 2) {
+        // 获取最新两个 tag 之间的提交
+        console.log(chalk.blue(`获取 ${allTags[1]} 到 ${allTags[0]} 之间的提交`));
+        commits = execSync(`git log ${allTags[1]}..${allTags[0]} --oneline`, { 
           encoding: 'utf-8', 
           cwd: PROJECT_ROOT 
         });
       } else {
-        // 没有足够的tag，获取最近10条提交
-        console.log(chalk.blue('获取最近10条提交'));
-        commits = execSync('git log --oneline -10', { 
+        // 首次发布或只有一个 tag
+        console.log(chalk.blue('获取最近 15 条提交'));
+        commits = execSync('git log --oneline -15', { 
           encoding: 'utf-8', 
           cwd: PROJECT_ROOT 
         });
@@ -439,7 +479,7 @@ async function notifyFeishu(version, notes, content) {
       config: { wide_screen_mode: true },
       header: {
         title: { 
-          content: `🚀 绿叶项目 v${version} 发布成功`, 
+          content: `🚀 心之旅项目 v${version} 发布成功`, 
           tag: "plain_text" 
         },
         template: "green"
@@ -523,7 +563,7 @@ async function notifyFeishuError(version, errorMessage) {
       config: { wide_screen_mode: true },
       header: {
         title: { 
-          content: `❌ 绿叶项目 v${version} 发布失败`, 
+          content: `❌ 心之旅项目 v${version} 发布失败`, 
           tag: "plain_text" 
         },
         template: "red"

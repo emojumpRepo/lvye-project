@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * README - 绿叶项目发布系统使用指南
+ * README - 心之旅项目发布系统使用指南
  * 
  * 本项目提供了完整的自动化发布解决方案，包括构建、部署、版本管理和通知。
  */
 
-# 绿叶项目发布系统
+# 心之旅项目发布系统
 
 ## 📋 功能特性
 
@@ -109,8 +109,8 @@ npm run deploy:all
 ## 📁 项目结构
 
 ```
-lvye-project/
-├── scripts/
+mindtrip-project/
+├── script/
 │   ├── release.mjs          # 主发布脚本
 │   ├── quick-release.mjs    # 快速发布脚本
 │   └── config/
@@ -124,7 +124,7 @@ lvye-project/
 
 ## ⚙️ 配置说明
 
-### 部署配置 (scripts/config/deploy.config.js)
+### 部署配置 (script/config/deploy.config.js)
 
 主要配置项：
 
