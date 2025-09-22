@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// 曼朗-心之旅 后端部署脚本（SSH2 版本）
-// 使用方法: node script/windows/deploy-backend.mjs
-// 或: npm run deploy:backend
+// Mindtrip Backend Deployment Script (SSH2 Version)
+// Usage: node script/windows/deploy-backend.mjs
+// or: npm run deploy:backend
 
 import { Client } from 'ssh2';
 import fs from 'fs';
@@ -36,35 +36,43 @@ const LOCAL_JAR = path.join(__dirname, '../../yudao-server/target/yudao-server.j
 const JAR_NAME = 'yudao-server.jar';
 
 console.log(chalk.cyan('========================================'));
-console.log(chalk.cyan('      曼朗-心之旅后端部署（SSH2版）'));
+console.log(chalk.cyan('    Mindtrip Backend Deployment (SSH2)'));
 console.log(chalk.cyan('========================================'));
 console.log();
 
-// 询问远程部署目录，提供常见默认值
-let REMOTE_DIR = readline.question('请输入后端远程目录（默认: /root/mindfront/work/project/mindtrip_server）: ');
+// Ask for remote deployment directory with default value
+let REMOTE_DIR = readline.question('Enter backend remote directory (default: /root/mindfront/work/project/mindtrip_server): ');
 if (!REMOTE_DIR.trim()) REMOTE_DIR = '/root/mindfront/work/project/mindtrip_server';
 
+// Ask for deployment method
+console.log();
+console.log('Select deployment method:');
+console.log('  [1] Use deploy.sh script (default)');
+console.log('  [2] Direct Docker management (stop, rebuild, restart)');
+const deployMethod = readline.question('Enter choice (1 or 2, default: 1): ').trim() || '1';
+
 console.log();
 console.log('========================================');
-console.log(`服务器: ${SERVER_HOST}`);
-console.log(`远程目录: ${REMOTE_DIR}`);
-console.log(`本地JAR: ${LOCAL_JAR}`);
+console.log(`Server: ${SERVER_HOST}`);
+console.log(`Remote directory: ${REMOTE_DIR}`);
+console.log(`Local JAR: ${LOCAL_JAR}`);
 console.log('========================================');
 console.log();
 
-// 检查本地 JAR 是否存在
+// Check if local JAR exists
 if (!fs.existsSync(LOCAL_JAR)) {
-    console.log(chalk.red('[Error] 未找到本地 JAR 文件，请先构建：'));
+    console.log(chalk.red('[Error] Local JAR file not found, please build first:'));
     console.log('  mvn -f yudao-server clean package -DskipTests');
     process.exit(1);
 }
 
-console.log('[Info] 找到JAR文件，准备部署...');
+console.log('[Info] JAR file found, preparing deployment...');
 
-// 询问服务器密码
-const password = readline.question('请输入服务器密码: ', { hideEchoBack: true });
+// Ask for server password with default value
+console.log('[Info] Press Enter to use default password or input custom password:');
+const password = readline.question('Server password (default: MF@Luye!996): ', { hideEchoBack: true }) || 'MF@Luye!996';
 if (!password) {
-    console.log(chalk.red('[Error] 密码不能为空'));
+    console.log(chalk.red('[Error] Password cannot be empty'));
     process.exit(1);
 }
 
@@ -87,8 +95,11 @@ function deployWithSSH() {
                 `mkdir -p "${REMOTE_DIR}/build"`,
                 `mkdir -p "${REMOTE_DIR}/target"`,
 
-                // 备份现有JAR（基础目录中的 yudao-server.jar）
-                `if [ -f "${REMOTE_DIR}/${JAR_NAME}" ]; then cp "${REMOTE_DIR}/${JAR_NAME}" "${REMOTE_DIR}/backup/${JAR_NAME}.${timestamp}.bak"; echo "[Backup] 备份为 backup/${JAR_NAME}.${timestamp}.bak"; fi`
+                // Backup existing JAR
+                `if [ -f "${REMOTE_DIR}/${JAR_NAME}" ]; then cp "${REMOTE_DIR}/${JAR_NAME}" "${REMOTE_DIR}/backup/${JAR_NAME}.${timestamp}.bak"; echo "[Backup] Created backup: backup/${JAR_NAME}.${timestamp}.bak"; fi`,
+                
+                // Clean old backups (keep only last 4)
+                `cd "${REMOTE_DIR}/backup" 2>/dev/null && ls -t ${JAR_NAME}.*.bak 2>/dev/null | tail -n +5 | xargs -r rm -f && echo "[Cleanup] Old backups cleaned, keeping last 4"`
             ];
 
             // 执行命令序列
@@ -148,17 +159,47 @@ function deployWithSSH() {
                     writeStream.on('close', () => {
                         console.log('\n[Upload] File upload completed');
 
-                        // 部署命令
-                        const deployCommands = [
-                            // 原子替换 target 下的 jar
-                            `mv -f "${REMOTE_DIR}/target/${JAR_NAME}.new" "${REMOTE_DIR}/target/${JAR_NAME}"`,
-                            // 同步一份到 build 目录（供 deploy.sh 使用）
-                            `cp -f "${REMOTE_DIR}/target/${JAR_NAME}" "${REMOTE_DIR}/build/${JAR_NAME}"`,
-                            // 在远程目录构建 Docker 镜像
-                            `cd "${REMOTE_DIR}" && echo "[Docker] Building image..." && docker build -t yudao-server .`,
-                            // 执行部署脚本（deploy.sh 负责停止/替换/启动等）
-                            `cd "${REMOTE_DIR}" && chmod +x deploy.sh && echo "[Deploy] Running deploy.sh..." && IMAGE=yudao-server:latest bash deploy.sh`
-                        ];
+                        let deployCommands;
+                        
+                        if (deployMethod === '2') {
+                            // Direct Docker management
+                            deployCommands = [
+                                // Atomic replacement of JAR in target directory
+                                `mv -f "${REMOTE_DIR}/target/${JAR_NAME}.new" "${REMOTE_DIR}/target/${JAR_NAME}"`,
+                                // Copy to build directory (for consistency)
+                                `cp -f "${REMOTE_DIR}/target/${JAR_NAME}" "${REMOTE_DIR}/build/${JAR_NAME}"`,
+                                // IMPORTANT: Also copy to root directory (where Dockerfile expects it)
+                                `cp -f "${REMOTE_DIR}/target/${JAR_NAME}" "${REMOTE_DIR}/${JAR_NAME}"`,
+                                `echo "[Copy] JAR file copied to: ${REMOTE_DIR}/${JAR_NAME}"`,
+                                
+                                // Stop existing container first
+                                `echo "[Docker] Stopping existing container..." && docker stop mindtrip-server 2>/dev/null || true`,
+                                `docker rm mindtrip-server 2>/dev/null || true`,
+                                
+                                // Build Docker image with no cache to ensure fresh build
+                                `cd "${REMOTE_DIR}" && echo "[Docker] Building fresh image (no cache)..." && docker build --no-cache -t yudao-server .`,
+                                
+                                // Run new container
+                                `echo "[Docker] Starting new container..." && docker run -d --name mindtrip-server --restart=always -p 48080:48080 yudao-server:latest`,
+                                
+                                // Verify container is running
+                                `sleep 3 && docker ps | grep mindtrip-server && echo "[Success] Container is running" || echo "[Error] Container failed to start"`
+                            ];
+                        } else {
+                            // Use deploy.sh script (original method)
+                            deployCommands = [
+                                // Atomic replacement of JAR in target directory
+                                `mv -f "${REMOTE_DIR}/target/${JAR_NAME}.new" "${REMOTE_DIR}/target/${JAR_NAME}"`,
+                                // Copy to build directory (for deploy.sh)
+                                `cp -f "${REMOTE_DIR}/target/${JAR_NAME}" "${REMOTE_DIR}/build/${JAR_NAME}"`,
+                                // Also copy to root directory to be safe
+                                `cp -f "${REMOTE_DIR}/target/${JAR_NAME}" "${REMOTE_DIR}/${JAR_NAME}"`,
+                                // Build Docker image
+                                `cd "${REMOTE_DIR}" && echo "[Docker] Building image..." && docker build -t yudao-server .`,
+                                // Execute deployment script
+                                `cd "${REMOTE_DIR}" && chmod +x deploy.sh && echo "[Deploy] Running deploy.sh..." && IMAGE=yudao-server:latest bash deploy.sh`
+                            ];
+                        }
 
                         let deployIndex = 0;
 
@@ -223,11 +264,11 @@ deployWithSSH()
         console.log(chalk.green('    Backend Deployment Successful!'));
         console.log(chalk.green('========================================'));
         console.log();
-        console.log(`服务器: ${SERVER_HOST}`);
-        console.log(`远程目录: ${REMOTE_DIR}`);
-        console.log(`备份位置: ${REMOTE_DIR}/backup/`);
+        console.log(`Server: ${SERVER_HOST}`);
+        console.log(`Remote directory: ${REMOTE_DIR}`);
+        console.log(`Backup location: ${REMOTE_DIR}/backup/`);
         console.log();
-        console.log(`可通过以下命令查看服务状态:`);
+        console.log(`View service status with:`);
         console.log(`  docker logs -f mindtrip-server`);
         console.log();
     })

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// 曼朗-心之旅 前端部署脚本（SSH2 版本）
-// 使用方法: node deploy-frontend-ssh2.mjs
-// 需要先安装依赖: npm install ssh2 archiver readline-sync chalk
+// Mindtrip Frontend Deployment Script (SSH2 Version)
+// Usage: node deploy-frontend-ssh2.mjs
+// Dependencies: npm install ssh2 archiver readline-sync chalk
 
 import { Client } from 'ssh2';
 import fs from 'fs';
@@ -32,7 +32,7 @@ const SERVER_USER = 'root';
 const SERVER_PORT = 22;
 
 console.log(chalk.cyan('========================================'));
-console.log(chalk.cyan('      曼朗-心之旅前端部署（SSH2版）'));
+console.log(chalk.cyan('   Mindtrip Frontend Deployment (SSH2)'));
 console.log(chalk.cyan('========================================'));
 console.log();
 
@@ -46,18 +46,20 @@ console.log('');
 const projectChoice = readline.question('Please enter your choice (1 or 2): ');
 const choice = projectChoice.trim();
 
-let PROJECT_NAME, REMOTE_PATH, LOCAL_ZIP, BUILD_PATH;
+let PROJECT_NAME, REMOTE_PATH, NGINX_PATH, LOCAL_ZIP, BUILD_PATH;
 
 switch (choice) {
     case '1':
         PROJECT_NAME = 'Admin Management Backend';
         REMOTE_PATH = '/root/mindfront/work/project/mindtrip_apps/admin';
+        NGINX_PATH = '/root/mindfront/work/nginx/html/admin';
         LOCAL_ZIP = path.join(__dirname, '../../yudao-ui/lvye-project-frontend/apps/admin/dist.zip');
         BUILD_PATH = 'yudao-ui/lvye-project-frontend/apps/admin';
         break;
     case '2':
         PROJECT_NAME = 'Web User Frontend';
         REMOTE_PATH = '/root/mindfront/work/project/mindtrip_apps/web';
+        NGINX_PATH = '/root/mindfront/work/nginx/html/web';
         LOCAL_ZIP = path.join(__dirname, '../../yudao-ui/lvye-project-frontend/apps/web/dist.zip');
         BUILD_PATH = 'yudao-ui/lvye-project-frontend/apps/web';
         break;
@@ -71,6 +73,7 @@ console.log('========================================');
 console.log(`Selected: ${PROJECT_NAME}`);
 console.log(`Server: ${SERVER_HOST}`);
 console.log(`Target Path: ${REMOTE_PATH}`);
+console.log(`Nginx Path: ${NGINX_PATH}`);
 console.log(`Local File: ${LOCAL_ZIP}`);
 console.log('========================================');
 console.log();
@@ -90,8 +93,9 @@ if (!fs.existsSync(LOCAL_ZIP)) {
 
 console.log('[Info] Found dist.zip file, preparing to deploy...');
 
-// 询问服务器密码
-const password = readline.question('Please enter server password: ', { hideEchoBack: true });
+// 询问服务器密码（提供默认值）
+console.log('[Info] Using default password, press Enter to continue or input custom password:');
+const password = readline.question('Server password (default: MF@Luye!996): ', { hideEchoBack: true }) || 'MF@Luye!996';
 if (!password) {
     console.log(chalk.red('[Error] Password cannot be empty'));
     process.exit(1);
@@ -113,13 +117,27 @@ function deployWithSSH() {
                 // 创建必要的目录
                 `mkdir -p "${REMOTE_PATH}"`,
                 `mkdir -p "${REMOTE_PATH}_backup"`,
+                `mkdir -p "${NGINX_PATH}_backup"`,
                 `mkdir -p /tmp/frontend_deploy`,
+                `mkdir -p /root/mindfront/work/nginx/html`,
 
-                // 备份现有的 dist.zip（如果存在）
-                `if [ -f "${REMOTE_PATH}/dist.zip" ]; then cp "${REMOTE_PATH}/dist.zip" "${REMOTE_PATH}_backup/dist_${timestamp}.zip"; echo "[Backup] Backed up dist.zip to ${REMOTE_PATH}_backup/dist_${timestamp}.zip"; fi`,
+                // Backup existing dist.zip if it exists
+                `if [ -f "${REMOTE_PATH}/dist.zip" ]; then cp "${REMOTE_PATH}/dist.zip" "${REMOTE_PATH}_backup/dist_${timestamp}.zip"; echo "[Backup] Created project backup: ${REMOTE_PATH}_backup/dist_${timestamp}.zip"; fi`,
+                
+                // Backup existing nginx directory if it exists
+                `if [ -d "${NGINX_PATH}" ]; then cp -r "${NGINX_PATH}" "${NGINX_PATH}_backup/backup_${timestamp}"; echo "[Backup] Created nginx backup: ${NGINX_PATH}_backup/backup_${timestamp}"; fi`,
+                
+                // Clean old project backups (keep only last 4)
+                `cd "${REMOTE_PATH}_backup" 2>/dev/null && ls -t dist_*.zip 2>/dev/null | tail -n +5 | xargs -r rm -f && echo "[Cleanup] Old project backups cleaned, keeping last 4"`,
+                
+                // Clean old nginx backups (keep only last 4)
+                `cd "${NGINX_PATH}_backup" 2>/dev/null && ls -dt backup_* 2>/dev/null | tail -n +5 | xargs -r rm -rf && echo "[Cleanup] Old nginx backups cleaned, keeping last 4"`,
 
-                // 清理目标目录中的所有文件
-                `if [ -d "${REMOTE_PATH}" ]; then rm -rf "${REMOTE_PATH}"/*; echo "[Clean] Target directory cleaned"; fi`
+                // Clean target directory
+                `if [ -d "${REMOTE_PATH}" ]; then rm -rf "${REMOTE_PATH}"/*; echo "[Clean] Project directory cleaned"; fi`,
+                
+                // Clean nginx directory
+                `if [ -d "${NGINX_PATH}" ]; then rm -rf "${NGINX_PATH}"/*; echo "[Clean] Nginx directory cleaned"; fi`
             ];
 
             // 执行命令序列
@@ -179,11 +197,11 @@ function deployWithSSH() {
                     writeStream.on('close', () => {
                         console.log('\n[Upload] File upload completed');
 
-                        // 解压和部署
+                        // Extract and deploy
                         const deployCommands = [
-                            // 先解压文件
+                            // Extract files
                             'cd /tmp/frontend_deploy && unzip -o dist.zip',
-                            // 检查解压结果并复制到目标目录
+                            // Check extraction result and copy to target directory
                             `if [ -d "/tmp/frontend_deploy/dist" ]; then ` +
                             `cp -r /tmp/frontend_deploy/dist/* "${REMOTE_PATH}/"; ` +
                             `echo "[Copy] Copied dist directory contents to ${REMOTE_PATH}"; ` +
@@ -194,24 +212,41 @@ function deployWithSSH() {
                             `echo "[Error] Expected file structure not found after extraction"; ` +
                             `ls -la /tmp/frontend_deploy/; ` +
                             `fi`,
-                            // 复制原始zip文件到目标目录（保留一份）
-                            `cp /tmp/frontend_deploy/dist.zip "${REMOTE_PATH}/dist.zip" && echo "[Save] Saved dist.zip to target directory"`,
-                            // 清理临时文件
+                            // Save original zip file
+                            `cp /tmp/frontend_deploy/dist.zip "${REMOTE_PATH}/dist.zip" && echo "[Save] Saved dist.zip to project directory"`,
+                            
+                            // Copy to nginx directory
+                            `echo "[Nginx] Starting to copy files to nginx directory..."`,
+                            `if [ -f "${REMOTE_PATH}/index.html" ]; then ` +
+                            `cp -r "${REMOTE_PATH}"/* "${NGINX_PATH}/"; ` +
+                            `echo "[Nginx] Successfully copied files to ${NGINX_PATH}"; ` +
+                            `else ` +
+                            `echo "[Error] No index.html found in project directory, nginx copy skipped"; ` +
+                            `fi`,
+                            
+                            // Clean temporary files
                             'rm -rf /tmp/frontend_deploy/*',
-                            // 设置权限
+                            
+                            // Set permissions
                             `chmod -R 755 "${REMOTE_PATH}"`,
                             `chown -R www:www "${REMOTE_PATH}"`,
-                            // 验证部署
-                            `if [ -f "${REMOTE_PATH}/index.html" ]; then ` +
-                            `echo "[Success] Frontend deployment completed"; ` +
-                            `echo "[Files] Target directory contains:"; ` +
-                            `ls -la "${REMOTE_PATH}/" | head -10; ` +
+                            `chmod -R 755 "${NGINX_PATH}"`,
+                            `chown -R www:www "${NGINX_PATH}"`,
+                            
+                            // Verify deployment
+                            `if [ -f "${REMOTE_PATH}/index.html" ] && [ -f "${NGINX_PATH}/index.html" ]; then ` +
+                            `echo "[Success] Frontend deployment completed successfully"; ` +
+                            `echo "[Files] Project directory contains:"; ` +
+                            `ls -la "${REMOTE_PATH}/" | head -5; ` +
+                            `echo "[Files] Nginx directory contains:"; ` +
+                            `ls -la "${NGINX_PATH}/" | head -5; ` +
                             `else ` +
-                            `echo "[Warning] Deployment may be incomplete, target directory contents:"; ` +
+                            `echo "[Warning] Deployment may be incomplete"; ` +
+                            `echo "[Check] Project directory:"; ` +
                             `ls -la "${REMOTE_PATH}/"; ` +
-                            `fi`,
-                            // 清理旧备份（保留最近3个）
-                            `cd "${REMOTE_PATH}_backup" && ls -t | tail -n +4 | xargs -r rm -rf && echo "[Cleanup] Old backups cleaned, keeping recent 3"`
+                            `echo "[Check] Nginx directory:"; ` +
+                            `ls -la "${NGINX_PATH}/"; ` +
+                            `fi`
                         ];
 
                         let deployIndex = 0;
@@ -259,7 +294,7 @@ function deployWithSSH() {
             reject(err);
         });
 
-        // 连接到服务器
+        // Connect to server
         conn.connect({
             host: SERVER_HOST,
             port: SERVER_PORT,
@@ -280,7 +315,9 @@ deployWithSSH()
         console.log(`Project: ${PROJECT_NAME}`);
         console.log(`Server: ${SERVER_HOST}`);
         console.log(`Deploy Path: ${REMOTE_PATH}`);
-        console.log(`Backup Location: ${REMOTE_PATH}_backup/`);
+        console.log(`Nginx Path: ${NGINX_PATH}`);
+        console.log(`Project Backup: ${REMOTE_PATH}_backup/`);
+        console.log(`Nginx Backup: ${NGINX_PATH}_backup/`);
         console.log();
 
         if (choice === '1') {
