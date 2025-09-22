@@ -69,7 +69,7 @@ module.exports = {
   api: {
     dify: {
       enabled: true,
-      apiKey: process.env.DIFY_API_KEY || 'app-zwnIyNUk3jqOeCJ5V38pIkvR',
+      apiKey: process.env.DIFY_API_KEY || 'app-27WVHbSe1uUxcd54gDGKySl1',
       apiUrl: process.env.DIFY_API_URL || 'http://154.9.255.162/v1',
       timeout: 30000,
       // AI 提示词模板

@@ -7,7 +7,7 @@
     "deploy:backend": "node script/windows/deploy-backend.mjs",
     "deploy:all": "npm run deploy:backend && npm run deploy:frontend",
     "build:backend": "mvn clean package -DskipTests",
-    "build:frontend": "cd yudao-ui/lvye-project-frontend && pnpm --filter @lvye/admin build && pnpm --filter @lvye/web build",
+    "build:frontend": "cd yudao-ui/lvye-project-frontend && pnpm build:admin && pnpm build:web",
     "build:all": "npm run build:backend && npm run build:frontend",
     "release": "node scripts/release.mjs",
     "release:patch": "node scripts/quick-release.mjs --patch",

@@ -21,7 +21,7 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 // 配置
 const CONFIG = {
   dify: {
-    apiKey: 'app-zwnIyNUk3jqOeCJ5V38pIkvR',
+    apiKey: 'app-27WVHbSe1uUxcd54gDGKySl1',
     apiUrl: 'http://154.9.255.162/v1'
   },
   feishu: {
@@ -162,20 +162,15 @@ async function release() {
       // Admin 项目
       console.log(chalk.blue('[1/4] 构建 Admin 管理后台...'));
       try {
-        const adminPath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend/apps/admin');
-        process.chdir(adminPath);
+        const frontendPath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
+        process.chdir(frontendPath);
         
-        // 安装依赖（如果需要）
-        if (!fs.existsSync(path.join(adminPath, 'node_modules'))) {
-          console.log(chalk.gray('  安装依赖...'));
-          execSync('pnpm install --frozen-lockfile', { stdio: 'inherit' });
-        }
-        
-        // 构建
-        execSync('pnpm build', { stdio: 'inherit' });
+        // 构建 Admin
+        execSync('pnpm build:admin', { stdio: 'inherit' });
         
         // 检查 dist.zip
-        if (!fs.existsSync(path.join(adminPath, 'dist.zip'))) {
+        const adminDistZip = path.join(frontendPath, 'apps/admin/dist.zip');
+        if (!fs.existsSync(adminDistZip)) {
           throw new Error('Admin dist.zip 未生成');
         }
         console.log(chalk.green('✓ Admin 构建成功'));
@@ -187,20 +182,15 @@ async function release() {
       // Web 项目
       console.log(chalk.blue('[2/4] 构建 Web 前台...'));
       try {
-        const webPath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend/apps/web');
-        process.chdir(webPath);
+        const frontendPath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
+        process.chdir(frontendPath);
         
-        // 安装依赖（如果需要）
-        if (!fs.existsSync(path.join(webPath, 'node_modules'))) {
-          console.log(chalk.gray('  安装依赖...'));
-          execSync('pnpm install --frozen-lockfile', { stdio: 'inherit' });
-        }
-        
-        // 构建
-        execSync('pnpm build', { stdio: 'inherit' });
+        // 构建 Web
+        execSync('pnpm build:web', { stdio: 'inherit' });
         
         // 检查 dist.zip
-        if (!fs.existsSync(path.join(webPath, 'dist.zip'))) {
+        const webDistZip = path.join(frontendPath, 'apps/web/dist.zip');
+        if (!fs.existsSync(webDistZip)) {
           throw new Error('Web dist.zip 未生成');
         }
         console.log(chalk.green('✓ Web 构建成功'));
@@ -252,7 +242,9 @@ async function release() {
     
     // 7. 生成发布日志
     console.log(chalk.blue('\n生成发布日志...'));
-    const releaseNotes = await generateReleaseNotes(version, changelog);
+    // 确定发布类型
+    const releaseType = determineReleaseType(version);
+    const releaseNotes = await generateReleaseNotes(version, changelog, releaseType);
     
     // 8. 发送飞书通知
     await notifyFeishu(version, releaseNotes, releaseContent);
@@ -286,6 +278,39 @@ async function release() {
   }
 }
 
+// 确定发布类型
+function determineReleaseType(version) {
+  // 根据版本号判断发布类型
+  const parts = version.split('.');
+  const [major, minor, patch] = parts.map(Number);
+  
+  // 获取上一个版本（可以从 git tag 获取）
+  try {
+    const tags = execSync('git tag -l "v*" --sort=-version:refname | head -2', { encoding: 'utf-8' })
+      .trim()
+      .split('\n');
+    
+    if (tags.length > 1) {
+      const prevVersion = tags[1].replace('v', '');
+      const [prevMajor, prevMinor, prevPatch] = prevVersion.split('.').map(Number);
+      
+      if (major > prevMajor) return 'major';
+      if (minor > prevMinor) return 'minor';
+      if (patch > prevPatch) return 'patch';
+    }
+  } catch (error) {
+    // 默认为 patch
+  }
+  
+  // 或者根据命令行参数
+  const args = process.argv.slice(2);
+  if (args.includes('--major')) return 'major';
+  if (args.includes('--minor')) return 'minor';
+  if (args.includes('--hotfix')) return 'hotfix';
+  
+  return 'patch'; // 默认
+}
+
 // 创建 Git 标签
 function createGitTag(version) {
   execSync(`git tag -a v${version} -m "Release v${version}"`, { stdio: 'inherit' });
@@ -293,41 +318,80 @@ function createGitTag(version) {
   console.log(chalk.green(`✓ Git 标签 v${version} 创建成功`));
 }
 
-// 生成发布日志（调用 Dify API）
-async function generateReleaseNotes(version, changes) {
+// 生成发布日志（调用 Dify Workflow API）
+async function generateReleaseNotes(version, changes, releaseType = 'patch') {
   try {
-    // 获取最近的提交记录
+    // 获取提交记录 - 优先获取两个tag之间的commits，否则获取最近10条
     let commits = '';
     try {
-      commits = execSync('git log --oneline -10', { encoding: 'utf-8', cwd: PROJECT_ROOT });
+      // 尝试获取最新的两个tag
+      const tags = execSync('git tag -l "v*" --sort=-version:refname | head -2', { 
+        encoding: 'utf-8', 
+        cwd: PROJECT_ROOT 
+      }).trim().split('\n');
+      
+      if (tags.length >= 2 && tags[0] && tags[1]) {
+        // 获取两个tag之间的提交
+        console.log(chalk.blue(`获取 ${tags[1]} 到 ${tags[0]} 之间的提交`));
+        commits = execSync(`git log ${tags[1]}..${tags[0]} --oneline`, { 
+          encoding: 'utf-8', 
+          cwd: PROJECT_ROOT 
+        });
+      } else {
+        // 没有足够的tag，获取最近10条提交
+        console.log(chalk.blue('获取最近10条提交'));
+        commits = execSync('git log --oneline -10', { 
+          encoding: 'utf-8', 
+          cwd: PROJECT_ROOT 
+        });
+      }
     } catch (error) {
-      commits = '无法获取提交记录';
+      // 如果出错，默认获取最近10条
+      try {
+        commits = execSync('git log --oneline -10', { 
+          encoding: 'utf-8', 
+          cwd: PROJECT_ROOT 
+        });
+      } catch (e) {
+        commits = '无法获取提交记录';
+      }
     }
     
-    const prompt = `请基于以下信息生成一份简洁的产品更新说明（面向运营团队）：
+    // 清理和格式化commits，移除commit hash，只保留commit message
+    const commitLines = commits.split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        // 移除开头的commit hash
+        return line.replace(/^[a-f0-9]{7,}\s+/, '');
+      })
+      .slice(0, 8); // 最多8条，避免太长
+    
+    // 构建精简的query - 直接使用commit信息
+    const prompt = commitLines.join('；').substring(0, 150); // 限制在150字符内
 
-版本号: v${version}
-更新内容: 
-${changes.join('\n')}
+    // 调试：打印发送的内容
+    console.log(chalk.blue('\n[调试] 准备发送给 Dify 的内容：'));
+    console.log(chalk.gray('API URL:'), CONFIG.dify.apiUrl + '/workflows/run');
+    console.log(chalk.gray('Git Commits:'));
+    commitLines.forEach(commit => console.log(chalk.gray('  - ' + commit)));
+    console.log(chalk.gray('Prompt 长度:'), prompt.length, '字符');
+    console.log(chalk.gray('发布类型:'), releaseType);
 
-最近提交记录:
-${commits}
-
-要求：
-1. 用通俗易懂的语言，避免技术术语
-2. 突出对用户的价值和改进
-3. 控制在 200 字以内
-4. 如果有新功能请重点说明
-5. 分类展示：新功能、优化、修复`;
+    // 使用 Workflow API - 简化的输入
+    const requestBody = {
+      inputs: {
+        query: prompt,  // 主要输入（50-100字的极简内容）
+        version: version,
+        release_type: releaseType,
+        target_audience: 'operation'  // 默认运营团队，可根据需要调整
+      },
+      response_mode: "blocking",
+      user: "release-bot"
+    };
 
     const response = await axios.post(
-      `${CONFIG.dify.apiUrl}/chat-messages`,
-      {
-        inputs: {},
-        query: prompt,
-        response_mode: "blocking",
-        user: "release-bot"
-      },
+      `${CONFIG.dify.apiUrl}/workflows/run`,  // 使用 workflows/run 端点
+      requestBody,
       {
         headers: {
           'Authorization': `Bearer ${CONFIG.dify.apiKey}`,
@@ -338,11 +402,25 @@ ${commits}
     );
     
     console.log(chalk.green('✓ AI 发布日志生成成功'));
-    return response.data.answer || `版本 v${version} 已发布\n${changes.join('\n')}`;
+    
+    // Workflow API 返回的数据结构
+    const result = response.data.data?.outputs?.result ||  // 正确的输出路径
+                   response.data.data?.outputs?.text || 
+                   response.data.data?.outputs?.answer ||
+                   `版本 v${version} 已发布\n${changes.join('\n')}`;
+    
+    return result;
     
   } catch (error) {
     console.warn(chalk.yellow('⚠ AI 生成失败，使用默认模板'));
-    console.log(chalk.gray(error.message));
+    
+    // 详细错误信息
+    if (error.response) {
+      console.log(chalk.red('错误状态码:'), error.response.status);
+      console.log(chalk.red('错误信息:'), JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.log(chalk.gray(error.message));
+    }
     
     // 使用默认模板
     return `📦 **版本 v${version} 更新内容**
