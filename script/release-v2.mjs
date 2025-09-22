@@ -88,11 +88,24 @@ function getGitCommits(projectType, currentVersion) {
     const tagPrefix = projectType === 'backend' ? 'mindtrip-backend-v' : 
                       projectType === 'frontend' ? 'mindtrip-frontend-v' : 'mindtrip-v';
     
+    // 根据项目类型确定工作目录
+    let workDir = PROJECT_ROOT;
+    if (projectType === 'frontend') {
+      // 前端项目在子目录中
+      workDir = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
+      
+      // 检查前端项目是否有独立的 .git 目录
+      if (!fs.existsSync(path.join(workDir, '.git'))) {
+        console.log(chalk.yellow('前端项目没有独立的 Git 仓库，使用主仓库的提交记录'));
+        workDir = PROJECT_ROOT;
+      }
+    }
+    
     // 获取当前项目的所有 tags（按版本排序）
     const currentTag = `${tagPrefix}${currentVersion}`;
     const allTags = execSync(`git tag -l "${tagPrefix}*" --sort=-version:refname`, {
       encoding: 'utf-8',
-      cwd: PROJECT_ROOT
+      cwd: workDir
     }).trim().split('\n').filter(tag => tag);
     
     let commits = '';
@@ -106,7 +119,7 @@ function getGitCommits(projectType, currentVersion) {
       console.log(chalk.blue(`获取 ${previousTag} 到 ${currentTag} 之间的提交`));
       commits = execSync(`git log ${previousTag}..${currentTag} --oneline`, {
         encoding: 'utf-8',
-        cwd: PROJECT_ROOT
+        cwd: workDir
       });
     } else if (allTags.length > 0 && !allTags.includes(currentTag)) {
       // 如果当前版本还没有 tag（新版本），获取最新 tag 到 HEAD 的提交
@@ -114,22 +127,39 @@ function getGitCommits(projectType, currentVersion) {
       console.log(chalk.blue(`获取 ${latestTag} 到 HEAD 之间的提交（准备发布 v${currentVersion}）`));
       commits = execSync(`git log ${latestTag}..HEAD --oneline`, {
         encoding: 'utf-8',
-        cwd: PROJECT_ROOT
+        cwd: workDir
       });
     } else if (allTags.length === 0) {
       // 如果没有任何 tag，获取最近的提交
       console.log(chalk.blue('首次发布，获取最近 15 条提交'));
-      commits = execSync('git log --oneline -15', {
-        encoding: 'utf-8',
-        cwd: PROJECT_ROOT
-      });
+      
+      // 如果是前端项目，只获取前端相关的提交
+      if (projectType === 'frontend' && workDir === PROJECT_ROOT) {
+        // 在主仓库中，只获取前端目录的提交
+        commits = execSync('git log --oneline -15 -- yudao-ui/lvye-project-frontend/', {
+          encoding: 'utf-8',
+          cwd: PROJECT_ROOT
+        });
+      } else {
+        commits = execSync('git log --oneline -15', {
+          encoding: 'utf-8',
+          cwd: workDir
+        });
+      }
     } else {
       // 其他情况，获取最近的提交
       console.log(chalk.blue('获取最近 10 条提交'));
-      commits = execSync('git log --oneline -10', {
-        encoding: 'utf-8',
-        cwd: PROJECT_ROOT
-      });
+      if (projectType === 'frontend' && workDir === PROJECT_ROOT) {
+        commits = execSync('git log --oneline -10 -- yudao-ui/lvye-project-frontend/', {
+          encoding: 'utf-8',
+          cwd: PROJECT_ROOT
+        });
+      } else {
+        commits = execSync('git log --oneline -10', {
+          encoding: 'utf-8',
+          cwd: workDir
+        });
+      }
     }
     
     // 如果没有提交，返回提示信息
@@ -139,7 +169,12 @@ function getGitCommits(projectType, currentVersion) {
     
     return commits.split('\n')
       .filter(line => line.trim())
-      .map(line => line.replace(/^[a-f0-9]{7,}\s+/, ''))
+      .map(line => {
+        // 移除 commit hash 并确保正确的编码
+        const message = line.replace(/^[a-f0-9]{7,}\s+/, '');
+        // 尝试修复可能的编码问题
+        return message.replace(/[^\x20-\x7E\u4e00-\u9fa5]/g, '');
+      })
       .slice(0, 10); // 最多返回10条
   } catch (error) {
     console.warn(chalk.yellow('获取提交记录失败:'), error.message);
@@ -332,11 +367,40 @@ async function main() {
                      projectType === 'frontend' ? 'mindtrip-frontend-v' : 'mindtrip-v';
     const tagName = `${tagPrefix}${newVersion}`;
     
-    execSync(`git add -A`, { cwd: PROJECT_ROOT });
-    execSync(`git commit -m "chore: release ${projectType} v${newVersion}"`, { cwd: PROJECT_ROOT });
-    execSync(`git tag -a ${tagName} -m "Release ${projectType} v${newVersion}"`, { cwd: PROJECT_ROOT });
-    execSync(`git push origin ${tagName}`, { cwd: PROJECT_ROOT });
-    console.log(chalk.green(`✓ Git标签 ${tagName} 创建成功`));
+    // 尝试提交版本文件的更改
+    try {
+      execSync(`git add -A`, { cwd: PROJECT_ROOT });
+      
+      // 检查是否有文件需要提交
+      const status = execSync('git status --porcelain', { 
+        encoding: 'utf-8', 
+        cwd: PROJECT_ROOT 
+      });
+      
+      if (status.trim()) {
+        // 有文件变化，提交
+        execSync(`git commit -m "chore: release ${projectType} v${newVersion}"`, { 
+          cwd: PROJECT_ROOT,
+          encoding: 'utf-8'
+        });
+        console.log(chalk.green('✓ 版本文件已提交'));
+      } else {
+        console.log(chalk.yellow('⚠ 没有文件变化需要提交'));
+      }
+    } catch (error) {
+      console.warn(chalk.yellow('⚠ Git 提交失败（可能没有变化）:'), error.message);
+    }
+    
+    // 创建并推送标签
+    try {
+      execSync(`git tag -a ${tagName} -m "Release ${projectType} v${newVersion}"`, { cwd: PROJECT_ROOT });
+      execSync(`git push origin ${tagName}`, { cwd: PROJECT_ROOT });
+      console.log(chalk.green(`✓ Git标签 ${tagName} 创建成功`));
+    } catch (error) {
+      console.error(chalk.red('创建标签失败:'), error.message);
+      // 标签创建失败不应该阻止后续流程
+      console.log(chalk.yellow('继续执行后续步骤...'));
+    }
     
     // 生成发布日志
     const releaseNotes = await generateReleaseNotes(newVersion, projectType, commitMessages, releaseType);
