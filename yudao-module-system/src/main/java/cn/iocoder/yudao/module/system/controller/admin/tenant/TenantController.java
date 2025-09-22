@@ -71,6 +71,20 @@ public class TenantController {
         return success(new TenantRespVO().setId(tenant.getId()).setName(tenant.getName()));
     }
 
+    @GetMapping("/get-by-id")
+    @PermitAll
+    @TenantIgnore
+    @Operation(summary = "使用租户编号，获得租户信息", description = "登录界面，根据租户编号，获得租户基础信息")
+    @Parameter(name = "id", description = "租户编号", required = true, example = "163")
+    public CommonResult<TenantRespVO> getTenantById(@RequestParam("id") Long id) {
+        TenantDO tenant = tenantService.getTenant(id);
+        if (tenant == null || CommonStatusEnum.isDisable(tenant.getStatus())) {
+            return success(null);
+        }
+        // 只返回必要的信息，不返回敏感数据
+        return success(new TenantRespVO().setId(tenant.getId()).setName(tenant.getName()));
+    }
+
     @PostMapping("/create")
     @Operation(summary = "创建租户")
     @PreAuthorize("@ss.hasPermission('system:tenant:create')")
