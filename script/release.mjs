@@ -21,7 +21,7 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 // 配置
 const CONFIG = {
   dify: {
-    apiKey: 'app-27WVHbSe1uUxcd54gDGKySl1',
+    apiKey: 'app-LTUF7HU291Ug9LAKD4ZC4ZHO',
     apiUrl: 'http://154.9.255.162/v1'
   },
   feishu: {

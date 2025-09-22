@@ -33,7 +33,7 @@
 | `script/config/deploy.config.js` | 集中配置文件 |
 
 ### 5. Dify 集成优化
-- ✅ API Key: `app-27WVHbSe1uUxcd54gDGKySl1`
+- ✅ API Key: `app-LTUF7HU291Ug9LAKD4ZC4ZHO`
 - ✅ 简化输入变量到 4 个：
   - `query`: Git commit 信息（自动获取）
   - `version`: 版本号

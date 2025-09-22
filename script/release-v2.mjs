@@ -20,7 +20,7 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 // 配置
 const CONFIG = {
   dify: {
-    apiKey: 'app-27WVHbSe1uUxcd54gDGKySl1',
+    apiKey: 'app-LTUF7HU291Ug9LAKD4ZC4ZHO',
     apiUrl: 'http://154.9.255.162/v1'
   },
   feishu: {
@@ -293,7 +293,7 @@ async function main() {
     if (gitStatus.trim()) {
       console.log(chalk.yellow('⚠ 警告：存在未提交的更改'));
       console.log(chalk.gray('  建议先提交或暂存更改'));
-      const continueAnyway = readline.question('是否继续? (y/N): ');
+      const continueAnyway = readline.question('Continue anyway? (y/N): ');
       if (continueAnyway.toLowerCase() !== 'y') {
         console.log('已取消发布');
         process.exit(0);
@@ -320,7 +320,7 @@ async function main() {
   console.log('  [1] 后端 (backend)');
   console.log('  [2] 前端 (frontend)');  
   console.log('  [3] 前后端 (all)');
-  const projectChoice = readline.question('请选择 (1/2/3): ') || '3';
+  const projectChoice = readline.question('Please select (1/2/3): ') || '3';
   const projectType = projectChoice === '1' ? 'backend' : 
                       projectChoice === '2' ? 'frontend' : 'all';
   
@@ -336,7 +336,7 @@ async function main() {
   console.log('  [1] Patch (修复) - ' + getNextVersion(currentVersion, 'patch'));
   console.log('  [2] Minor (功能) - ' + getNextVersion(currentVersion, 'minor'));
   console.log('  [3] Major (重大) - ' + getNextVersion(currentVersion, 'major'));
-  const releaseChoice = readline.question('请选择 (1/2/3): ') || '1';
+  const releaseChoice = readline.question('Please select (1/2/3): ') || '1';
   const releaseType = releaseChoice === '3' ? 'major' :
                      releaseChoice === '2' ? 'minor' : 'patch';
   
@@ -347,7 +347,7 @@ async function main() {
   console.log(`  项目: ${projectType}`);
   console.log(`  版本: v${currentVersion} → v${newVersion}`);
   
-  const confirm = readline.question('\n确认发布? (y/N): ');
+  const confirm = readline.question('\nConfirm release? (y/N): ');
   if (confirm.toLowerCase() !== 'y') {
     console.log('已取消发布');
     process.exit(0);
