@@ -148,6 +148,7 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
         return scenarioMapper.selectPage(pageReqVO, new LambdaQueryWrapperX<AssessmentScenarioDO>()
                 .likeIfPresent(AssessmentScenarioDO::getCode, pageReqVO.getCode())
                 .likeIfPresent(AssessmentScenarioDO::getName, pageReqVO.getName())
+                .likeIfPresent(AssessmentScenarioDO::getDescription, pageReqVO.getDescription())
                 .eqIfPresent(AssessmentScenarioDO::getIsActive, pageReqVO.getIsActive()));
     }
 

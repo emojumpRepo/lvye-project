@@ -24,6 +24,9 @@ public class AssessmentScenarioVO {
     @NotBlank(message = "场景名称不能为空")
     private String name;
 
+    @Schema(description = "场景描述", example = "这是一个校园旅行测评场景，用于评估学生在校园环境中的心理状态")
+    private String description;
+
     @Schema(description = "最大问卷数量，空表示不限制", example = "3")
     private Integer maxQuestionnaireCount;
 

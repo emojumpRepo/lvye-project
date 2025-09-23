@@ -18,6 +18,8 @@ public class AssessmentScenarioDO extends TenantBaseDO {
 
     private String name;
 
+    private String description;
+
     private Integer maxQuestionnaireCount;
 
     private String frontendRoute;
