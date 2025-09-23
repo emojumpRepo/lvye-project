@@ -48,7 +48,10 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
                 .set(StudentProfileDO::getRiskLevel, riskLevel));
     }
 
-    IPage<StudentProfileVO> selectPageList(IPage<StudentProfileVO> page, @Param("pageReqVO") StudentProfilePageReqVO pageReqVO);
+    IPage<StudentProfileVO> selectPageList(IPage<StudentProfileVO> page,
+                                           @Param("pageReqVO") StudentProfilePageReqVO pageReqVO,
+                                           @Param("deptIds") Collection<Long> deptIds,
+                                           @Param("selfUserId") Long selfUserId);
 
     StudentProfileVO selectInfoByStudentProfileId(Long studentProfileId);
 
