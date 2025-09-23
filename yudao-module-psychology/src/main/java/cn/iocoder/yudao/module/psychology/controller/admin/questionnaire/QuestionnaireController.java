@@ -317,7 +317,7 @@ public class QuestionnaireController {
     @GetMapping("/survey-questions")
     @Operation(summary = "获取外部问卷题目")
     @Parameter(name = "questionnaireId", description = "问卷ID", required = true)
-    @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
+    // @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
     public CommonResult<ExternalSurveyQuestionRespVO> getSurveyQuestions(@RequestParam("questionnaireId") Long questionnaireId) {
         try {
             QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
@@ -396,7 +396,7 @@ public class QuestionnaireController {
     @GetMapping("/get-result")
     @Operation(summary = "获取问卷结果")
     @Parameter(name = "id", description = "问卷结果ID", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
+    // @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
     public CommonResult<QuestionnaireResultRespVO> getQuestionnaireResult(@RequestParam("id") Long id) {
         try {
             QuestionnaireResultRespVO result = questionnaireResultService.getQuestionnaireResult(id);
