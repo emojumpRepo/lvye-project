@@ -55,6 +55,13 @@ public interface QuestionnaireConvert {
 
     PageResult<QuestionnaireRespVO> convertPage(PageResult<QuestionnaireDO> page);
 
+    // === 包含 surveyCode 的分页项转换 ===
+    QuestionnaireWithSurveyRespVO convertWithSurvey(QuestionnaireDO bean);
+
+    List<QuestionnaireWithSurveyRespVO> convertWithSurveyList(List<QuestionnaireDO> list);
+
+    PageResult<QuestionnaireWithSurveyRespVO> convertWithSurveyPage(PageResult<QuestionnaireDO> page);
+
     @Mapping(target = "assessmentDimensionLabels", ignore = true)
     QuestionnaireSimpleRespVO convertSimple(QuestionnaireDO bean);
 

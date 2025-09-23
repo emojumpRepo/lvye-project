@@ -156,7 +156,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             questionnaire.setTitle(StringUtils.hasText(externalSurvey.getTitle()) ?
                     externalSurvey.getTitle() : "未命名问卷");
             questionnaire.setDescription(SurveyDataConverter.generateDescription(externalSurvey));
-            questionnaire.setExternalLink(SurveyDataConverter.generateSurveyLink(externalSurvey, surveySystemProperties.getBaseUrl()));
+            questionnaire.setExternalLink(externalSurvey.getSurveyPath());
             questionnaire.setExternalId(externalSurvey.getSurveyMetaId());
             questionnaire.setSurveyCode(externalSurvey.getSurveyCode());
 

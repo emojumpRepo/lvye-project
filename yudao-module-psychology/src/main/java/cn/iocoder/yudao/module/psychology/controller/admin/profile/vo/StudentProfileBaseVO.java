@@ -57,6 +57,10 @@ public class StudentProfileBaseVO {
     @Length(max = 11, message = "手机号不能超过11")
     private String mobile;
 
+    @Schema(description = "监护人手机号", example = "13900139000")
+    @Length(max = 11, message = "监护人手机号不能超过11")
+    private String guardianMobile;
+
     @Schema(description = "身份证号", requiredMode = Schema.RequiredMode.REQUIRED, example = "110101200801012345")
     @NotBlank(message = "身份证号不能为空")
     @Length(min = 18, max = 18, message = "身份证号必须为18位")

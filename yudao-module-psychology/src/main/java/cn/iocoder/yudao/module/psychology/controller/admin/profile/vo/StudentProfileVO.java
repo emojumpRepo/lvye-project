@@ -39,8 +39,14 @@ public class StudentProfileVO {
     @Schema(description = "性别", example = "1")
     private Integer sex;
 
+    @Schema(description = "民族", example = "1")
+    private Integer ethnicity;
+
     @Schema(description = "手机号", example = "13800138000")
     private String mobile;
+
+    @Schema(description = "监护人手机号", example = "13900139000")
+    private String guardianMobile;
 
     @Schema(description = "身份证号", example = "110101200801012345")
     private String idCard;

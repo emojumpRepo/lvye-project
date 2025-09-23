@@ -43,6 +43,21 @@ public interface AuthConvert {
                 .build();
     }
 
+    default AuthPermissionInfoRespVO convert(AdminUserDO user, List<RoleDO> roleList, List<MenuDO> menuList, String deptName) {
+        AuthPermissionInfoRespVO.UserVO userVO = BeanUtils.toBean(user, AuthPermissionInfoRespVO.UserVO.class);
+        userVO.setDeptName(deptName);
+        return AuthPermissionInfoRespVO.builder()
+                .user(userVO)
+                .roles(convertSet(roleList, RoleDO::getCode))
+                // 权限标识信息
+                .permissions(convertSet(menuList, MenuDO::getPermission))
+                // 菜单树
+                .menus(buildMenuTree(menuList))
+                //是否为家长登录
+                .isParent(WebFrameworkUtils.getIsParent())
+                .build();
+    }
+
     @Mapping(target = "children", ignore = true)
     AuthPermissionInfoRespVO.MenuVO convertTreeNode(MenuDO menu);
 

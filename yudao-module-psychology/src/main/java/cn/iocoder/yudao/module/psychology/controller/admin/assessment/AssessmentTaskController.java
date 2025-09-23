@@ -116,6 +116,7 @@ public class AssessmentTaskController {
                     info.setQuestionCount(questionnaire.getQuestionCount());
                     info.setEstimatedDuration(questionnaire.getEstimatedDuration());
                     info.setStatus(questionnaire.getStatus());
+                    info.setCode(questionnaire.getSurveyCode());
                     questionnaires.add(info);
                 }
             }
