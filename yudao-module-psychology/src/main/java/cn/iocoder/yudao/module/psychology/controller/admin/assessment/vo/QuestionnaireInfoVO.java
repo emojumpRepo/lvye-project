@@ -18,6 +18,9 @@ public class QuestionnaireInfoVO {
     @Schema(description = "问卷标题", requiredMode = Schema.RequiredMode.REQUIRED, example = "心理健康评估问卷")
     private String title;
 
+    @Schema(description = "问卷编码", requiredMode = Schema.RequiredMode.REQUIRED, example = "mental_health_survey")
+    private String code;
+
     @Schema(description = "问卷描述", example = "用于评估学生心理健康状况的专业问卷")
     private String description;
 
