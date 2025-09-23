@@ -106,6 +106,13 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     }
 
     @Override
+    public PageResult<cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireWithSurveyRespVO>
+        getQuestionnairePageWithSurvey(QuestionnairePageReqVO pageReqVO) {
+        PageResult<QuestionnaireDO> pageResult = questionnaireMapper.selectPage(pageReqVO);
+        return QuestionnaireConvert.INSTANCE.convertWithSurveyPage(pageResult);
+    }
+
+    @Override
     public List<QuestionnaireRespVO> getAllQuestionnaireList() {
         List<QuestionnaireDO> list = questionnaireMapper.selectList();
         return QuestionnaireConvert.INSTANCE.convertList(list);

@@ -53,6 +53,12 @@ public interface QuestionnaireService {
     PageResult<QuestionnaireRespVO> getQuestionnairePage(QuestionnairePageReqVO pageReqVO);
 
     /**
+     * 获得问卷分页列表（包含 surveyCode 字段）
+     */
+    PageResult<cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireWithSurveyRespVO>
+        getQuestionnairePageWithSurvey(QuestionnairePageReqVO pageReqVO);
+
+    /**
      * 获得所有问卷列表
      *
      * @return 问卷列表

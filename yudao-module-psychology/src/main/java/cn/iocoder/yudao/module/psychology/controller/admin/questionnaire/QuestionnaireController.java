@@ -87,8 +87,8 @@ public class QuestionnaireController {
     @GetMapping("/page")
     @Operation(summary = "获得问卷分页")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
-    public CommonResult<PageResult<QuestionnaireRespVO>> getQuestionnairePage(@Valid QuestionnairePageReqVO pageReqVO) {
-        PageResult<QuestionnaireRespVO> pageResult = questionnaireService.getQuestionnairePage(pageReqVO);
+    public CommonResult<PageResult<QuestionnaireWithSurveyRespVO>> getQuestionnairePage(@Valid QuestionnairePageReqVO pageReqVO) {
+        PageResult<QuestionnaireWithSurveyRespVO> pageResult = questionnaireService.getQuestionnairePageWithSurvey(pageReqVO);
         return success(pageResult);
     }
 
