@@ -26,6 +26,7 @@ public interface QuestionnaireResultConfigMapper extends BaseMapperX<Questionnai
                 .likeIfPresent(QuestionnaireResultConfigDO::getDimensionName, reqVO.getDimensionName())
                 .eqIfPresent(QuestionnaireResultConfigDO::getCalculateType, reqVO.getCalculateType())
                 .eqIfPresent(QuestionnaireResultConfigDO::getIsAbnormal, reqVO.getIsAbnormal())
+                .likeIfPresent(QuestionnaireResultConfigDO::getLevel, reqVO.getLevel())
                 .betweenIfPresent(QuestionnaireResultConfigDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(QuestionnaireResultConfigDO::getId));
     }

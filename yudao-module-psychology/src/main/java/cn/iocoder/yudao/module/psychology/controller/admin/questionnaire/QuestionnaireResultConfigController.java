@@ -3,9 +3,7 @@ package cn.iocoder.yudao.module.psychology.controller.admin.questionnaire;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigPageReqVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigSaveReqVO;
-import cn.iocoder.yudao.module.psychology.convert.questionnaire.QuestionnaireResultConfigConvert;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultConfigDO;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultConfigService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -58,29 +55,29 @@ public class QuestionnaireResultConfigController {
     @Operation(summary = "获得问卷结果配置")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire-result-config:query')")
-    public CommonResult<QuestionnaireResultConfigRespVO> getQuestionnaireResultConfig(@RequestParam("id") Long id) {
+    public CommonResult<QuestionnaireResultConfigDO> getQuestionnaireResultConfig(@RequestParam("id") Long id) {
         QuestionnaireResultConfigDO questionnaireResultConfig = questionnaireResultConfigService.getQuestionnaireResultConfig(id);
-        return success(QuestionnaireResultConfigConvert.INSTANCE.convert(questionnaireResultConfig));
+        return success(questionnaireResultConfig);
     }
 
     @GetMapping("/page")
     @Operation(summary = "获得问卷结果配置分页")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire-result-config:query')")
-    public CommonResult<PageResult<QuestionnaireResultConfigRespVO>> getQuestionnaireResultConfigPage(@Valid QuestionnaireResultConfigPageReqVO pageVO) {
+    public CommonResult<PageResult<QuestionnaireResultConfigDO>> getQuestionnaireResultConfigPage(@Valid QuestionnaireResultConfigPageReqVO pageVO) {
         PageResult<QuestionnaireResultConfigDO> pageResult = questionnaireResultConfigService.getQuestionnaireResultConfigPage(pageVO);
-        return success(QuestionnaireResultConfigConvert.INSTANCE.convertPage(pageResult));
+        return success(pageResult);
     }
 
     @GetMapping("/list-by-questionnaire")
     @Operation(summary = "根据问卷ID获取结果配置分页列表")
     @Parameter(name = "questionnaireId", description = "问卷ID", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire-result-config:query')")
-    public CommonResult<PageResult<QuestionnaireResultConfigRespVO>> getQuestionnaireResultConfigPageByQuestionnaireId(
+    public CommonResult<PageResult<QuestionnaireResultConfigDO>> getQuestionnaireResultConfigPageByQuestionnaireId(
             @RequestParam("questionnaireId") Long questionnaireId,
             @Valid QuestionnaireResultConfigPageReqVO pageReqVO) {
         pageReqVO.setQuestionnaireId(questionnaireId);
         PageResult<QuestionnaireResultConfigDO> pageResult = questionnaireResultConfigService.getQuestionnaireResultConfigPage(pageReqVO);
-        return success(QuestionnaireResultConfigConvert.INSTANCE.convertPage(pageResult));
+        return success(pageResult);
     }
 
     @GetMapping("/get-by-questionnaire-and-dimension")
@@ -88,11 +85,11 @@ public class QuestionnaireResultConfigController {
     @Parameter(name = "questionnaireId", description = "问卷ID", required = true, example = "1024")
     @Parameter(name = "dimensionName", description = "维度名称", required = true, example = "睡眠质量")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire-result-config:query')")
-    public CommonResult<QuestionnaireResultConfigRespVO> getQuestionnaireResultConfigByQuestionnaireIdAndDimensionName(
+    public CommonResult<QuestionnaireResultConfigDO> getQuestionnaireResultConfigByQuestionnaireIdAndDimensionName(
             @RequestParam("questionnaireId") Long questionnaireId,
             @RequestParam("dimensionName") String dimensionName) {
         QuestionnaireResultConfigDO config = questionnaireResultConfigService.getQuestionnaireResultConfigByQuestionnaireIdAndDimensionName(questionnaireId, dimensionName);
-        return success(QuestionnaireResultConfigConvert.INSTANCE.convert(config));
+        return success(config);
     }
 
     @DeleteMapping("/delete-by-questionnaire")

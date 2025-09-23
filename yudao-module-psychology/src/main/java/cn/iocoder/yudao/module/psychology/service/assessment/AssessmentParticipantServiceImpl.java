@@ -292,6 +292,15 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         } else {
             resultDO.setGenerationStatus(3);
         }
+        
+        // 将匹配的问卷规则配置的level字符串保存到evaluate字段
+        if (!answerResultList.isEmpty()) {
+            // 取第一个结果的level作为整体评价等级
+            String level = answerResultList.get(0).getLevel();
+            if (level != null && !level.isEmpty()) {
+                resultDO.setEvaluate(level);
+            }
+        }
         resultDO.setResultData(JSON.toJSONString(answerResultList));
         resultDO.setCompletedTime(new Date());
         questionnaireResultMapper.updateById(resultDO);

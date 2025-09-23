@@ -269,18 +269,29 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     @Override
     public PageResult<StudentProfileVO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        DeptDataPermissionRespDTO deptDataPermissionRespDTO = permissionApi.getDeptDataPermission(userId);
+        DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
+
+        // 计算可见部门ID集合
+        java.util.Collection<Long> deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
+                ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
+        Long selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
 
         IPage<StudentProfileVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
-        studentProfileMapper.selectPageList(page, pageReqVO);
+        studentProfileMapper.selectPageList(page, pageReqVO, deptIds, selfUserId);
         return new PageResult<>(page.getRecords(), page.getTotal());
     }
 
     @Override
     public List<StudentProfileVO> getStudentProfileList(StudentProfilePageReqVO reqVO) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
+        java.util.Collection<Long> deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
+                ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
+        Long selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
+
         // 设置不分页，获取所有数据
         IPage<StudentProfileVO> page = new Page<>(1, Integer.MAX_VALUE);
-        studentProfileMapper.selectPageList(page, reqVO);
+        studentProfileMapper.selectPageList(page, reqVO, deptIds, selfUserId);
         return page.getRecords();
     }
 
