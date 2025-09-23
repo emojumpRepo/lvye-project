@@ -215,3 +215,33 @@ node script/release-v2.mjs
     [数据库服务]
     ├─ MySQL容器 (端口3306)
     └─ Redis容器 (端口6379)
+
+
+
+1. 统一管理文件 /root/mindfront/docker-compose-services.yml
+- nginx和mindtrip-server都配置了restart: always（开机自启）
+- nginx使用host网络模式，通过localhost:48080访问后端
+2. 启动脚本 /root/mindfront/start-services.sh
+- 一键启动所有服务
+- 自动处理容器清理和重建
+3. 重启后自动恢复
+- 服务器重启后，Docker会自动启动这些容器
+- 网络配置已持久化在配置文件中
+
+不需要重新配置的原因：
+- 所有配置都写入了文件（docker-compose-services.yml和nginx配置）
+- 使用restart: always确保开机自启
+- nginx通过localhost访问后端，不依赖动态IP
+
+管理命令：
+# 启动所有服务
+/root/mindfront/start-services.sh
+
+# 查看状态
+docker compose -f docker-compose-services.yml ps
+
+# 重启服务
+docker compose -f docker-compose-services.yml restart
+
+# 查看日志
+docker compose -f docker-compose-services.yml logs -f
