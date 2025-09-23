@@ -63,4 +63,16 @@ public class ResultGenerationContext {
      */
     private Map<String, Object> extraParams;
 
+    /**
+     * 场景编码（如 CAMPUS_TRIP）
+     */
+    private String scenarioCode;
+
+    /**
+     * 问卷ID到问卷编码的映射
+     * key: 问卷ID
+     * value: 问卷编码（如 mental_health_survey）
+     */
+    private Map<Long, String> questionnaireCodeMap;
+
 }

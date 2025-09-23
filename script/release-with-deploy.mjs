@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * 心之旅项目统一发布工具
- * 功能：构建、部署、生成日志、发送通知
- * 使用：npm run release 或 node script/release.mjs
+ * Mindtrip Project Full Release Tool with Deploy
+ * Features: Build, Deploy, Generate logs, Send notifications
+ * Usage: npm run release:deploy or node script/release-with-deploy.mjs
  */
 
 import { execSync } from 'child_process';
@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.join(__dirname, '..');
 
-// 配置
+// Configuration
 const CONFIG = {
   dify: {
     apiKey: 'app-LTUF7HU291Ug9LAKD4ZC4ZHO',
@@ -36,11 +36,11 @@ const CONFIG = {
 };
 
 console.log(chalk.cyan('========================================'));
-console.log(chalk.cyan('      心之旅项目统一发布工具 v1.0.0'));
+console.log(chalk.cyan('    Mindtrip Project Release Tool v1.0.0'));
 console.log(chalk.cyan('========================================'));
 console.log();
 
-// 检查当前分支必须是 master
+// Check current branch must be master
 try {
   const currentBranch = execSync('git branch --show-current', {
     encoding: 'utf-8',
@@ -48,47 +48,47 @@ try {
   }).trim();
   
   if (currentBranch !== 'master') {
-    console.log(chalk.red('❌ 错误：发布必须在 master 分支进行'));
-    console.log(chalk.yellow(`   当前分支：${currentBranch}`));
-    console.log(chalk.gray('   请先切换到 master 分支：git checkout master'));
+    console.log(chalk.red('Error: Release must be on master branch'));
+    console.log(chalk.yellow(`   Current branch: ${currentBranch}`));
+    console.log(chalk.gray('   Please switch to master: git checkout master'));
     process.exit(1);
   }
   
-  console.log(chalk.green('✓ 当前分支：master'));
+  console.log(chalk.green('✓ Current branch: master'));
   
-  // 拉取最新代码
-  console.log(chalk.blue('正在同步最新代码...'));
+  // Pull latest code
+  console.log(chalk.blue('Syncing latest code...'));
   execSync('git pull origin master', {
     stdio: 'inherit',
     cwd: PROJECT_ROOT
   });
-  console.log(chalk.green('✓ 代码已同步'));
+  console.log(chalk.green('✓ Code synced'));
   console.log();
   
 } catch (error) {
-  console.error(chalk.red('Git 操作失败:'), error.message);
+  console.error(chalk.red('Git operation failed:'), error.message);
   process.exit(1);
 }
 
-// 检查是否在项目根目录
+// Check if in project root
 if (!fs.existsSync(path.join(PROJECT_ROOT, 'pom.xml'))) {
-  console.log(chalk.red('错误：请在项目根目录执行此脚本'));
+  console.log(chalk.red('Error: Please run this script from project root'));
   process.exit(1);
 }
 
-// 解析命令行参数
+// Parse command line arguments
 const args = process.argv.slice(2);
 const isAuto = args.includes('--auto');
 const versionArg = args.find(arg => arg.startsWith('--version='));
 
-// 1. 获取版本号
+// 1. Get version number
 let version;
 if (versionArg) {
   version = versionArg.split('=')[1];
 } else if (!isAuto) {
-  version = readline.question('请输入版本号 (如 1.2.0): v');
+  version = readline.question('Enter version number (e.g. 1.2.0): v');
 } else {
-  // 自动获取下一个补丁版本
+  // Auto get next patch version
   try {
     const packageJson = JSON.parse(
       fs.readFileSync(path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend/package.json'), 'utf-8')
@@ -96,168 +96,168 @@ if (versionArg) {
     const [major, minor, patch] = packageJson.version.split('.');
     version = `${major}.${minor}.${parseInt(patch) + 1}`;
   } catch (error) {
-    console.log(chalk.red('无法自动获取版本号，请手动输入'));
-    version = readline.question('请输入版本号 (如 1.2.0): v');
+    console.log(chalk.red('Cannot get version automatically, please enter manually'));
+    version = readline.question('Enter version number (e.g. 1.2.0): v');
   }
 }
 
 if (!version) {
-  console.log(chalk.red('版本号不能为空'));
+  console.log(chalk.red('Version cannot be empty'));
   process.exit(1);
 }
 
-// 确保版本号格式正确
+// Ensure correct version format
 if (!version.match(/^\d+\.\d+\.\d+$/)) {
-  console.log(chalk.red('版本号格式错误，应为 x.y.z 格式'));
+  console.log(chalk.red('Invalid version format, should be x.y.z'));
   process.exit(1);
 }
 
-// 2. 选择发布内容
-let choice = '3'; // 默认全部发布
+// 2. Select release content
+let choice = '3'; // Default all
 if (!isAuto) {
-  console.log('\n请选择要发布的内容:');
-  console.log('  [1] 仅后端');
-  console.log('  [2] 仅前端');
-  console.log('  [3] 前端 + 后端（默认）');
-  choice = readline.question('请选择 (1/2/3): ') || '3';
+  console.log('\nSelect content to release:');
+  console.log('  [1] Backend only');
+  console.log('  [2] Frontend only');
+  console.log('  [3] Frontend + Backend (default)');
+  choice = readline.question('Please select (1/2/3): ') || '3';
 }
 
-// 3. 确认发布
-const releaseContent = choice === '1' ? '后端' : choice === '2' ? '前端' : '前端+后端';
-console.log('\n' + chalk.yellow('即将发布:'));
-console.log(`  版本: v${version}`);
-console.log(`  内容: ${releaseContent}`);
-console.log(`  服务器: ${CONFIG.server.host}`);
+// 3. Confirm release
+const releaseContent = choice === '1' ? 'Backend' : choice === '2' ? 'Frontend' : 'Frontend+Backend';
+console.log('\n' + chalk.yellow('About to release:'));
+console.log(`  Version: v${version}`);
+console.log(`  Content: ${releaseContent}`);
+console.log(`  Server: ${CONFIG.server.host}`);
 
 if (!isAuto) {
-  const confirm = readline.question('\n确认发布? (y/N): ');
+  const confirm = readline.question('\nConfirm release? (y/N): ');
   if (confirm.toLowerCase() !== 'y') {
-    console.log('已取消发布');
+    console.log('Release cancelled');
     process.exit(0);
   }
 }
 
-// 主发布函数
+// Main release function
 async function release() {
   const startTime = Date.now();
   const changelog = [];
   let hasError = false;
   
   try {
-    // 4. 构建和部署后端
+    // 4. Build and deploy backend
     if (choice === '1' || choice === '3') {
-      console.log(chalk.blue('\n========== 后端发布 =========='));
+      console.log(chalk.blue('\n========== Backend Release =========='));
       
-      // 构建
-      console.log(chalk.blue('[1/2] 构建后端...'));
+      // Build
+      console.log(chalk.blue('[1/2] Building backend...'));
       try {
         process.chdir(PROJECT_ROOT);
         execSync('mvn clean package -DskipTests', { 
           stdio: 'inherit',
           cwd: PROJECT_ROOT 
         });
-        console.log(chalk.green('✓ 后端构建成功'));
+        console.log(chalk.green('✓ Backend build successful'));
         
-        // 检查 JAR 文件
+        // Check JAR file
         const jarPath = path.join(PROJECT_ROOT, 'yudao-server/target/yudao-server.jar');
         if (!fs.existsSync(jarPath)) {
-          throw new Error('JAR 文件未生成');
+          throw new Error('JAR file not generated');
         }
         const jarSize = (fs.statSync(jarPath).size / 1024 / 1024).toFixed(2);
-        console.log(chalk.gray(`  JAR 文件大小: ${jarSize} MB`));
+        console.log(chalk.gray(`  JAR file size: ${jarSize} MB`));
       } catch (error) {
-        console.log(chalk.red('✗ 后端构建失败'));
+        console.log(chalk.red('✗ Backend build failed'));
         throw error;
       }
       
-      // 部署
-      console.log(chalk.blue('[2/2] 部署后端...'));
+      // Deploy
+      console.log(chalk.blue('[2/2] Deploying backend...'));
       try {
         execSync('node script/windows/deploy-backend.mjs', { 
           stdio: 'inherit',
           cwd: PROJECT_ROOT 
         });
-        console.log(chalk.green('✓ 后端部署成功'));
-        changelog.push('- 后端服务更新');
+        console.log(chalk.green('✓ Backend deployed successfully'));
+        changelog.push('- Backend service updated');
       } catch (error) {
-        console.log(chalk.red('✗ 后端部署失败'));
+        console.log(chalk.red('✗ Backend deployment failed'));
         throw error;
       }
     }
     
-    // 5. 构建和部署前端
+    // 5. Build and deploy frontend
     if (choice === '2' || choice === '3') {
-      console.log(chalk.blue('\n========== 前端发布 =========='));
+      console.log(chalk.blue('\n========== Frontend Release =========='));
       
-      // Admin 项目
-      console.log(chalk.blue('[1/4] 构建 Admin 管理后台...'));
+      // Admin project
+      console.log(chalk.blue('[1/4] Building Admin dashboard...'));
       try {
         const frontendPath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
         process.chdir(frontendPath);
         
-        // 构建 Admin
+        // Build Admin
         execSync('pnpm build:admin', { stdio: 'inherit' });
         
-        // 检查 dist.zip
+        // Check dist.zip
         const adminDistZip = path.join(frontendPath, 'apps/admin/dist.zip');
         if (!fs.existsSync(adminDistZip)) {
-          throw new Error('Admin dist.zip 未生成');
+          throw new Error('Admin dist.zip not generated');
         }
-        console.log(chalk.green('✓ Admin 构建成功'));
+        console.log(chalk.green('✓ Admin build successful'));
       } catch (error) {
-        console.log(chalk.red('✗ Admin 构建失败'));
+        console.log(chalk.red('✗ Admin build failed'));
         throw error;
       }
       
-      // Web 项目
-      console.log(chalk.blue('[2/4] 构建 Web 前台...'));
+      // Web project
+      console.log(chalk.blue('[2/4] Building Web frontend...'));
       try {
         const frontendPath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
         process.chdir(frontendPath);
         
-        // 构建 Web
+        // Build Web
         execSync('pnpm build:web', { stdio: 'inherit' });
         
-        // 检查 dist.zip
+        // Check dist.zip
         const webDistZip = path.join(frontendPath, 'apps/web/dist.zip');
         if (!fs.existsSync(webDistZip)) {
-          throw new Error('Web dist.zip 未生成');
+          throw new Error('Web dist.zip not generated');
         }
-        console.log(chalk.green('✓ Web 构建成功'));
+        console.log(chalk.green('✓ Web build successful'));
       } catch (error) {
-        console.log(chalk.red('✗ Web 构建失败'));
+        console.log(chalk.red('✗ Web build failed'));
         throw error;
       }
       
-      // 部署前端
-      console.log(chalk.blue('[3/4] 部署前端...'));
+      // Deploy frontend
+      console.log(chalk.blue('[3/4] Deploying frontend...'));
       try {
         process.chdir(PROJECT_ROOT);
         execSync('node script/windows/deploy-frontend.mjs', { 
           stdio: 'inherit',
           cwd: PROJECT_ROOT 
         });
-        console.log(chalk.green('✓ 前端部署成功'));
-        changelog.push('- 前端界面优化');
+        console.log(chalk.green('✓ Frontend deployed successfully'));
+        changelog.push('- Frontend UI optimized');
       } catch (error) {
-        console.log(chalk.red('✗ 前端部署失败'));
+        console.log(chalk.red('✗ Frontend deployment failed'));
         throw error;
       }
     }
     
-    // 6. 生成 Git Tag
-    console.log(chalk.blue('\n[4/4] 创建版本标签...'));
+    // 6. Create Git Tag
+    console.log(chalk.blue('\n[4/4] Creating version tag...'));
     try {
       process.chdir(PROJECT_ROOT);
       
-      // 检查是否有未提交的更改
+      // Check for uncommitted changes
       const gitStatus = execSync('git status --porcelain', { encoding: 'utf-8' });
       if (gitStatus.trim()) {
-        console.log(chalk.yellow('警告：存在未提交的更改'));
+        console.log(chalk.yellow('Warning: Uncommitted changes exist'));
         if (!isAuto) {
-          const continueTag = readline.question('是否继续创建标签? (y/N): ');
+          const continueTag = readline.question('Continue creating tag? (y/N): ');
           if (continueTag.toLowerCase() !== 'y') {
-            console.log('跳过创建标签');
+            console.log('Skip creating tag');
           } else {
             createGitTag(version);
           }
@@ -266,55 +266,55 @@ async function release() {
         createGitTag(version);
       }
     } catch (error) {
-      console.log(chalk.yellow('⚠ Git 标签创建失败（非关键错误）'));
+      console.log(chalk.yellow('⚠ Git tag creation failed (non-critical)'));
       console.log(chalk.gray(error.message));
     }
     
-    // 7. 生成发布日志
-    console.log(chalk.blue('\n生成发布日志...'));
-    // 确定发布类型
+    // 7. Generate release log
+    console.log(chalk.blue('\nGenerating release notes...'));
+    // Determine release type
     const releaseType = determineReleaseType(version);
     const releaseNotes = await generateReleaseNotes(version, changelog, releaseType);
     
-    // 8. 发送飞书通知
+    // 8. Send Feishu notification
     await notifyFeishu(version, releaseNotes, releaseContent);
     
-    // 记录发布
+    // Record release
     recordRelease(version, releaseContent);
     
-    // 发布成功
+    // Release success
     const duration = ((Date.now() - startTime) / 1000 / 60).toFixed(1);
     console.log(chalk.green('\n========================================'));
-    console.log(chalk.green('           发布成功！'));
+    console.log(chalk.green('           Release Successful!'));
     console.log(chalk.green('========================================'));
-    console.log(`  版本: v${version}`);
-    console.log(`  内容: ${releaseContent}`);
-    console.log(`  耗时: ${duration} 分钟`);
-    console.log(`  访问地址: http://${CONFIG.server.host}/`);
+    console.log(`  Version: v${version}`);
+    console.log(`  Content: ${releaseContent}`);
+    console.log(`  Duration: ${duration} minutes`);
+    console.log(`  Access URL: http://${CONFIG.server.host}/`);
     console.log();
     
   } catch (error) {
     hasError = true;
-    console.error(chalk.red('\n❌ 发布失败:'), error.message);
+    console.error(chalk.red('\n❌ Release failed:'), error.message);
     
-    // 发送失败通知
+    // Send failure notification
     try {
       await notifyFeishuError(version, error.message);
     } catch (notifyError) {
-      console.error('发送失败通知失败:', notifyError.message);
+      console.error('Failed to send failure notification:', notifyError.message);
     }
     
     process.exit(1);
   }
 }
 
-// 确定发布类型
+// Determine release type
 function determineReleaseType(version) {
-  // 根据版本号判断发布类型
+  // Based on version number
   const parts = version.split('.');
   const [major, minor, patch] = parts.map(Number);
   
-  // 获取上一个版本（可以从 git tag 获取）
+  // Get previous version from git tag
   try {
     const tags = execSync('git tag -l "v*" --sort=-version:refname | head -2', { encoding: 'utf-8' })
       .trim()
@@ -329,32 +329,32 @@ function determineReleaseType(version) {
       if (patch > prevPatch) return 'patch';
     }
   } catch (error) {
-    // 默认为 patch
+    // Default to patch
   }
   
-  // 或者根据命令行参数
+  // Or from command line arguments
   const args = process.argv.slice(2);
   if (args.includes('--major')) return 'major';
   if (args.includes('--minor')) return 'minor';
   if (args.includes('--hotfix')) return 'hotfix';
   
-  return 'patch'; // 默认
+  return 'patch'; // Default
 }
 
-// 创建 Git 标签
+// Create Git tag
 function createGitTag(version) {
   execSync(`git tag -a v${version} -m "Release v${version}"`, { stdio: 'inherit' });
   execSync(`git push origin v${version}`, { stdio: 'inherit' });
-  console.log(chalk.green(`✓ Git 标签 v${version} 创建成功`));
+  console.log(chalk.green(`✓ Git tag v${version} created successfully`));
 }
 
-// 生成发布日志（调用 Dify Workflow API）
+// Generate release notes (call Dify Workflow API)
 async function generateReleaseNotes(version, changes, releaseType = 'patch') {
   try {
-    // 获取提交记录 - 智能判断获取方式
+    // Get commit records
     let commits = '';
     try {
-      // 获取所有版本 tags
+      // Get all version tags
       const allTags = execSync('git tag -l "v*" --sort=-version:refname', { 
         encoding: 'utf-8', 
         cwd: PROJECT_ROOT 
@@ -363,74 +363,74 @@ async function generateReleaseNotes(version, changes, releaseType = 'patch') {
       const currentTag = `v${version}`;
       
       if (allTags.length > 0 && !allTags.includes(currentTag)) {
-        // 准备发布新版本，获取最新 tag 到 HEAD 的提交
+        // Preparing new version, get commits from latest tag to HEAD
         const latestTag = allTags[0];
-        console.log(chalk.blue(`获取 ${latestTag} 到 HEAD 之间的提交`));
+        console.log(chalk.blue(`Getting commits from ${latestTag} to HEAD`));
         commits = execSync(`git log ${latestTag}..HEAD --oneline`, { 
           encoding: 'utf-8', 
           cwd: PROJECT_ROOT 
         });
       } else if (allTags.length >= 2) {
-        // 获取最新两个 tag 之间的提交
-        console.log(chalk.blue(`获取 ${allTags[1]} 到 ${allTags[0]} 之间的提交`));
+        // Get commits between two latest tags
+        console.log(chalk.blue(`Getting commits from ${allTags[1]} to ${allTags[0]}`));
         commits = execSync(`git log ${allTags[1]}..${allTags[0]} --oneline`, { 
           encoding: 'utf-8', 
           cwd: PROJECT_ROOT 
         });
       } else {
-        // 首次发布或只有一个 tag
-        console.log(chalk.blue('获取最近 15 条提交'));
+        // First release or only one tag
+        console.log(chalk.blue('Getting recent 15 commits'));
         commits = execSync('git log --oneline -15', { 
           encoding: 'utf-8', 
           cwd: PROJECT_ROOT 
         });
       }
     } catch (error) {
-      // 如果出错，默认获取最近10条
+      // If error, get recent 10 commits
       try {
         commits = execSync('git log --oneline -10', { 
           encoding: 'utf-8', 
           cwd: PROJECT_ROOT 
         });
       } catch (e) {
-        commits = '无法获取提交记录';
+        commits = 'Unable to get commit records';
       }
     }
     
-    // 清理和格式化commits，移除commit hash，只保留commit message
+    // Clean and format commits
     const commitLines = commits.split('\n')
       .filter(line => line.trim())
       .map(line => {
-        // 移除开头的commit hash
+        // Remove commit hash
         return line.replace(/^[a-f0-9]{7,}\s+/, '');
       })
-      .slice(0, 8); // 最多8条，避免太长
+      .slice(0, 8); // Max 8 to avoid too long
     
-    // 构建精简的query - 直接使用commit信息
-    const prompt = commitLines.join('；').substring(0, 150); // 限制在150字符内
+    // Build concise query
+    const prompt = commitLines.join('; ').substring(0, 150); // Limit to 150 chars
 
-    // 调试：打印发送的内容
-    console.log(chalk.blue('\n[调试] 准备发送给 Dify 的内容：'));
+    // Debug: Print content to send
+    console.log(chalk.blue('\n[Debug] Preparing content for Dify:'));
     console.log(chalk.gray('API URL:'), CONFIG.dify.apiUrl + '/workflows/run');
     console.log(chalk.gray('Git Commits:'));
     commitLines.forEach(commit => console.log(chalk.gray('  - ' + commit)));
-    console.log(chalk.gray('Prompt 长度:'), prompt.length, '字符');
-    console.log(chalk.gray('发布类型:'), releaseType);
+    console.log(chalk.gray('Prompt length:'), prompt.length, 'characters');
+    console.log(chalk.gray('Release type:'), releaseType);
 
-    // 使用 Workflow API - 简化的输入
+    // Use Workflow API
     const requestBody = {
       inputs: {
-        query: prompt,  // 主要输入（50-100字的极简内容）
+        query: prompt,
         version: version,
         release_type: releaseType,
-        target_audience: 'operation'  // 默认运营团队，可根据需要调整
+        target_audience: 'operation'
       },
       response_mode: "blocking",
       user: "release-bot"
     };
 
     const response = await axios.post(
-      `${CONFIG.dify.apiUrl}/workflows/run`,  // 使用 workflows/run 端点
+      `${CONFIG.dify.apiUrl}/workflows/run`,
       requestBody,
       {
         headers: {
@@ -441,37 +441,37 @@ async function generateReleaseNotes(version, changes, releaseType = 'patch') {
       }
     );
     
-    console.log(chalk.green('✓ AI 发布日志生成成功'));
+    console.log(chalk.green('✓ AI release notes generated successfully'));
     
-    // Workflow API 返回的数据结构
-    const result = response.data.data?.outputs?.result ||  // 正确的输出路径
+    // Workflow API response structure
+    const result = response.data.data?.outputs?.result ||
                    response.data.data?.outputs?.text || 
                    response.data.data?.outputs?.answer ||
-                   `版本 v${version} 已发布\n${changes.join('\n')}`;
+                   `Version v${version} released\n${changes.join('\n')}`;
     
     return result;
     
   } catch (error) {
-    console.warn(chalk.yellow('⚠ AI 生成失败，使用默认模板'));
+    console.warn(chalk.yellow('⚠ AI generation failed, using default template'));
     
-    // 详细错误信息
+    // Detailed error info
     if (error.response) {
-      console.log(chalk.red('错误状态码:'), error.response.status);
-      console.log(chalk.red('错误信息:'), JSON.stringify(error.response.data, null, 2));
+      console.log(chalk.red('Error status:'), error.response.status);
+      console.log(chalk.red('Error message:'), JSON.stringify(error.response.data, null, 2));
     } else {
       console.log(chalk.gray(error.message));
     }
     
-    // 使用默认模板
-    return `📦 **版本 v${version} 更新内容**
+    // Use default template
+    return `📦 **Version v${version} Updates**
 
 ${changes.join('\n')}
 
-感谢您的使用和支持！如有问题请及时反馈。`;
+Thank you for your support! Please report any issues.`;
   }
 }
 
-// 发送飞书通知
+// Send Feishu notification
 async function notifyFeishu(version, notes, content) {
   const message = {
     msg_type: "interactive",
@@ -479,7 +479,7 @@ async function notifyFeishu(version, notes, content) {
       config: { wide_screen_mode: true },
       header: {
         title: { 
-          content: `🚀 心之旅项目 v${version} 发布成功`, 
+          content: `🚀 Mindtrip Project v${version} Released Successfully`, 
           tag: "plain_text" 
         },
         template: "green"
@@ -498,14 +498,14 @@ async function notifyFeishu(version, notes, content) {
             {
               is_short: true,
               text: {
-                content: `**发布内容：** ${content}`,
+                content: `**Content:** ${content}`,
                 tag: "lark_md"
               }
             },
             {
               is_short: true,
               text: {
-                content: `**服务器：** ${CONFIG.server.host}`,
+                content: `**Server:** ${CONFIG.server.host}`,
                 tag: "lark_md"
               }
             }
@@ -517,7 +517,7 @@ async function notifyFeishu(version, notes, content) {
             {
               tag: "button",
               text: { 
-                content: "访问系统", 
+                content: "Visit System", 
                 tag: "plain_text" 
               },
               type: "primary",
@@ -526,7 +526,7 @@ async function notifyFeishu(version, notes, content) {
             {
               tag: "button",
               text: { 
-                content: "管理后台", 
+                content: "Admin Dashboard", 
                 tag: "plain_text" 
               },
               type: "default",
@@ -539,7 +539,7 @@ async function notifyFeishu(version, notes, content) {
           elements: [
             {
               tag: "plain_text",
-              content: `发布时间: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
+              content: `Release time: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
             }
           ]
         }
@@ -549,13 +549,13 @@ async function notifyFeishu(version, notes, content) {
 
   try {
     await axios.post(CONFIG.feishu.webhook, message, { timeout: 10000 });
-    console.log(chalk.green('✓ 飞书通知发送成功'));
+    console.log(chalk.green('✓ Feishu notification sent successfully'));
   } catch (error) {
-    console.warn(chalk.yellow('⚠ 飞书通知发送失败:'), error.message);
+    console.warn(chalk.yellow('⚠ Feishu notification failed:'), error.message);
   }
 }
 
-// 发送失败通知
+// Send failure notification
 async function notifyFeishuError(version, errorMessage) {
   const message = {
     msg_type: "interactive",
@@ -563,7 +563,7 @@ async function notifyFeishuError(version, errorMessage) {
       config: { wide_screen_mode: true },
       header: {
         title: { 
-          content: `❌ 心之旅项目 v${version} 发布失败`, 
+          content: `❌ Mindtrip Project v${version} Release Failed`, 
           tag: "plain_text" 
         },
         template: "red"
@@ -571,14 +571,14 @@ async function notifyFeishuError(version, errorMessage) {
       elements: [
         {
           tag: "markdown",
-          content: `**错误信息：**\n${errorMessage}\n\n请检查并重试。`
+          content: `**Error:**\n${errorMessage}\n\nPlease check and retry.`
         },
         {
           tag: "note",
           elements: [
             {
               tag: "plain_text",
-              content: `时间: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
+              content: `Time: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
             }
           ]
         }
@@ -589,11 +589,11 @@ async function notifyFeishuError(version, errorMessage) {
   try {
     await axios.post(CONFIG.feishu.webhook, message, { timeout: 10000 });
   } catch (error) {
-    // 静默失败
+    // Silent failure
   }
 }
 
-// 记录发布历史
+// Record release history
 function recordRelease(version, content) {
   const record = {
     version: `v${version}`,
@@ -608,12 +608,12 @@ function recordRelease(version, content) {
   try {
     fs.appendFileSync(logFile, JSON.stringify(record) + '\n');
   } catch (error) {
-    // 静默失败，不影响发布
+    // Silent failure
   }
 }
 
-// 执行发布
+// Execute release
 release().catch(error => {
-  console.error(chalk.red('发布过程出现未预期的错误:'), error);
+  console.error(chalk.red('Unexpected error during release:'), error);
   process.exit(1);
 });

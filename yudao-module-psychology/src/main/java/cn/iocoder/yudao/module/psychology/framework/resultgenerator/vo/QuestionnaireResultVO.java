@@ -51,6 +51,13 @@ public class QuestionnaireResultVO {
     private Map<String, BigDecimal> dimensionScores;
 
     /**
+     * 各维度异常状态
+     * key: 维度名称
+     * value: 是否异常 (true=异常, false=正常)
+     */
+    private Map<String, Boolean> dimensionAbnormalStatus;
+
+    /**
      * 结果报告内容
      */
     private String reportContent;
@@ -59,5 +66,11 @@ public class QuestionnaireResultVO {
      * 建议内容
      */
     private String suggestions;
+
+    /**
+     * 问卷整体是否异常：0-正常，1-异常
+     * 某些问卷（如PHCSS）会根据维度异常数量综合判定
+     */
+    private Integer isAbnormal;
 
 }
