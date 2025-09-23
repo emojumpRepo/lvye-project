@@ -23,4 +23,6 @@ public class DeptSimpleRespVO {
     @Schema(description = "数量", example = "张三")
     private Long count;
 
+    @Schema(description = "排序", example = "1")
+    private Long sort;
 }
