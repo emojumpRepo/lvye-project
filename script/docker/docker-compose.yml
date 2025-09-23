@@ -36,7 +36,7 @@ services:
       - "48080:48080"
     environment:
       # https://github.com/polovyivan/docker-pass-configs-to-container
-      SPRING_PROFILES_ACTIVE: local
+      SPRING_PROFILES_ACTIVE: prod
       JAVA_OPTS:
         ${JAVA_OPTS:-
           -Xms512m
