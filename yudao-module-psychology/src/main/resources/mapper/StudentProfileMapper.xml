@@ -43,6 +43,24 @@
             <if test="pageReqVO.riskLevel != null">
                 AND a.risk_level = #{pageReqVO.riskLevel}
             </if>
+            <!-- 数据权限：按可见部门与本人过滤 -->
+            <if test="(deptIds != null and deptIds.size > 0) or selfUserId != null">
+                AND (
+                <if test="deptIds != null and deptIds.size > 0">
+                    (
+                        a.class_dept_id IN
+                        <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+                        OR
+                        a.grade_dept_id IN
+                        <foreach collection="deptIds" item="gid" open="(" separator="," close=")">#{gid}</foreach>
+                    )
+                </if>
+                <if test="selfUserId != null">
+                    <if test="deptIds != null and deptIds.size > 0"> OR </if>
+                    a.user_id = #{selfUserId}
+                </if>
+                )
+            </if>
             ORDER BY a.id DESC
         </where>
     </select>
