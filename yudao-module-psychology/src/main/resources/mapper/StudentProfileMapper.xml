@@ -16,10 +16,6 @@
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
         <where>
             a.deleted = 0
-            <!-- 如果存在用户部门ID，则限定年级或班级部门为该部门（班级或年级均可匹配） -->
-            <if test="pageReqVO.deptId != null">
-                AND (a.class_dept_id = #{pageReqVO.deptId} OR a.grade_dept_id = #{pageReqVO.deptId})
-            </if>
             <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
                 AND a.student_no LIKE CONCAT('%', #{pageReqVO.studentNo}, '%')
             </if>
