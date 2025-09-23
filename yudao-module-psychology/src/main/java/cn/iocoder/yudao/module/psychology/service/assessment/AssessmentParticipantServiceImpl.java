@@ -282,24 +282,14 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         for (QuestionnaireResultVO answerResult : answerResultList) {
             isAbnormalCount = isAbnormalCount + answerResult.getIsAbnormal();
         }
-        //查询评价内容，赋值
+        //查询评价内容，赋值（仅风险等级与建议，不再覆盖整体评价为 level）
         QuestionnaireResultEvaluateConfigDO evaluateConfigDO = evaluateConfigMapper.selectByQuestionnaireIdAndAbnormalCount(questionnaireId, isAbnormalCount);
         if (evaluateConfigDO != null) {
             resultDO.setRiskLevel(evaluateConfigDO.getRiskLevel());
-            resultDO.setEvaluate(evaluateConfigDO.getEvaluate());
             resultDO.setSuggestions(evaluateConfigDO.getSuggestions());
             resultDO.setGenerationStatus(2);
         } else {
             resultDO.setGenerationStatus(3);
-        }
-        
-        // 将匹配的问卷规则配置的level字符串保存到evaluate字段
-        if (!answerResultList.isEmpty()) {
-            // 取第一个结果的level作为整体评价等级
-            String level = answerResultList.get(0).getLevel();
-            if (level != null && !level.isEmpty()) {
-                resultDO.setEvaluate(level);
-            }
         }
         resultDO.setResultData(JSON.toJSONString(answerResultList));
         resultDO.setCompletedTime(new Date());
