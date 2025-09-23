@@ -344,21 +344,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Override
     public PageResult<AssessmentTaskVO> getAssessmentTaskPage(AssessmentTaskPageReqVO pageReqVO) {
-        Long userId = SecurityFrameworkUtils.getLoginUserId();
-        List<String> taskNos = new ArrayList<>();
-        DeptDataPermissionRespDTO deptDataPermissionRespDTO = permissionApi.getDeptDataPermission(userId);
-        if (!deptDataPermissionRespDTO.getAll()) {
-            // 空集合时直接返回空分页，避免生成非法 SQL
-            if (deptDataPermissionRespDTO.getDeptIds() == null || deptDataPermissionRespDTO.getDeptIds().isEmpty()) {
-                return new PageResult<>(java.util.Collections.emptyList(), 0L);
-            }
-            taskNos = deptTaskMapper.selectTaskListByDeptIds(deptDataPermissionRespDTO.getDeptIds());
-            if (taskNos == null || taskNos.isEmpty()) {
-                return new PageResult<>(java.util.Collections.emptyList(), 0L);
-            }
-        }
+        // 移除权限检查，直接查询所有任务
         IPage<AssessmentTaskVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
-        assessmentTaskMapper.selectPageList(page, pageReqVO, taskNos);
+        assessmentTaskMapper.selectPageList(page, pageReqVO, null); // taskNos传null，表示查询所有任务
         // 填充每条记录的问卷ID列表与槽位映射
         if (page.getRecords() != null && !page.getRecords().isEmpty()) {
             for (AssessmentTaskVO record : page.getRecords()) {
@@ -754,11 +742,14 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
                 riskLevelStatisticsVO.setCount(entry.getValue());
                 riskLevelGradeStatisticsList.add(riskLevelStatisticsVO);
             }
-            RiskLevelGradeStatisticsVO riskLevelGradeStatisticsVO = new RiskLevelGradeStatisticsVO();
-            riskLevelGradeStatisticsVO.setGradeDeptId(gradeDeptId);
-            riskLevelGradeStatisticsVO.setGradeName(deptService.getDept(gradeDeptId).getName());
-            riskLevelGradeStatisticsVO.setTotal(gradeTotal);
-            riskLevelGradeStatisticsVO.setRiskLevelList(riskLevelGradeStatisticsList);
+            DeptDO gradeDept = deptService.getDept(gradeDeptId);
+            // 只有当年级部门存在时才添加到列表中
+            if (gradeDept != null) {
+                RiskLevelGradeStatisticsVO riskLevelGradeStatisticsVO = new RiskLevelGradeStatisticsVO();
+                riskLevelGradeStatisticsVO.setGradeDeptId(gradeDeptId);
+                riskLevelGradeStatisticsVO.setGradeName(gradeDept.getName());
+                riskLevelGradeStatisticsVO.setTotal(gradeTotal);
+                riskLevelGradeStatisticsVO.setRiskLevelList(riskLevelGradeStatisticsList);
             // 统计班级列表
             Map<Long, Map<Integer, Integer>> classRiskMap = new HashMap<>();
             Map<Long, Integer> classTotalMap = new HashMap<>();
@@ -798,17 +789,21 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
                     r.setCount(entry.getValue());
                     clsRiskList.add(r);
                 }
-                RiskLevelClassStatisticsVO cls = new RiskLevelClassStatisticsVO();
-                cls.setClassDeptId(classId);
                 DeptDO classDept = deptService.getDept(classId);
-                cls.setClassName(classDept != null ? classDept.getName() : "未知班级");
-                cls.setTotal(classTotalMap.getOrDefault(classId, 0));
-                cls.setRiskLevelList(clsRiskList);
-                classList.add(cls);
+                // 只有当班级部门存在时才添加到列表中
+                if (classDept != null) {
+                    RiskLevelClassStatisticsVO cls = new RiskLevelClassStatisticsVO();
+                    cls.setClassDeptId(classId);
+                    cls.setClassName(classDept.getName());
+                    cls.setTotal(classTotalMap.getOrDefault(classId, 0));
+                    cls.setRiskLevelList(clsRiskList);
+                    classList.add(cls);
+                }
             }
-            // 挂到年级节点
-            riskLevelGradeStatisticsVO.setClassList(classList);
-            gradeList.add(riskLevelGradeStatisticsVO);
+                // 挂到年级节点
+                riskLevelGradeStatisticsVO.setClassList(classList);
+                gradeList.add(riskLevelGradeStatisticsVO);
+            }
         }
         assessmentTaskRiskLevelStatisticsVO.setGradeList(gradeList);
         return assessmentTaskRiskLevelStatisticsVO;

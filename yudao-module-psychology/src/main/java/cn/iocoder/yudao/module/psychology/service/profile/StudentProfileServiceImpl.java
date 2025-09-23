@@ -269,7 +269,11 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     @Override
     public PageResult<StudentProfileVO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        DeptDataPermissionRespDTO deptDataPermissionRespDTO = permissionApi.getDeptDataPermission(userId);
+        // 若当前登录用户存在部门ID，则将其注入查询条件
+        Long loginDeptId = SecurityFrameworkUtils.getLoginUserDeptId();
+        if (loginDeptId != null) {
+            pageReqVO.setDeptId(loginDeptId);
+        }
 
         IPage<StudentProfileVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
         studentProfileMapper.selectPageList(page, pageReqVO);
@@ -278,6 +282,11 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Override
     public List<StudentProfileVO> getStudentProfileList(StudentProfilePageReqVO reqVO) {
+        // 若当前登录用户存在部门ID，则将其注入查询条件
+        Long loginDeptId = SecurityFrameworkUtils.getLoginUserDeptId();
+        if (loginDeptId != null) {
+            reqVO.setDeptId(loginDeptId);
+        }
         // 设置不分页，获取所有数据
         IPage<StudentProfileVO> page = new Page<>(1, Integer.MAX_VALUE);
         studentProfileMapper.selectPageList(page, reqVO);

@@ -123,7 +123,7 @@ public class StudentProfileController {
 
     @GetMapping("/page")
     @Operation(summary = "获得学生档案分页")
-//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    // @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
     @DataPermission(enable = false)
     public CommonResult<PageResult<StudentProfileVO>> getStudentProfilePage(@Valid StudentProfilePageReqVO pageReqVO) {
         PageResult<StudentProfileVO> pageResult = studentProfileService.getStudentProfilePage(pageReqVO);

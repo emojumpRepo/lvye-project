@@ -39,4 +39,7 @@ public class StudentProfilePageReqVO extends PageParam {
     @Schema(description = "风险等级", example = "1")
     private Integer riskLevel;
 
+    @Schema(description = "用户部门编号（自动注入）", example = "100")
+    private Long deptId;
+
 }

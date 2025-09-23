@@ -62,7 +62,7 @@ public class AssessmentResultController {
 
     @GetMapping("/get")
     @Operation(summary = "获取测评结果详情")
-    @PreAuthorize("@ss.hasPermission('psychology:assessment:query')")
+    // @PreAuthorize("@ss.hasPermission('psychology:assessment:query')")
     public CommonResult<AssessmentResultDetailRespVO> getAssessmentResult(
             @Parameter(description = "测评结果ID", required = true)
             @RequestParam @NotNull(message = "测评结果ID不能为空") Long id) {
