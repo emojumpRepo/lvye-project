@@ -97,11 +97,11 @@
     </select>
 
     <select id="selectClassStudentCount" resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO">
-        select class_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 group by class_dept_id;
+        select class_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 and graduation_status != 1 group by class_dept_id;
     </select>
 
     <select id="selectGradeStudentCount" resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO">
-        select grade_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 group by grade_dept_id;
+        select grade_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 and graduation_status != 1 group by grade_dept_id;
     </select>
 
 </mapper>
