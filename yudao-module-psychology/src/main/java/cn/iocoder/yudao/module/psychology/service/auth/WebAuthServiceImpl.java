@@ -90,20 +90,31 @@ public class WebAuthServiceImpl implements WebAuthService {
 
     @Override
     public WebAuthLoginRespVO login(WebAuthLoginReqVO reqVO) {
-        // 根据学号查找学生档案
-        log.info("尝试登录，学号: {}, 当前租户ID: {}", reqVO.getUsername(), TenantContextHolder.getTenantId());
+        // 先根据学号查找学生档案，如果不存在则根据身份证查找
+        log.info("尝试登录，用户名: {}, 当前租户ID: {}", reqVO.getUsername(), TenantContextHolder.getTenantId());
         StudentProfileDO studentProfile = studentProfileService.getStudentProfileByNo(reqVO.getUsername());
+        String searchType = "学号";
+        
         if (studentProfile == null) {
-            log.warn("学生档案不存在，学号: {}, 租户ID: {}", reqVO.getUsername(), TenantContextHolder.getTenantId());
+            log.info("学号查找失败，尝试根据身份证查找，用户名: {}", reqVO.getUsername());
+            studentProfile = studentProfileService.getStudentProfileByIdCard(reqVO.getUsername());
+            searchType = "身份证";
+        }
+        
+        if (studentProfile == null) {
+            log.warn("学生档案不存在，用户名: {}, 租户ID: {}", reqVO.getUsername(), TenantContextHolder.getTenantId());
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
+        
+        log.info("通过{}找到学生档案: {}, 学号: {}", searchType, studentProfile.getId(), studentProfile.getStudentNo());
         // 校验学生姓名是否匹配：请求姓名需同时匹配档案姓名与账号昵称
-        AdminUserDO account = userMapper.selectByUsername(reqVO.getUsername());
+        // 注意：无论是通过学号还是身份证找到档案，都要用学号去查找用户账号
+        AdminUserDO account = userMapper.selectByUsername(studentProfile.getStudentNo());
         String reqName = reqVO.getStudentName();
         boolean accountMatch = account != null && reqName != null && reqName.equals(account.getNickname());
         if (!accountMatch) {
-            log.warn("学生姓名不匹配，学号: {}, 请求姓名: {}, 档案姓名: {}, 账号昵称: {}",
-                    reqVO.getUsername(), reqName, studentProfile.getName(), account == null ? null : account.getNickname());
+            log.warn("学生姓名不匹配，查找方式: {}, 输入用户名: {}, 学号: {}, 请求姓名: {}, 档案姓名: {}, 账号昵称: {}",
+                    searchType, reqVO.getUsername(), studentProfile.getStudentNo(), reqName, studentProfile.getName(), account == null ? null : account.getNickname());
             throw exception(ErrorCodeConstants.STUDENT_NAME_NOT_MATCH);
         }
         log.info("找到学生档案: {}", studentProfile.getId());
@@ -114,10 +125,12 @@ public class WebAuthServiceImpl implements WebAuthService {
         AdminUserDO user;
         if (enablePwdLogin) {
             // 要求密码，进行账号密码认证
-            user = authService.authenticate(reqVO.getUsername(), reqVO.getPassword());
+            // 注意：无论输入的是学号还是身份证，都要用学号进行认证
+            user = authService.authenticate(studentProfile.getStudentNo(), reqVO.getPassword());
         } else {
             // 不要求密码，仅校验用户存在和状态
-            user = userMapper.selectByUsername(reqVO.getUsername());
+            // 这里直接使用前面已经查找到的account对象
+            user = account;
             if (user == null) {
                 throw exception(cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_NOT_EXISTS);
             }
