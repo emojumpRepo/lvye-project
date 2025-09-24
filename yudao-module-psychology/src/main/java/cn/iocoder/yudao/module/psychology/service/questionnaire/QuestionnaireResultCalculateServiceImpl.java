@@ -79,6 +79,7 @@ public class QuestionnaireResultCalculateServiceImpl implements QuestionnaireRes
                     resultVO.setStudentComment(resultConfigDO.getStudentComment());
                     resultVO.setIsAbnormal(resultConfigDO.getIsAbnormal());
                     resultVO.setLevel(resultConfigDO.getLevel());
+                    resultVO.setDescription(resultConfigDO.getDescription());
                     resultList.add(resultVO);
                 }
             }
@@ -98,6 +99,7 @@ public class QuestionnaireResultCalculateServiceImpl implements QuestionnaireRes
                 resultVO.setStudentComment(resultConfigDO.getStudentComment());
                 resultVO.setIsAbnormal(resultConfigDO.getIsAbnormal());
                 resultVO.setLevel(resultConfigDO.getLevel());
+                resultVO.setDescription(resultConfigDO.getDescription());
                 resultList.add(resultVO);
             }
             // 最多选择计算公式
@@ -122,6 +124,7 @@ public class QuestionnaireResultCalculateServiceImpl implements QuestionnaireRes
                 resultVO.setStudentComment(resultConfigDO.getStudentComment());
                 resultVO.setIsAbnormal(resultConfigDO.getIsAbnormal());
                 resultVO.setLevel(resultConfigDO.getLevel());
+                resultVO.setDescription(resultConfigDO.getDescription());
                 resultList.add(resultVO);
             }
         }

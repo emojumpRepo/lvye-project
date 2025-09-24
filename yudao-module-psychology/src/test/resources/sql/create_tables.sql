@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS "lvye_questionnaire_result_config" (
     "teacher_comment" varchar(2000),
     "student_comment" varchar(2000),
     "is_abnormal" int DEFAULT 0,
+    "description" varchar(2000),
     "creator" varchar(64) DEFAULT '',
     "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
     "updater" varchar(64) DEFAULT '',

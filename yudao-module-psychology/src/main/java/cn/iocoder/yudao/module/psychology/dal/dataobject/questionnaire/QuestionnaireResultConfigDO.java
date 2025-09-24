@@ -68,4 +68,9 @@ public class QuestionnaireResultConfigDO extends TenantBaseDO {
      */
     private String level;
 
+    /**
+     * 描述
+     */
+    private String description;
+
 }

@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.psychology.service.questionnaire;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigPageReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigSaveReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultConfigDO;
 
 import jakarta.validation.Valid;
@@ -43,7 +44,7 @@ public interface QuestionnaireResultConfigService {
      * @param id 编号
      * @return 问卷结果配置
      */
-    QuestionnaireResultConfigDO getQuestionnaireResultConfig(Long id);
+    QuestionnaireResultConfigRespVO getQuestionnaireResultConfig(Long id);
 
     /**
      * 获得问卷结果配置分页
@@ -51,7 +52,7 @@ public interface QuestionnaireResultConfigService {
      * @param pageReqVO 分页查询
      * @return 问卷结果配置分页
      */
-    PageResult<QuestionnaireResultConfigDO> getQuestionnaireResultConfigPage(QuestionnaireResultConfigPageReqVO pageReqVO);
+    PageResult<QuestionnaireResultConfigRespVO> getQuestionnaireResultConfigPage(QuestionnaireResultConfigPageReqVO pageReqVO);
 
     /**
      * 根据问卷ID获取结果配置列表
