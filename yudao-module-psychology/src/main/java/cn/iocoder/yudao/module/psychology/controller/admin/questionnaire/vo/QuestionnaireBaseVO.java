@@ -37,6 +37,9 @@ public class QuestionnaireBaseVO {
     @Schema(description = "外部问卷链接", example = "https://survey.example.com/123")
     private String externalLink;
 
+    @Schema(description = "问卷编码", example = "SURVEY_001")
+    private String surveyCode;
+
     @Schema(description = "题目数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "25")
     @NotNull(message = "题目数量不能为空")
     private Integer questionCount;

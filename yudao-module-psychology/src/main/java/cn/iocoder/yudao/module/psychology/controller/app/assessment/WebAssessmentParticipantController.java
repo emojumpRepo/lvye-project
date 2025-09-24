@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.psychology.controller.app.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.CustomResponse;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentParticipantService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultCalculateService;
@@ -45,9 +46,21 @@ public class WebAssessmentParticipantController {
     @PostMapping("/submit")
     @Operation(summary = "提交测评答案")
     @PermitAll
-    public CommonResult<Boolean> submitAssessment(@Valid @RequestBody WebAssessmentParticipateReqVO participateReqVO) {
+    public CustomResponse<Boolean> submitAssessment(@Valid @RequestBody WebAssessmentParticipateReqVO participateReqVO) {
         assessmentParticipantService.submitAssessment(participateReqVO.getTaskNo(), participateReqVO.getUserId(), participateReqVO);
-        return success(true);
+        return CustomResponse.success(true, "数据已接收");
+    }
+
+    /**
+     * 提交测评答案 - 格式1：标准格式
+     * 返回格式：{"code": 200, "message": "回调接收成功"}
+     */
+    @PostMapping("/submit-format1")
+    @Operation(summary = "提交测评答案 - 格式1")
+    @PermitAll
+    public CustomResponse<Boolean> submitAssessmentFormat1(@Valid @RequestBody WebAssessmentParticipateReqVO participateReqVO) {
+        assessmentParticipantService.submitAssessment(participateReqVO.getTaskNo(), participateReqVO.getUserId(), participateReqVO);
+        return CustomResponse.success(200, "回调接收成功");
     }
 
     @GetMapping("/status")

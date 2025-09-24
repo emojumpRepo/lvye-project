@@ -25,6 +25,7 @@ public interface QuestionnaireMapper extends BaseMapperX<QuestionnaireDO> {
                 .likeIfPresent(QuestionnaireDO::getTitle, reqVO.getTitle())
                 .eqIfPresent(QuestionnaireDO::getQuestionnaireType, reqVO.getQuestionnaireType())
                 .eqIfPresent(QuestionnaireDO::getTargetAudience, reqVO.getTargetAudience())
+                .likeIfPresent(QuestionnaireDO::getSurveyCode, reqVO.getSurveyCode())
                 .eqIfPresent(QuestionnaireDO::getStatus, reqVO.getStatus())
                 .eqIfPresent(QuestionnaireDO::getSupportIndependentUse, reqVO.getSupportIndependentUse())
                 .betweenIfPresent(QuestionnaireDO::getCreateTime, reqVO.getCreateTime())

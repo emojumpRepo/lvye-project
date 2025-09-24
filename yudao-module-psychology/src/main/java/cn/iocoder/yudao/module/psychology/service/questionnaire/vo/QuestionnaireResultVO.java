@@ -41,4 +41,9 @@ public class QuestionnaireResultVO {
      */
     private String level;
 
+    /**
+     * 配置描述
+     */
+    private String description;
+
 }

@@ -148,6 +148,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         simple.setDescription(questionnaire.getDescription());
         simple.setQuestionnaireType(questionnaire.getQuestionnaireType());
         simple.setTargetAudience(questionnaire.getTargetAudience());
+        simple.setSurveyCode(questionnaire.getSurveyCode());
         simple.setQuestionCount(questionnaire.getQuestionCount());
         simple.setEstimatedDuration(questionnaire.getEstimatedDuration());
         simple.setStatus(questionnaire.getStatus());
