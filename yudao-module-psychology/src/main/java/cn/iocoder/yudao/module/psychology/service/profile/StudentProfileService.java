@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.psychology.service.profile;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileSimpleVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import jakarta.validation.Valid;
@@ -146,5 +147,14 @@ public interface StudentProfileService {
      * @param riskLevel
      */
     void updateStudentRiskLevel(Long studentProfileId, Integer riskLevel);
+
+    /**
+     * 根据学号和姓名模糊查询学生档案简化列表
+     *
+     * @param studentNo 学号（支持模糊查询）
+     * @param name 姓名（支持模糊查询）
+     * @return 学生档案简化列表
+     */
+    List<StudentProfileSimpleVO> searchSimpleStudentProfilesByStudentNoAndName(String studentNo, String name);
 
 }

@@ -7,6 +7,7 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.excel.core.util.ExcelUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileSimpleVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.timeline.StudentTimelineDO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
@@ -238,6 +239,21 @@ public class StudentProfileController {
         StudentProfileCompletenessRespVO result = studentProfileService.checkProfileCompleteness(studentProfileId);
         return success(result);
     }
+
+    @GetMapping("/search")
+    @Operation(summary = "根据学号和姓名模糊查询学生档案列表")
+    @Parameter(name = "studentNo", description = "学号（支持模糊查询）", example = "2024001")
+    @Parameter(name = "name", description = "姓名（支持模糊查询）", example = "张三")
+    @DataPermission(enable = false)
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    public CommonResult<List<StudentProfileSimpleVO>> searchStudentProfiles(
+            @RequestParam(value = "studentNo", required = false) String studentNo,
+            @RequestParam(value = "name", required = false) String name) {
+        List<StudentProfileSimpleVO> list = studentProfileService.searchSimpleStudentProfilesByStudentNoAndName(studentNo, name);
+        return success(list);
+    }
+
+    
 
 
 }

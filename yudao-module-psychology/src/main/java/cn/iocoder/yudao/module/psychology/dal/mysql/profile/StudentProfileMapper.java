@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfilePageReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileSimpleVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -64,6 +65,11 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
     List<StudentClassVO> selectClassStudentCount();
 
     List<StudentClassVO> selectGradeStudentCount();
+
+    List<StudentProfileSimpleVO> searchSimpleByStudentNoAndName(@Param("studentNo") String studentNo,
+                                                               @Param("name") String name,
+                                                               @Param("deptIds") Collection<Long> deptIds,
+                                                               @Param("selfUserId") Long selfUserId);
 
 }
 
