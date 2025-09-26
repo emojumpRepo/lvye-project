@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.psychology.service.assessment;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioPageReqVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
@@ -235,10 +236,15 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
     }
 
     /**
-     * 校验场景编码唯一性
+     * 校验场景编码唯一性（同一租户内）
      */
     private void validateScenarioCodeUnique(String code, Long id) {
-        AssessmentScenarioDO scenario = scenarioMapper.selectOne(AssessmentScenarioDO::getCode, code);
+        // 在当前租户内查询相同code的场景
+        AssessmentScenarioDO scenario = scenarioMapper.selectOne(
+            new LambdaQueryWrapperX<AssessmentScenarioDO>()
+                .eq(AssessmentScenarioDO::getCode, code)
+                .eq(AssessmentScenarioDO::getTenantId, TenantContextHolder.getRequiredTenantId())
+        );
         if (scenario != null && !scenario.getId().equals(id)) {
             throw exception(ASSESSMENT_SCENARIO_CODE_DUPLICATE);
         }

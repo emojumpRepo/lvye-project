@@ -78,6 +78,14 @@ public interface StudentProfileService {
     StudentProfileDO getStudentProfileByUserId(Long userId);
 
     /**
+     * 根据身份证号获取学生档案
+     *
+     * @param idCard 身份证号
+     * @return 学生档案
+     */
+    StudentProfileDO getStudentProfileByIdCard(String idCard);
+
+    /**
      * 批量导入学生档案
      * @param studentList
      * @param isUpdateSupport

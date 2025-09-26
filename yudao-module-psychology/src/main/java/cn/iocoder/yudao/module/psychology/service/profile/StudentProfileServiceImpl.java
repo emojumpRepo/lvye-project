@@ -306,6 +306,14 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     }
 
     @Override
+    public StudentProfileDO getStudentProfileByIdCard(String idCard) {
+        if (idCard == null || idCard.trim().isEmpty()) {
+            return null;
+        }
+        return studentProfileMapper.selectByIdCard(idCard.trim());
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public StudentProfileImportRespVO importStudentProfile(List<StudentImportExcelVO> studentList, boolean isUpdateSupport) {
         StudentProfileImportRespVO respVO = new StudentProfileImportRespVO();

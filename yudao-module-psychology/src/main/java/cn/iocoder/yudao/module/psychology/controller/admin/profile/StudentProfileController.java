@@ -131,10 +131,14 @@ public class StudentProfileController {
     }
 
     @GetMapping("/simple-list")
-    @Operation(summary = "获得学生档案精简列表", description = "不分页，主要用于前端的下拉选项")
+    @Operation(summary = "获得学生档案精简列表", description = "不分页，主要用于前端的下拉选项，排除已毕业学生")
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
     @DataPermission(enable = false)
     public CommonResult<List<StudentProfileVO>> getStudentProfileSimpleList(StudentProfilePageReqVO reqVO) {
+        // 设置毕业状态过滤条件，排除已毕业的学生（graduationStatus = 1）
+        if (reqVO.getGraduationStatus() == null) {
+            reqVO.setGraduationStatus(0); // 0-在读，1-已毕业
+        }
         List<StudentProfileVO> list = studentProfileService.getStudentProfileList(reqVO);
         return success(list);
     }
