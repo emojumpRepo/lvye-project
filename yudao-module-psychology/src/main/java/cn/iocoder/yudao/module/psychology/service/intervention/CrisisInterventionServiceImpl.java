@@ -555,7 +555,38 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Override
     public List<CrisisEventStatusStatisticsVO> getCrisisEventStatusStatistics() {
-        return crisisInterventionMapper.selectStatusStatistics();
+        // 从数据库获取实际的统计数据
+        List<CrisisEventStatusStatisticsVO> dbStatistics = crisisInterventionMapper.selectStatusStatistics();
+
+        // 创建一个包含所有状态的Map，初始值都为0
+        Map<Integer, Long> statusMap = new HashMap<>();
+        // 1-已上报、2-已分配、3-处理中、4-已结案、5-持续关注
+        statusMap.put(1, 0L);
+        statusMap.put(2, 0L);
+        statusMap.put(3, 0L);
+        statusMap.put(4, 0L);
+        statusMap.put(5, 0L);
+
+        // 用数据库查询结果更新Map
+        for (CrisisEventStatusStatisticsVO stat : dbStatistics) {
+            if (stat.getStatus() != null) {
+                statusMap.put(stat.getStatus(), stat.getCount());
+            }
+        }
+
+        // 将Map转换为List返回
+        List<CrisisEventStatusStatisticsVO> result = new ArrayList<>();
+        for (Map.Entry<Integer, Long> entry : statusMap.entrySet()) {
+            result.add(CrisisEventStatusStatisticsVO.builder()
+                    .status(entry.getKey())
+                    .count(entry.getValue())
+                    .build());
+        }
+
+        // 按状态值排序
+        result.sort((a, b) -> a.getStatus().compareTo(b.getStatus()));
+
+        return result;
     }
 
     @Override
