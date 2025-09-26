@@ -82,6 +82,13 @@ public interface CrisisInterventionService {
     Map<String, Long> getCrisisEventStatistics();
 
     /**
+     * 获取危机事件状态分组统计
+     *
+     * @return 状态统计数据列表
+     */
+    List<CrisisEventStatusStatisticsVO> getCrisisEventStatusStatistics();
+
+    /**
      * 获取危机事件详情
      *
      * @param id 事件ID

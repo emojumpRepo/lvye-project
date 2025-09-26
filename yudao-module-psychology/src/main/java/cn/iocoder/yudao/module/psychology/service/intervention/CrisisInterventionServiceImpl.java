@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.psychology.service.intervention;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
@@ -475,6 +476,12 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
         // 创建危机事件
         CrisisInterventionDO event = BeanUtils.toBean(createReqVO, CrisisInterventionDO.class);
+        
+        // 生成事件编号：RPT_年份_随机数
+        String currentYear = String.valueOf(LocalDateTime.now().getYear());
+        String eventId = "RPT_" + currentYear + "_" + RandomUtil.randomNumbers(6);
+        event.setEventId(eventId);
+        
         event.setStatus(1); // 已上报
         event.setReporterUserId(currentUserId);
         event.setReportedAt(LocalDateTime.now());
@@ -537,13 +544,18 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     @Override
     public Map<String, Long> getCrisisEventStatistics() {
         Map<String, Long> statistics = new HashMap<>();
-        
+
         statistics.put("pending", crisisInterventionMapper.countByStatus(1)); // 待处理
         statistics.put("processing", crisisInterventionMapper.countByStatus(3)); // 处理中
         statistics.put("resolved", crisisInterventionMapper.countByStatus(4)); // 已解决
         statistics.put("monitoring", crisisInterventionMapper.countByStatus(5)); // 持续关注
-        
+
         return statistics;
+    }
+
+    @Override
+    public List<CrisisEventStatusStatisticsVO> getCrisisEventStatusStatistics() {
+        return crisisInterventionMapper.selectStatusStatistics();
     }
 
     @Override
@@ -1115,11 +1127,16 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
             // 创建新的危机事件记录
             CrisisInterventionDO event = new CrisisInterventionDO();
+            
+            // 生成事件编号：RPT_年份_随机数
+            String currentYear = String.valueOf(LocalDateTime.now().getYear());
+            String eventId = "RPT_" + currentYear + "_" + RandomUtil.randomNumbers(6);
+            event.setEventId(eventId);
+            
             event.setStudentProfileId(studentProfileId);
             event.setTitle("风险等级调整");
             event.setDescription("风险等级调整至" + getRiskLevelName(riskLevel) + "：" + reason);
             event.setRiskLevel(riskLevel);
-            event.setUrgencyLevel(riskLevel == 5 ? 1 : 2); // 重大设为高紧急度，严重设为中紧急度
             event.setPriority(riskLevel == 5 ? 1 : 2); // 重大设为高优先级，严重设为中优先级
             event.setStatus(1); // 已上报
             event.setReporterUserId(SecurityFrameworkUtils.getLoginUserId());

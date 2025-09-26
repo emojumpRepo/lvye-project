@@ -37,9 +37,6 @@ public class CrisisEventCreateReqVO {
     @Schema(description = "优先级", example = "1")
     private Integer priority = 2;
 
-    @Schema(description = "紧急程度")
-    private Integer urgencyLevel;
-
     @Schema(description = "附件URL列表")
     private List<String> attachmentUrls;
 

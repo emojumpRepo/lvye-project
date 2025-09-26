@@ -64,6 +64,7 @@ CREATE TABLE `lvye_consultation_assessment` (
 -- 3. 危机干预事件表（新建）
 CREATE TABLE `lvye_crisis_intervention` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `event_id` VARCHAR(20) COMMENT '事件编号',
   `student_profile_id` BIGINT NOT NULL COMMENT '学生档案编号',
   `title` VARCHAR(255) COMMENT '事件标题',
   `description` TEXT COMMENT '事件描述',
@@ -73,7 +74,6 @@ CREATE TABLE `lvye_crisis_intervention` (
   `source_type` TINYINT COMMENT '来源类型（枚举：CrisisSourceTypeEnum）',
   `reporter_user_id` BIGINT COMMENT '上报人管理员编号（任课老师/系统等）',
   `reported_at` DATETIME COMMENT '上报时间',
-  `urgency_level` TINYINT COMMENT '紧急程度',
   `priority` TINYINT DEFAULT 2 COMMENT '优先级(字典：priority_level) 1-高/2-中/3-低',
   `location` VARCHAR(255) COMMENT '事发地点',
   `process_method` TINYINT COMMENT '处理方式(字典：process_method)',
@@ -87,6 +87,7 @@ CREATE TABLE `lvye_crisis_intervention` (
   `updater` VARCHAR(64) DEFAULT '' COMMENT '更新者',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
+  INDEX `idx_event_id` (`event_id`),
   INDEX `idx_student_profile_id` (`student_profile_id`),
   INDEX `idx_handler_user_id` (`handler_user_id`),
   INDEX `idx_status` (`status`),

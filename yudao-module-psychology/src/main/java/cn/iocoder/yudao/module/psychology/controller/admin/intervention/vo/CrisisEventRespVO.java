@@ -13,6 +13,9 @@ public class CrisisEventRespVO {
     @Schema(description = "ID", example = "1")
     private Long id;
 
+    @Schema(description = "事件编号", example = "RPT_2024_12345")
+    private String eventId;
+
     @Schema(description = "学生档案ID", example = "1")
     private Long studentProfileId;
 
@@ -54,9 +57,6 @@ public class CrisisEventRespVO {
 
     @Schema(description = "上报时间")
     private LocalDateTime reportedAt;
-
-    @Schema(description = "紧急程度")
-    private Integer urgencyLevel;
 
     @Schema(description = "优先级", example = "1")
     private Integer priority;

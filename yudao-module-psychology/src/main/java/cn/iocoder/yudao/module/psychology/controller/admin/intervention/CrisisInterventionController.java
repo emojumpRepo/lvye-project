@@ -95,6 +95,14 @@ public class CrisisInterventionController {
         return success(interventionService.getCrisisEventStatistics());
     }
 
+    @GetMapping("/event/status-statistics")
+    @Operation(summary = "获取危机事件状态分组统计")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<CrisisEventStatusStatisticsVO>> getCrisisEventStatusStatistics() {
+        return success(interventionService.getCrisisEventStatusStatistics());
+    }
+
     @GetMapping("/event/{id}")
     @Operation(summary = "获取危机事件详情")
     @Parameter(name = "id", description = "事件ID", required = true)

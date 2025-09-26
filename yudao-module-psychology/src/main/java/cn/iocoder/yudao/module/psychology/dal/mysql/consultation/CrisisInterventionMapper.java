@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.CrisisEventPageReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.CrisisEventStatusStatisticsVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisInterventionDO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -43,6 +44,9 @@ public interface CrisisInterventionMapper extends BaseMapperX<CrisisIntervention
 
     @Select("SELECT COUNT(1) FROM lvye_crisis_intervention WHERE risk_level = #{riskLevel} AND deleted = 0")
     Long countByRiskLevel(@Param("riskLevel") Integer riskLevel);
+
+    @Select("SELECT status, COUNT(*) as count FROM lvye_crisis_intervention WHERE deleted = 0 GROUP BY status")
+    List<CrisisEventStatusStatisticsVO> selectStatusStatistics();
 }
 
 

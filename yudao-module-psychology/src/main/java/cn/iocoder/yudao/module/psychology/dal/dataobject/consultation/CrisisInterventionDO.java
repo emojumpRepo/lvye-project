@@ -21,6 +21,9 @@ public class CrisisInterventionDO extends TenantBaseDO {
     @TableId
     private Long id;
 
+    /** 事件编号 */
+    private String eventId;
+
     /** 学生档案编号 */
     private Long studentProfileId;
 
@@ -49,9 +52,6 @@ public class CrisisInterventionDO extends TenantBaseDO {
 
     /** 上报时间 */
     private java.time.LocalDateTime reportedAt;
-
-    /** 紧急程度（快速上报特有），与 riskLevel 区分：前者为主观紧急，后者为评估风险 */
-    private Integer urgencyLevel;
     
     /** 优先级（字典：priority_level）
      * 1-高、2-中、3-低
