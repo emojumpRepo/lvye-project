@@ -187,17 +187,17 @@ public class CrisisInterventionController {
 
     // ========== 系统设置 ==========
 
-    @GetMapping("/admin/settings/intervention-assignment-mode")
-    @Operation(summary = "获取危机事件分配模式")
-    @PreAuthorize("@ss.hasPermission('psychology:settings:query')")
-    public CommonResult<InterventionAssignmentSettingVO> getAssignmentMode() {
+    @GetMapping("/admin/get-assignment-settings")
+    @Operation(summary = "获取危机事件分配设置")
+    @PreAuthorize("@ss.hasPermission('psychology:get-assignment-settings')")
+    public CommonResult<InterventionAssignmentSettingVO> getAssignmentSettings() {
         return success(interventionService.getAssignmentSettings());
     }
 
     @PutMapping("/admin/settings/intervention-assignment-mode")
     @Operation(summary = "设置危机事件分配模式")
     @PreAuthorize("@ss.hasPermission('psychology:settings:update')")
-    public CommonResult<Boolean> setAssignmentMode(@Valid @RequestBody InterventionAssignmentSettingVO settingVO) {
+    public CommonResult<Boolean> setAssignmentSettings(@Valid @RequestBody InterventionAssignmentSettingVO settingVO) {
         interventionService.setAssignmentSettings(settingVO);
         return success(true);
     }
