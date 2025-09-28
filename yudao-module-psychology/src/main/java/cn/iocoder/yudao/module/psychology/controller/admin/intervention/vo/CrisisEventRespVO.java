@@ -79,6 +79,12 @@ public class CrisisEventRespVO {
     @Schema(description = "是否自动分配", example = "false")
     private Boolean autoAssigned;
 
+    @Schema(description = "完成状态（1: 已解决，2: 持续关注）", example = "1")
+    private Integer completedStatus;
+
+    @Schema(description = "处理时间")
+    private LocalDateTime handleAt;
+
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 

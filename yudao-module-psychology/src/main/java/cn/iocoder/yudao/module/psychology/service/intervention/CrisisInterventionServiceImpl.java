@@ -636,21 +636,27 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 更新处理人和状态
         event.setHandlerUserId(assignReqVO.getHandlerUserId());
         event.setStatus(2); // 已分配
+        event.setHandleAt(LocalDateTime.now());
         crisisInterventionMapper.updateById(event);
 
-        // 使用结构化方式记录分配动作
-        recordEventProcessWithUsers(id, "ASSIGN_HANDLER", null,
-            assignReqVO.getAssignReason(),
+        // 获取负责人信息用于生成分配原因
+        AdminUserRespDTO handler = adminUserApi.getUser(assignReqVO.getHandlerUserId());
+        String handlerName = handler != null ? handler.getNickname() : "未知";
+        
+        // 使用结构化方式记录分配动作（原因后端自动生成）
+        String autoAssignReason = String.format("为%s事件分配负责人——>%s", 
+            StrUtil.blankToDefault(event.getEventId(), "未知编号"), handlerName);
+        recordEventProcessWithUsers(id, "ASSIGN_HANDLER", "分配负责人",
+            autoAssignReason,
             assignReqVO.getHandlerUserId(),
             null); // 初次分配，没有原负责人
         
         // 添加时间线记录
-        AdminUserRespDTO handler = adminUserApi.getUser(assignReqVO.getHandlerUserId());
         Map<String, Object> meta = new HashMap<>();
         meta.put("eventId", id);
         meta.put("handlerUserId", assignReqVO.getHandlerUserId());
-        meta.put("handlerName", handler != null ? handler.getNickname() : "未知");
-        meta.put("assignReason", assignReqVO.getAssignReason());
+        meta.put("handlerName", handlerName);
+        meta.put("assignReason", autoAssignReason);
         meta.put("status", "已分配");
         
         String content = String.format("危机事件已分配给 %s 处理", 
@@ -676,24 +682,31 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         
         // 更新处理人
         event.setHandlerUserId(reassignReqVO.getNewHandlerUserId());
+        event.setHandleAt(LocalDateTime.now());
         crisisInterventionMapper.updateById(event);
 
+        // 获取新旧负责人信息用于生成重新分配原因
+        AdminUserRespDTO oldHandler = oldHandlerId != null ? adminUserApi.getUser(oldHandlerId) : null;
+        AdminUserRespDTO newHandler = adminUserApi.getUser(reassignReqVO.getNewHandlerUserId());
+        String oldHandlerName = oldHandler != null ? oldHandler.getNickname() : "未知";
+        String newHandlerName = newHandler != null ? newHandler.getNickname() : "未知";
+        
         // 使用结构化方式记录变更
-        recordEventProcessWithUsers(id, "REASSIGN_HANDLER", null, 
-            reassignReqVO.getReason(), 
+        String reassignReason = String.format("为%s事件重新分配负责人——>%s", 
+            StrUtil.blankToDefault(event.getEventId(), "未知编号"), newHandlerName);
+        recordEventProcessWithUsers(id, "REASSIGN_HANDLER", "重新分配负责人", 
+            reassignReason, 
             reassignReqVO.getNewHandlerUserId(), 
             oldHandlerId);
         
         // 添加时间线记录
-        AdminUserRespDTO oldHandler = oldHandlerId != null ? adminUserApi.getUser(oldHandlerId) : null;
-        AdminUserRespDTO newHandler = adminUserApi.getUser(reassignReqVO.getNewHandlerUserId());
         Map<String, Object> meta = new HashMap<>();
         meta.put("eventId", id);
         meta.put("oldHandlerUserId", oldHandlerId);
-        meta.put("oldHandlerName", oldHandler != null ? oldHandler.getNickname() : "未知");
+        meta.put("oldHandlerName", oldHandlerName);
         meta.put("newHandlerUserId", reassignReqVO.getNewHandlerUserId());
-        meta.put("newHandlerName", newHandler != null ? newHandler.getNickname() : "未知");
-        meta.put("reason", reassignReqVO.getReason());
+        meta.put("newHandlerName", newHandlerName);
+        meta.put("reason", reassignReason);
         
         String content = String.format("危机事件负责人从 %s 变更为 %s，原因：%s",
             oldHandler != null ? oldHandler.getNickname() : "未知",
@@ -976,7 +989,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         process.setEventId(eventId);
         process.setOperatorUserId(SecurityFrameworkUtils.getLoginUserId());
         process.setAction(action);
-        process.setContent(content);
+        process.setContent(StrUtil.blankToDefault(content, action));
         process.setReason(reason);
         process.setRelatedUserId(relatedUserId);
         process.setOriginalUserId(originalUserId);

@@ -77,6 +77,12 @@ public class CrisisInterventionDO extends TenantBaseDO {
     
     /** 是否自动分配 */
     private Boolean autoAssigned;
+    
+    /** 完成状态（1: 已解决，2: 持续关注） */
+    private Integer completedStatus;
+    
+    /** 处理时间 */
+    private java.time.LocalDateTime handleAt;
 }
 
 
