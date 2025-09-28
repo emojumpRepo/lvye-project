@@ -644,10 +644,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         String handlerName = handler != null ? handler.getNickname() : "未知";
         
         // 使用结构化方式记录分配动作（原因后端自动生成）
-        String autoAssignReason = String.format("为%s事件分配负责人——>%s", 
-            StrUtil.blankToDefault(event.getEventId(), "未知编号"), handlerName);
-        recordEventProcessWithUsers(id, "ASSIGN_HANDLER", "分配负责人",
-            autoAssignReason,
+        String autoAssignReason = String.format("分配负责人——>%s", handlerName);
+        recordEventProcessWithUsers(id, "ASSIGN_HANDLER", autoAssignReason,
+            null,
             assignReqVO.getHandlerUserId(),
             null); // 初次分配，没有原负责人
         
@@ -692,10 +691,10 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         String newHandlerName = newHandler != null ? newHandler.getNickname() : "未知";
         
         // 使用结构化方式记录变更
-        String reassignReason = String.format("为%s事件重新分配负责人：%s——>%s，原因：%s", 
-            StrUtil.blankToDefault(event.getEventId(), "未知编号"), oldHandlerName, newHandlerName, reassignReqVO.getReason());
-        recordEventProcessWithUsers(id, "REASSIGN_HANDLER", "重新分配负责人", 
-            reassignReason, 
+        String reassignReason = String.format("重新分配负责人：%s——>%s，原因：%s", 
+            oldHandlerName, newHandlerName, reassignReqVO.getReason());
+        recordEventProcessWithUsers(id, "REASSIGN_HANDLER", reassignReason, 
+            reassignReqVO.getReason(), 
             reassignReqVO.getNewHandlerUserId(), 
             oldHandlerId);
         
