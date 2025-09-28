@@ -692,8 +692,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         String newHandlerName = newHandler != null ? newHandler.getNickname() : "未知";
         
         // 使用结构化方式记录变更
-        String reassignReason = String.format("为%s事件重新分配负责人——>%s", 
-            StrUtil.blankToDefault(event.getEventId(), "未知编号"), newHandlerName);
+        String reassignReason = String.format("为%s事件重新分配负责人：%s——>%s，原因：%s", 
+            StrUtil.blankToDefault(event.getEventId(), "未知编号"), oldHandlerName, newHandlerName, reassignReqVO.getReason());
         recordEventProcessWithUsers(id, "REASSIGN_HANDLER", "重新分配负责人", 
             reassignReason, 
             reassignReqVO.getNewHandlerUserId(), 
