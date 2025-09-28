@@ -655,15 +655,14 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         meta.put("eventId", id);
         meta.put("handlerUserId", assignReqVO.getHandlerUserId());
         meta.put("handlerName", handlerName);
-        meta.put("assignReason", autoAssignReason);
+        meta.put("assignReason", null);
         meta.put("status", "已分配");
         
-        String content = String.format("危机事件已分配给 %s 处理", 
-            handler != null ? handler.getNickname() : "未知");
+        String content = String.format("危机事件已分配给 %s 处理", handlerName);
         studentTimelineService.saveTimelineWithMeta(
             event.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
-            "危机事件分配",
+            "危机事件(" + event.getEventId() + ")分配",
             "crisis_event_" + id,
             content,
             meta
@@ -691,8 +690,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         String newHandlerName = newHandler != null ? newHandler.getNickname() : "未知";
         
         // 使用结构化方式记录变更
-        String reassignReason = String.format("重新分配负责人：%s——>%s，原因：%s", 
-            oldHandlerName, newHandlerName, reassignReqVO.getReason());
+        String reassignReason = String.format("重新分配负责人：%s——>%s", 
+            oldHandlerName, newHandlerName);
         recordEventProcessWithUsers(id, "REASSIGN_HANDLER", reassignReason, 
             reassignReqVO.getReason(), 
             reassignReqVO.getNewHandlerUserId(), 
@@ -705,7 +704,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         meta.put("oldHandlerName", oldHandlerName);
         meta.put("newHandlerUserId", reassignReqVO.getNewHandlerUserId());
         meta.put("newHandlerName", newHandlerName);
-        meta.put("reason", reassignReason);
+        meta.put("reason", reassignReqVO.getReason());
         
         String content = String.format("危机事件负责人从 %s 变更为 %s，原因：%s",
             oldHandler != null ? oldHandler.getNickname() : "未知",
@@ -714,7 +713,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         studentTimelineService.saveTimelineWithMeta(
             event.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
-            "危机事件负责人变更",
+            "危机事件(" + event.getEventId() + ")负责人变更",
             "crisis_event_" + id,
             content,
             meta
@@ -1305,7 +1304,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         crisisInterventionMapper.updateById(updateObj);
 
         // 记录处理历史
-        recordEventProcess(id, "更新描述", "更新事件描述：" + description);
+        recordEventProcess(id, "UPDATE_DESCRIPTION", "更新事件描述：" + description);
 
         log.info("更新危机事件描述，ID: {}, 描述: {}", id, description);
     }
