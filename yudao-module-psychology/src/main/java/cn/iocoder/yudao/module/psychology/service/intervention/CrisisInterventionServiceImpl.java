@@ -28,6 +28,8 @@ import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import cn.iocoder.yudao.module.psychology.service.counselor.StudentCounselorAssignmentService;
 import cn.iocoder.yudao.module.infra.service.config.ConfigService;
 import cn.iocoder.yudao.module.psychology.enums.InterventionAssignmentModeEnum;
+import cn.iocoder.yudao.module.psychology.enums.DictTypeConstants;
+import cn.iocoder.yudao.framework.dict.core.DictFrameworkUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -729,11 +731,12 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 更新处理方式和状态
         event.setProcessMethod(processReqVO.getProcessMethod());
         event.setProcessReason(processReqVO.getProcessReason());
-        event.setStatus(3); // 处理中
+        event.setStatus(3); // 已选择
         event.setProgress(25);
         crisisInterventionMapper.updateById(event);
 
         // 记录处理动作
+        // 从字典获取处理方式名称
         String methodName = getProcessMethodName(processReqVO.getProcessMethod());
         recordEventProcessWithUsers(id, "CHOOSE_PROCESS", methodName,
             processReqVO.getProcessReason(),
@@ -1199,14 +1202,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     }
 
     private String getProcessMethodName(Integer method) {
-        // TODO: 从字典获取
-        switch (method) {
-            case 1: return "心理访谈";
-            case 2: return "量表评估";
-            case 3: return "持续关注";
-            case 4: return "直接解决";
-            default: return "未知";
-        }
+        // 从字典获取处理方式名称
+        String label = DictFrameworkUtils.parseDictDataLabel("intervention_process_method", method);
+        return label != null ? label : "未知";
     }
 
     private String getActionName(String action) {

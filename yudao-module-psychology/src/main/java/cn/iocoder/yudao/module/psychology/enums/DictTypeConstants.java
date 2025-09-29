@@ -22,4 +22,6 @@ public interface DictTypeConstants {
     String URGENCY_LEVEL = "urgency_level"; // 紧急程度
     String QUESTIONNAIRE_ASSESSMENT_DIMENSION = "questionnaire_assessment_dimension"; // 问卷测评维度
 
+    String INTERVENTION_PROCESS_METHOD = "intervention_process_method"; // 危机事件处理方式
+
 }
