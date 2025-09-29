@@ -1,7 +1,9 @@
 package cn.iocoder.yudao.module.psychology.service.profile;
 
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.timeline.StudentTimelineDO;
+import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentTimelineMapper;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
@@ -27,6 +29,9 @@ public class StudentTimelineServiceImpl implements StudentTimelineService {
     @Resource
     private AdminUserMapper adminUserMapper;
 
+    @Resource
+    private StudentProfileMapper studentProfileMapper;
+
     @Override
     @Async
     public void saveTimeline(Long studentProfileId, Integer eventType, String title, String bizId){
@@ -36,9 +41,20 @@ public class StudentTimelineServiceImpl implements StudentTimelineService {
 
     @Override
     @Async
-    public void saveTimelineWithMeta(Long studentProfileId, Integer eventType, String title, 
+    public void saveTimelineWithMeta(Long studentProfileId, Integer eventType, String title,
                                      String bizId, String content, Map<String, Object> meta){
         Long userId = SecurityFrameworkUtils.getLoginUserId();
+        boolean isFromStudentProfile = false;
+
+        // 如果获取不到当前登录用户ID，则从学生档案中获取
+        if (userId == null) {
+            StudentProfileDO studentProfile = studentProfileMapper.selectById(studentProfileId);
+            if (studentProfile != null) {
+                userId = studentProfile.getUserId();
+                isFromStudentProfile = true;
+            }
+        }
+
         AdminUserDO userDO = adminUserMapper.selectById(userId);
         StudentTimelineDO studentTimelineDO = new StudentTimelineDO();
         studentTimelineDO.setStudentProfileId(studentProfileId);
@@ -48,6 +64,13 @@ public class StudentTimelineServiceImpl implements StudentTimelineService {
         studentTimelineDO.setBizId(bizId);
         studentTimelineDO.setOperator(userDO != null ? userDO.getNickname() : "");
         studentTimelineDO.setMeta(meta);
+
+        // 如果是通过学生档案获取的userId，需要手动设置creator和updater
+        if (isFromStudentProfile && userId != null) {
+            studentTimelineDO.setCreator(userId.toString());
+            studentTimelineDO.setUpdater(userId.toString());
+        }
+
         studentTimelineMapper.insert(studentTimelineDO);
     }
 
