@@ -13,6 +13,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.Scenari
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppScenarioDetailVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppScenarioQuestionnaireAccessVO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
 
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO;
@@ -20,6 +21,7 @@ import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppQuesti
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentParticipantService;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentTaskService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultService;
+import cn.iocoder.yudao.module.psychology.enums.ResultGenerationStatusEnum;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireAccessService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -80,12 +82,80 @@ public class WebAssessmentTaskController {
                     }
                     int progress = total == 0 ? 0 : (int) Math.round((completed * 100.0) / total);
                     resp.setProgress(progress);
+                    // 是否有结果正在生成：查询该任务下当前用户的所有问卷结果，存在 generation_status = GENERATING 即为 true
+                    List<StudentAssessmentQuestionnaireDetailVO> rs =
+                            questionnaireResultService.selectQuestionnaireResultByTaskNoAndUserId(resp.getTaskNo(), userId);
+                    boolean generating = false;
+                    if (rs != null && !rs.isEmpty()) {
+                        Integer generatingCode = ResultGenerationStatusEnum.GENERATING.getStatus();
+                        for (StudentAssessmentQuestionnaireDetailVO r : rs) {
+                            if (r.getGenerationStatus() != null && r.getGenerationStatus().equals(generatingCode)) {
+                                generating = true;
+                                break;
+                            }
+                        }
+                    }
+                    resp.setResultGenerating(generating);
                 } else {
                     resp.setProgress(0);
+                    resp.setResultGenerating(false);
                 }
             }
         }
         return success(respList);
+    }
+
+    @GetMapping("/generating-tasks")
+    @Operation(summary = "轮询获取结果正在生成中的测评任务列表")
+    @DataPermission(enable = false)
+    public CommonResult<List<WebAssessmentTaskRespVO>> getGeneratingTasks() {
+        Long userId = WebFrameworkUtils.getLoginUserId();
+        List<WebAssessmentTaskVO> list = assessmentTaskService.selectListByUserId();
+        List<WebAssessmentTaskRespVO> respList = BeanUtils.toBean(list, WebAssessmentTaskRespVO.class);
+        List<WebAssessmentTaskRespVO> generatingTasks = new java.util.ArrayList<>();
+        if (respList != null && !respList.isEmpty()) {
+            Integer generatingCode = ResultGenerationStatusEnum.GENERATING.getStatus();
+            for (WebAssessmentTaskRespVO resp : respList) {
+                Integer participantStatus = assessmentParticipantService.getParticipantStatus(resp.getTaskNo(), userId);
+                resp.setParticipantStatus(participantStatus);
+
+                boolean generating = false;
+                boolean allCompleted = false;
+                // 计算进度，同时判断是否有生成中结果
+                if (resp.getQuestionnaireIds() != null && !resp.getQuestionnaireIds().isEmpty()) {
+                    int total = resp.getQuestionnaireIds().size();
+                    int completed = 0;
+                    for (Long questionnaireId : resp.getQuestionnaireIds()) {
+                        if (questionnaireResultService.hasUserCompletedTaskQuestionnaire(resp.getTaskNo(), questionnaireId, userId)) {
+                            completed++;
+                        }
+                    }
+                    int progress = total == 0 ? 0 : (int) Math.round((completed * 100.0) / total);
+                    resp.setProgress(progress);
+                    allCompleted = total > 0 && completed == total;
+
+                    List<StudentAssessmentQuestionnaireDetailVO> rs =
+                            questionnaireResultService.selectQuestionnaireResultByTaskNoAndUserId(resp.getTaskNo(), userId);
+                    if (rs != null && !rs.isEmpty()) {
+                        for (StudentAssessmentQuestionnaireDetailVO r : rs) {
+                            if (r.getGenerationStatus() != null && r.getGenerationStatus().equals(generatingCode)) {
+                                generating = true;
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    resp.setProgress(0);
+                }
+
+                resp.setResultGenerating(generating);
+                // 仅返回“已完成全部问卷且仍在生成中”的任务
+                if (generating && allCompleted) {
+                    generatingTasks.add(resp);
+                }
+            }
+        }
+        return success(generatingTasks);
     }
 
     @GetMapping("/get")
@@ -120,22 +190,31 @@ public class WebAssessmentTaskController {
                     s.setMetadataJson(slotVO.getMetadataJson());
                     // 映射问卷 - 处理问卷列表，取第一个问卷
                     if (slotVO.getQuestionnaires() != null && !slotVO.getQuestionnaires().isEmpty()) {
-                        ScenarioQuestionnaireAccessVO firstQuestionnaire = slotVO.getQuestionnaires().get(0);
-                        AppScenarioQuestionnaireAccessVO q = new AppScenarioQuestionnaireAccessVO();
-                        boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, firstQuestionnaire.getId(), userId);
-                        boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(firstQuestionnaire.getId(), userId);
-                        q.setId(firstQuestionnaire.getId());
-                        q.setTitle(firstQuestionnaire.getTitle());
-                        q.setDescription(firstQuestionnaire.getDescription());
-                        q.setQuestionnaireType(firstQuestionnaire.getQuestionnaireType());
-                        q.setTargetAudience(firstQuestionnaire.getTargetAudience());
-                        q.setQuestionCount(firstQuestionnaire.getQuestionCount());
-                        q.setExternalLink(firstQuestionnaire.getExternalLink());
-                        q.setEstimatedDuration(firstQuestionnaire.getEstimatedDuration());
-                        q.setStatus(firstQuestionnaire.getStatus());
-                        q.setCompleted(completed);
-                        q.setAccessible(accessible);
-                        s.setQuestionnaire(q);
+                        java.util.List<AppScenarioQuestionnaireAccessVO> list = new java.util.ArrayList<>();
+                        for (ScenarioQuestionnaireAccessVO qx : slotVO.getQuestionnaires()) {
+                            AppScenarioQuestionnaireAccessVO q = new AppScenarioQuestionnaireAccessVO();
+                            boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, qx.getId(), userId);
+                            boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(qx.getId(), userId);
+                            q.setId(qx.getId());
+                            q.setTitle(qx.getTitle());
+                            q.setDescription(qx.getDescription());
+                            q.setQuestionnaireType(qx.getQuestionnaireType());
+                            q.setTargetAudience(qx.getTargetAudience());
+                            q.setQuestionCount(qx.getQuestionCount());
+                            q.setExternalLink(qx.getExternalLink());
+                            q.setEstimatedDuration(qx.getEstimatedDuration());
+                            q.setStatus(qx.getStatus());
+                            q.setCompleted(completed);
+                            q.setAccessible(accessible);
+                            // 查询问卷结果生成状态（若已提交则返回最新一条的generation_status）
+                            QuestionnaireResultDO qr =
+                                questionnaireResultService.getQuestionnaireResultByUnique(taskNo, qx.getId(), userId);
+                            if (qr != null) {
+                                q.setGenerationStatus(qr.getGenerationStatus());
+                            }
+                            list.add(q);
+                        }
+                        s.setQuestionnaires(list);
                     }
                     slotDetails.add(s);
                 }

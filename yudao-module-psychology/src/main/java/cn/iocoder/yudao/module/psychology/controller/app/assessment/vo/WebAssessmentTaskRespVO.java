@@ -46,6 +46,9 @@ public class WebAssessmentTaskRespVO {
     @Schema(description = "任务完成进度，百分比0-100", example = "75")
     private Integer progress;
 
+    @Schema(description = "是否有问卷结果正在生成", example = "false")
+    private Boolean resultGenerating;
+
     @Schema(description = "开始时间")
     private Date startline;
 

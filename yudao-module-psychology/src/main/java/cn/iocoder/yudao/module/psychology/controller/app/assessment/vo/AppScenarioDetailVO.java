@@ -54,7 +54,7 @@ public class AppScenarioDetailVO {
         @Schema(description = "元数据JSON")
         private String metadataJson;
 
-        @Schema(description = "问卷")
-        private AppScenarioQuestionnaireAccessVO questionnaire;
+        @Schema(description = "问卷列表")
+        private java.util.List<AppScenarioQuestionnaireAccessVO> questionnaires;
     }
 }
