@@ -39,4 +39,7 @@ public class AppScenarioQuestionnaireAccessVO {
 
     @Schema(description = "是否可访问")
     private Boolean accessible;
+
+    @Schema(description = "生成状态：0-待生成，1-生成中，2-已生成，3-生成失败")
+    private Integer generationStatus;
 }

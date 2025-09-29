@@ -330,6 +330,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Override
     public AssessmentTaskDO getAssessmentTask(String taskNo) {
         AssessmentTaskDO assessmentTaskDO = assessmentTaskMapper.selectByTaskNo(taskNo);
+        if (assessmentTaskDO == null) {
+            throw exception(ErrorCodeConstants.ASSESSMENT_TASK_NOT_EXISTS);
+        }
         AdminUserDO userDO = adminUserService.getUser(assessmentTaskDO.getPublishUserId());
         assessmentTaskDO.setPublishUser(userDO != null ? userDO.getNickname() : "");
         assessmentTaskDO.setTotalNum(userTaskMapper.selectCount(new LambdaUpdateWrapper<AssessmentUserTaskDO>()

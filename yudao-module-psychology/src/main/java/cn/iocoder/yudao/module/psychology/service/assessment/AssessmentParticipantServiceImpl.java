@@ -253,6 +253,7 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         resultDO.setAssessmentTaskNo(taskNo);
         resultDO.setUserId(userId);
         resultDO.setQuestionnaireId(questionnaireId);
+        resultDO.setGenerationStatus(1);
         String result = JSON.toJSONString(answerList);
         resultDO.setAnswers(result);
         questionnaireResultMapper.insert(resultDO);
