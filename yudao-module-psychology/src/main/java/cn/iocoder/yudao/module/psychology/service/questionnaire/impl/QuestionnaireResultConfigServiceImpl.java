@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.service.questionnaire.impl;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigPageReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigSaveReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigRespVO;
@@ -33,7 +32,6 @@ public class QuestionnaireResultConfigServiceImpl implements QuestionnaireResult
     private QuestionnaireResultConfigMapper questionnaireResultConfigMapper;
 
     @Override
-    @TenantIgnore
     public Long createQuestionnaireResultConfig(QuestionnaireResultConfigSaveReqVO createReqVO) {
         // 插入
         QuestionnaireResultConfigDO questionnaireResultConfig = QuestionnaireResultConfigConvert.INSTANCE.convert(createReqVO);
@@ -43,26 +41,15 @@ public class QuestionnaireResultConfigServiceImpl implements QuestionnaireResult
     }
 
     @Override
-    @TenantIgnore
     public void updateQuestionnaireResultConfig(QuestionnaireResultConfigSaveReqVO updateReqVO) {
-        log.info("更新问卷结果配置: id={}, riskLevel={}", updateReqVO.getId(), updateReqVO.getRiskLevel());
-        
         // 校验存在
         validateQuestionnaireResultConfigExists(updateReqVO.getId());
-        
         // 更新
         QuestionnaireResultConfigDO updateObj = QuestionnaireResultConfigConvert.INSTANCE.convert(updateReqVO);
-        log.info("转换后的DO对象: id={}, riskLevel={}", updateObj.getId(), updateObj.getRiskLevel());
-        
         questionnaireResultConfigMapper.updateById(updateObj);
-        
-        // 验证更新结果
-        QuestionnaireResultConfigDO updated = questionnaireResultConfigMapper.selectById(updateReqVO.getId());
-        log.info("更新后的数据库记录: id={}, riskLevel={}", updated.getId(), updated.getRiskLevel());
     }
 
     @Override
-    @TenantIgnore
     public void deleteQuestionnaireResultConfig(Long id) {
         // 校验存在
         validateQuestionnaireResultConfigExists(id);
@@ -77,33 +64,28 @@ public class QuestionnaireResultConfigServiceImpl implements QuestionnaireResult
     }
 
     @Override
-    @TenantIgnore
     public QuestionnaireResultConfigRespVO getQuestionnaireResultConfig(Long id) {
         return QuestionnaireResultConfigConvert.INSTANCE.convert(questionnaireResultConfigMapper.selectById(id));
     }
 
     @Override
-    @TenantIgnore
     public PageResult<QuestionnaireResultConfigRespVO> getQuestionnaireResultConfigPage(QuestionnaireResultConfigPageReqVO pageReqVO) {
         return QuestionnaireResultConfigConvert.INSTANCE.convertPage(questionnaireResultConfigMapper.selectPage(pageReqVO));
     }
 
     @Override
-    @TenantIgnore
-    public List<QuestionnaireResultConfigDO> getQuestionnaireResultConfigListByDimensionId(Long dimensionId) {
-        return questionnaireResultConfigMapper.selectListByDimensionId(dimensionId);
-    }
-
-    @Override
-    @TenantIgnore
-    public void deleteQuestionnaireResultConfigByDimensionId(Long dimensionId) {
-        questionnaireResultConfigMapper.deleteByDimensionId(dimensionId);
-    }
-
-    @Override
-    @TenantIgnore
     public List<QuestionnaireResultConfigDO> getQuestionnaireResultConfigListByQuestionnaireId(Long questionnaireId) {
         return questionnaireResultConfigMapper.selectListByQuestionnaireId(questionnaireId);
+    }
+
+    @Override
+    public QuestionnaireResultConfigDO getQuestionnaireResultConfigByQuestionnaireIdAndDimensionName(Long questionnaireId, String dimensionName) {
+        return questionnaireResultConfigMapper.selectByQuestionnaireIdAndDimensionName(questionnaireId, dimensionName);
+    }
+
+    @Override
+    public void deleteQuestionnaireResultConfigByQuestionnaireId(Long questionnaireId) {
+        questionnaireResultConfigMapper.deleteByQuestionnaireId(questionnaireId);
     }
 
 }

@@ -2,13 +2,12 @@ package cn.iocoder.yudao.module.psychology.dal.dataobject.assessment;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 /**
- * 测评结果 DO（场景化测评结果）
+ * 测评结果 DO（维度级别与总分）
  */
 @TableName(value = "lvye_assessment_result", autoResultMap = true)
 @Data
@@ -23,73 +22,37 @@ public class AssessmentResultDO extends TenantBaseDO {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /** 测评ID（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private Long assessmentId;
-
-    /** 场景ID（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private Long scenarioId;
-
-    /** 学生档案ID（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private Long studentProfileId;
-
-    /** 用户ID（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private Long userId;
-
-    /** 任务参与者编号（兼容旧字段） */
+    /** 任务参与者编号 */
     private Long participantId;
 
-    /** 测评任务编号（兼容旧字段） */
+    /** 测评任务编号 */
     private String taskNo;
 
-    /** 维度编码（兼容旧字段，如 total 为总分，其它维度按问卷定义） */
+    /** 维度编码（如 total 为总分，其它维度按问卷定义） */
     private String dimensionCode;
 
-    /** 分数（兼容旧字段） */
+    /** 分数 */
     private Integer score;
 
-    /** 风险等级 */
+    /** 风险等级（字典：risk_level） */
     private Integer riskLevel;
 
-    /** 评价等级（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private String level;
-
-    /** 描述（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private String description;
-
-    /** 建议（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private String suggestions;
-
-    /** 评语（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private String comment;
-
-    /** 建议/结论摘要（兼容旧字段） */
+    /** 建议/结论摘要 */
     private String suggestion;
 
-    /** 关联的问卷结果汇总 (JSON格式存储，兼容旧字段) */
+    /** 关联的问卷结果汇总 (JSON格式存储) */
     private String questionnaireResults;
 
-    /** 综合风险等级（兼容旧字段） */
+    /** 综合风险等级 */
     private Integer combinedRiskLevel;
 
-    /** 风险因素分析 (JSON格式存储，兼容旧字段) */
+    /** 风险因素分析 (JSON格式存储) */
     private String riskFactors;
 
-    /** 干预建议（兼容旧字段） */
+    /** 干预建议 */
     private String interventionSuggestions;
 
-    /** 结果数据（当前表无该列，忽略映射） */
-    @TableField(exist = false)
-    private String resultData;
-
-    /** 生成规则版本（兼容旧字段） */
+    /** 生成规则版本 */
     private String generationConfigVersion;
 }
 

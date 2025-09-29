@@ -1,17 +1,15 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.assessment;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @TableName(value = "lvye_assessment_scenario", autoResultMap = true)
-@TenantIgnore  // 测评场景表为全局配置表，不进行租户隔离
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class AssessmentScenarioDO extends BaseDO {
+public class AssessmentScenarioDO extends TenantBaseDO {
 
     @TableId
     private Long id;

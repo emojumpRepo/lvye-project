@@ -21,14 +21,4 @@ public interface QuestionnaireResultCalculateService {
      * @return
      */
     List<QuestionnaireResultVO> resultCalculate(Long questionnaireId, Long userId, List<WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList);
-
-    /**
-     * 问卷结果计算（带问卷结果ID，支持维度结果保存）
-     * @param questionnaireId 问卷id
-     * @param userId 用户id
-     * @param questionnaireResultId 问卷结果ID
-     * @param answerList 答题列表
-     * @return
-     */
-    List<QuestionnaireResultVO> resultCalculate(Long questionnaireId, Long userId, Long questionnaireResultId, List<WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList);
 }

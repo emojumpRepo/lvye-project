@@ -9,7 +9,6 @@ import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssess
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO;
-import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioQuestionnaireAccessVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentScenarioService;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppScenarioDetailVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.AppScenarioQuestionnaireAccessVO;
@@ -118,21 +117,20 @@ public class WebAssessmentTaskController {
                     s.setSlotOrder(slotVO.getSlotOrder());
                     s.setFrontendComponent(slotVO.getFrontendComponent());
                     s.setMetadataJson(slotVO.getMetadataJson());
-                    // 映射问卷 - 处理问卷列表，取第一个问卷
-                    if (slotVO.getQuestionnaires() != null && !slotVO.getQuestionnaires().isEmpty()) {
-                        ScenarioQuestionnaireAccessVO firstQuestionnaire = slotVO.getQuestionnaires().get(0);
+                    // 映射问卷
+                    if (slotVO.getQuestionnaire() != null) {
                         AppScenarioQuestionnaireAccessVO q = new AppScenarioQuestionnaireAccessVO();
-                        boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, firstQuestionnaire.getId(), userId);
-                        boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(firstQuestionnaire.getId(), userId);
-                        q.setId(firstQuestionnaire.getId());
-                        q.setTitle(firstQuestionnaire.getTitle());
-                        q.setDescription(firstQuestionnaire.getDescription());
-                        q.setQuestionnaireType(firstQuestionnaire.getQuestionnaireType());
-                        q.setTargetAudience(firstQuestionnaire.getTargetAudience());
-                        q.setQuestionCount(firstQuestionnaire.getQuestionCount());
-                        q.setExternalLink(firstQuestionnaire.getExternalLink());
-                        q.setEstimatedDuration(firstQuestionnaire.getEstimatedDuration());
-                        q.setStatus(firstQuestionnaire.getStatus());
+                        boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, slotVO.getQuestionnaire().getId(), userId);
+                        boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(slotVO.getQuestionnaire().getId(), userId);
+                        q.setId(slotVO.getQuestionnaire().getId());
+                        q.setTitle(slotVO.getQuestionnaire().getTitle());
+                        q.setDescription(slotVO.getQuestionnaire().getDescription());
+                        q.setQuestionnaireType(slotVO.getQuestionnaire().getQuestionnaireType());
+                        q.setTargetAudience(slotVO.getQuestionnaire().getTargetAudience());
+                        q.setQuestionCount(slotVO.getQuestionnaire().getQuestionCount());
+                        q.setExternalLink(slotVO.getQuestionnaire().getExternalLink());
+                        q.setEstimatedDuration(slotVO.getQuestionnaire().getEstimatedDuration());
+                        q.setStatus(slotVO.getQuestionnaire().getStatus());
                         q.setCompleted(completed);
                         q.setAccessible(accessible);
                         s.setQuestionnaire(q);

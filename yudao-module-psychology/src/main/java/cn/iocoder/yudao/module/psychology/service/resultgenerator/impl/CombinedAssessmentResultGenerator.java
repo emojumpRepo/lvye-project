@@ -7,11 +7,8 @@ import cn.iocoder.yudao.module.psychology.framework.resultgenerator.ResultGenera
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.*;
 import cn.iocoder.yudao.module.psychology.util.RiskLevelUtils;
 import cn.iocoder.yudao.module.psychology.util.RiskLevelStrategyManager;
-import cn.iocoder.yudao.module.psychology.service.assessment.ScenarioBasedAssessmentResultService;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentResultDO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import jakarta.annotation.Resource;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -27,9 +24,6 @@ import java.util.stream.Collectors;
 @Component
 public class CombinedAssessmentResultGenerator implements ResultGeneratorStrategy {
 
-    @Resource
-    private ScenarioBasedAssessmentResultService scenarioBasedAssessmentResultService;
-
     @Override
     public ResultGeneratorTypeEnum getGeneratorType() {
         return ResultGeneratorTypeEnum.COMBINED_ASSESSMENT;
@@ -44,56 +38,8 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
     @Override
     @SuppressWarnings("unchecked")
     public <T> T generateResult(ResultGenerationContext context) {
-        log.info("开始生成组合测评结果，测评ID: {}, 场景编码: {}, 场景ID: {}, 任务号: {}", 
-            context.getAssessmentId(), context.getScenarioCode(), context.getScenarioId(), context.getTaskNo());
-
-        // 1. 检查是否有场景ID，如果有则使用新的场景化计算逻辑
-        if (context.getScenarioId() != null) {
-            return generateScenarioBasedResult(context);
-        }
-
-        // 2. 兜底：使用原有逻辑
-        return generateLegacyResult(context);
-    }
-
-    /**
-     * 生成基于场景的测评结果
-     */
-    @SuppressWarnings("unchecked")
-    private <T> T generateScenarioBasedResult(ResultGenerationContext context) {
-        log.info("使用场景化计算逻辑，场景ID: {}", context.getScenarioId());
-
-        try {
-            // 使用新的场景化服务计算测评结果
-            AssessmentResultDO assessmentResult = scenarioBasedAssessmentResultService.calculateAssessmentResult(
-                context.getAssessmentId(),
-                context.getScenarioId(),
-                context.getStudentProfileId(),
-                context.getUserId(),
-                context.getTaskNo()
-            );
-
-            if (assessmentResult != null) {
-                // 转换为VO格式（兼容现有接口）
-                AssessmentResultVO resultVO = convertToAssessmentResultVO(assessmentResult, context);
-                log.info("场景化测评结果生成完成，风险等级: {}", assessmentResult.getRiskLevel());
-                return (T) resultVO;
-            } else {
-                log.warn("场景化计算未产生结果，回退到兜底逻辑");
-                return generateLegacyResult(context);
-            }
-        } catch (Exception e) {
-            log.error("场景化计算失败，回退到兜底逻辑", e);
-            return generateLegacyResult(context);
-        }
-    }
-
-    /**
-     * 生成兜底的测评结果（原有逻辑）
-     */
-    @SuppressWarnings("unchecked")
-    private <T> T generateLegacyResult(ResultGenerationContext context) {
-        log.info("使用兜底计算逻辑");
+        log.info("开始生成组合测评结果，测评ID: {}, 场景编码: {}", 
+            context.getAssessmentId(), context.getScenarioCode());
 
         // 1. 获取所有关联的问卷结果
         List<QuestionnaireResultVO> questionnaireResults = context.getQuestionnaireResults();
@@ -132,55 +78,8 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
         // 获取场景特定的风险等级名称用于日志
         String riskLevelName = getScenarioSpecificRiskLevelName(combinedRiskLevel, config.getScenarioCode());
 
-        log.info("兜底测评结果生成完成，综合风险等级: {}", riskLevelName);
+        log.info("组合测评结果生成完成，综合风险等级: {}", riskLevelName);
         return (T) result;
-    }
-
-    /**
-     * 转换AssessmentResultDO为AssessmentResultVO
-     */
-    private AssessmentResultVO convertToAssessmentResultVO(AssessmentResultDO assessmentResult, ResultGenerationContext context) {
-        RiskLevelEnum riskLevel = RiskLevelEnum.fromLevel(assessmentResult.getRiskLevel());
-        if (riskLevel == null) {
-            riskLevel = RiskLevelEnum.NORMAL;
-        }
-
-        return AssessmentResultVO.builder()
-                .assessmentId(assessmentResult.getAssessmentId())
-                .combinedScore(BigDecimal.ZERO) // 场景化计算暂不提供综合得分
-                .combinedRiskLevel(assessmentResult.getRiskLevel())
-                .riskFactors(Collections.emptyList()) // 暂不提供风险因素分析
-                .interventionSuggestions(Collections.emptyList()) // 暂不提供干预建议
-                .comprehensiveReport(buildScenarioBasedReport(assessmentResult))
-                .questionnaireResults(context.getQuestionnaireResults())
-                .build();
-    }
-
-    /**
-     * 构建基于场景的测评报告
-     */
-    private String buildScenarioBasedReport(AssessmentResultDO assessmentResult) {
-        StringBuilder report = new StringBuilder();
-        report.append("测评结果报告\n");
-        report.append("===================\n\n");
-        
-        if (assessmentResult.getLevel() != null) {
-            report.append("评价等级: ").append(assessmentResult.getLevel()).append("\n");
-        }
-        
-        if (assessmentResult.getDescription() != null) {
-            report.append("描述: ").append(assessmentResult.getDescription()).append("\n");
-        }
-        
-        if (assessmentResult.getSuggestions() != null) {
-            report.append("建议: ").append(assessmentResult.getSuggestions()).append("\n");
-        }
-        
-        if (assessmentResult.getComment() != null) {
-            report.append("评语: ").append(assessmentResult.getComment()).append("\n");
-        }
-        
-        return report.toString();
     }
 
     @Override

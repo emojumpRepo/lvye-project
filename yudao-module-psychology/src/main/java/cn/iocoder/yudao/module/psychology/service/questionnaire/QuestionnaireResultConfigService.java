@@ -55,26 +55,27 @@ public interface QuestionnaireResultConfigService {
     PageResult<QuestionnaireResultConfigRespVO> getQuestionnaireResultConfigPage(QuestionnaireResultConfigPageReqVO pageReqVO);
 
     /**
-     * 根据维度ID获取结果配置列表
-     *
-     * @param dimensionId 维度ID
-     * @return 结果配置列表
-     */
-    List<QuestionnaireResultConfigDO> getQuestionnaireResultConfigListByDimensionId(Long dimensionId);
-
-    /**
-     * 根据维度ID删除结果配置
-     *
-     * @param dimensionId 维度ID
-     */
-    void deleteQuestionnaireResultConfigByDimensionId(Long dimensionId);
-
-    /**
-     * 根据问卷ID获取所有维度的结果配置列表（兼容旧接口）
+     * 根据问卷ID获取结果配置列表
      *
      * @param questionnaireId 问卷ID
      * @return 结果配置列表
      */
     List<QuestionnaireResultConfigDO> getQuestionnaireResultConfigListByQuestionnaireId(Long questionnaireId);
+
+    /**
+     * 根据问卷ID和维度名称获取结果配置
+     *
+     * @param questionnaireId 问卷ID
+     * @param dimensionName 维度名称
+     * @return 结果配置
+     */
+    QuestionnaireResultConfigDO getQuestionnaireResultConfigByQuestionnaireIdAndDimensionName(Long questionnaireId, String dimensionName);
+
+    /**
+     * 根据问卷ID删除结果配置
+     *
+     * @param questionnaireId 问卷ID
+     */
+    void deleteQuestionnaireResultConfigByQuestionnaireId(Long questionnaireId);
 
 }

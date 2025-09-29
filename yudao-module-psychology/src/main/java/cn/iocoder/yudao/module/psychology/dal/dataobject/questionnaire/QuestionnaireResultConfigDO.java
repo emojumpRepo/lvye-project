@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -14,10 +13,9 @@ import lombok.EqualsAndHashCode;
  * @author MinGoo
  */
 @TableName(value = "lvye_questionnaire_result_config", autoResultMap = true)
-@TenantIgnore  // 问卷结果配置表为全局配置表，不进行租户隔离
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class QuestionnaireResultConfigDO extends BaseDO {
+public class QuestionnaireResultConfigDO extends TenantBaseDO {
 
     /**
      * 配置ID
@@ -26,9 +24,14 @@ public class QuestionnaireResultConfigDO extends BaseDO {
     private Long id;
 
     /**
-     * 维度ID（新架构）
+     * 问卷ID
      */
-    private Long dimensionId;
+    private Long questionnaireId;
+
+    /**
+     * 维度名称
+     */
+    private String dimensionName;
 
     /**
      * 题目索引
@@ -61,11 +64,6 @@ public class QuestionnaireResultConfigDO extends BaseDO {
     private Integer isAbnormal;
 
     /**
-     * 风险等级（1-无/低风险，2-轻度风险，3-中度风险，4-重度风险）
-     */
-    private Integer riskLevel;
-
-    /**
      * 等级：优秀、良好、一般、较差、很差
      */
     private String level;
@@ -74,10 +72,5 @@ public class QuestionnaireResultConfigDO extends BaseDO {
      * 描述
      */
     private String description;
-
-    /**
-     * 状态（0：禁用，1：启用）
-     */
-    private Integer status;
 
 }

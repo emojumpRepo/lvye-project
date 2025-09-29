@@ -7,9 +7,11 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTa
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultEvaluateConfigDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskQuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultEvaluateConfigMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
@@ -62,6 +64,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Resource
     private AssessmentTaskQuestionnaireMapper taskQuestionnaireMapper;
+
+    @Resource
+    private QuestionnaireResultEvaluateConfigMapper evaluateConfigMapper;
 
     @Resource
     private StudentTimelineService studentTimelineService;
@@ -161,9 +166,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         }
         //保存问卷提交答案
         Long questionnaireResultId = this.saveQuestionnaireResult(taskNo, userId, participateReqVO.getQuestionnaireId(), participateReqVO.getAnswers());
-        //计算并返回问卷结果（带问卷结果ID，支持维度结果保存）
+        //计算并返回问卷结果
         List<QuestionnaireResultVO> resultCalculate = resultCalculateService.resultCalculate(participateReqVO.getQuestionnaireId(),
-                userId, questionnaireResultId, participateReqVO.getAnswers());
+                userId, participateReqVO.getAnswers());
         //更新问卷结果
         QuestionnaireResultDO questionnaireResultDO = this.updateQuestionnaireResult(questionnaireResultId, participateReqVO.getQuestionnaireId(), participateReqVO.getAnswers(), resultCalculate);
         //如果问卷结果有返回风险等级/评价/建议，则更新学生测评表,更新学生档案
@@ -272,64 +277,19 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
             log.info("问卷ID={} 保存维度分数: {}", questionnaireId, dimensionScores);
         }
         
-        // 基于维度计算结果设置风险等级和建议
-        Integer maxRiskLevel = null;
-        StringBuilder combinedSuggestions = new StringBuilder();
-        StringBuilder combinedEvaluate = new StringBuilder();
-        int abnormalDimensionCount = 0;
-        
+        //统计不正常的因子总数，计算风险登记
+        int isAbnormalCount = 0;
         for (QuestionnaireResultVO answerResult : answerResultList) {
-            // 统计异常维度数量
-            if (answerResult.getIsAbnormal() != null && answerResult.getIsAbnormal() > 0) {
-                abnormalDimensionCount++;
-            }
-            
-            // 收集建议内容
-            if (answerResult.getStudentComment() != null && !answerResult.getStudentComment().trim().isEmpty()) {
-                if (combinedSuggestions.length() > 0) {
-                    combinedSuggestions.append("\n");
-                }
-                combinedSuggestions.append(answerResult.getStudentComment());
-            }
-            
-            // 收集评价内容
-            if (answerResult.getDescription() != null && !answerResult.getDescription().trim().isEmpty()) {
-                if (combinedEvaluate.length() > 0) {
-                    combinedEvaluate.append("\n");
-                }
-                combinedEvaluate.append(answerResult.getDescription());
-            }
+            isAbnormalCount = isAbnormalCount + answerResult.getIsAbnormal();
         }
-        
-        // 根据异常维度数量设置风险等级
-        if (abnormalDimensionCount == 0) {
-            maxRiskLevel = 1; // 正常
-        } else if (abnormalDimensionCount == 1) {
-            maxRiskLevel = 2; // 关注
-        } else if (abnormalDimensionCount == 2) {
-            maxRiskLevel = 3; // 预警
-        } else {
-            maxRiskLevel = 4; // 高危
-        }
-        
-        // 设置计算结果
-        resultDO.setRiskLevel(maxRiskLevel);
-        if (combinedSuggestions.length() > 0) {
-            resultDO.setSuggestions(combinedSuggestions.toString());
-        }
-        if (combinedEvaluate.length() > 0) {
-            resultDO.setEvaluate(combinedEvaluate.toString());
-        }
-        
-        // 设置生成状态
-        if (answerResultList != null && !answerResultList.isEmpty()) {
-            resultDO.setGenerationStatus(2); // 已生成
-            log.info("问卷ID={} 计算完成，异常维度数量={}, 风险等级={}", questionnaireId, abnormalDimensionCount, maxRiskLevel);
-        } else {
-            // 未配置维度：跳过计算，标记成功且无/低风险
+        //查询评价内容，赋值（仅风险等级与建议，不再覆盖整体评价为 level）
+        QuestionnaireResultEvaluateConfigDO evaluateConfigDO = evaluateConfigMapper.selectByQuestionnaireIdAndAbnormalCount(questionnaireId, isAbnormalCount);
+        if (evaluateConfigDO != null) {
+            resultDO.setRiskLevel(evaluateConfigDO.getRiskLevel());
+            resultDO.setSuggestions(evaluateConfigDO.getSuggestions());
             resultDO.setGenerationStatus(2);
-            resultDO.setRiskLevel(1);
-            log.info("问卷ID={} 未配置维度，跳过计算并标记为成功（无/低风险）", questionnaireId);
+        } else {
+            resultDO.setGenerationStatus(3);
         }
         resultDO.setResultData(JSON.toJSONString(answerResultList));
         resultDO.setCompletedTime(new Date());

@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -15,10 +14,9 @@ import java.time.LocalDateTime;
  * @author 芋道源码
  */
 @TableName(value = "lvye_questionnaire", autoResultMap = true)
-@TenantIgnore  // 问卷表为全局配置表，不进行租户隔离
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class QuestionnaireDO extends BaseDO {
+public class QuestionnaireDO extends TenantBaseDO {
 
     /**
      * 问卷ID

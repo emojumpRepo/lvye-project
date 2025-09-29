@@ -1,20 +1,15 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.assessment;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
-import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
-import com.baomidou.mybatisplus.annotation.TableField;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.List;
-
 @TableName(value = "lvye_assessment_scenario_slot", autoResultMap = true)
-@TenantIgnore  // 测评场景插槽表为全局配置表，不进行租户隔离
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class AssessmentScenarioSlotDO extends BaseDO {
+public class AssessmentScenarioSlotDO extends TenantBaseDO {
 
     @TableId
     private Long id;
@@ -37,15 +32,9 @@ public class AssessmentScenarioSlotDO extends BaseDO {
     private String metadataJson;
 
     /**
-     * 关联问卷ID列表（JSON格式存储，如：[1,2,3]）
+     * 关联问卷ID（lvye_questionnaire.id）
      */
-    private String questionnaireIds;
-
-    /**
-     * 关联问卷ID列表（非持久化字段，用于业务逻辑处理）
-     */
-    @TableField(exist = false)
-    private List<Long> questionnaireIdList;
+    private Long questionnaireId;
 }
 
 

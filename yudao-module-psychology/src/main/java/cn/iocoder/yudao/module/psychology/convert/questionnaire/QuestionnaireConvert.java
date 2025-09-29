@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.psychology.controller.app.questionnaire.vo.AppQue
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
@@ -30,6 +31,7 @@ public interface QuestionnaireConvert {
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "updater", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
     @Mapping(target = "transMap", ignore = true)
     QuestionnaireDO convert(QuestionnaireCreateReqVO bean);
 
@@ -43,6 +45,7 @@ public interface QuestionnaireConvert {
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "updater", ignore = true)
     @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
     @Mapping(target = "transMap", ignore = true)
     QuestionnaireDO convert(QuestionnaireUpdateReqVO bean);
 
