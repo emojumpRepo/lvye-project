@@ -1,12 +1,11 @@
 package cn.iocoder.yudao.module.psychology.dal.mysql.assessment;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
-import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
 import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -16,6 +15,20 @@ public interface AssessmentScenarioSlotMapper extends BaseMapperX<AssessmentScen
     default java.util.List<AssessmentScenarioSlotDO> selectListByScenarioId(Long scenarioId) {
         return selectList(AssessmentScenarioSlotDO::getScenarioId, scenarioId);
     }
+
+    /**
+     * 根据问卷ID查询包含该问卷的场景插槽
+     * 使用JSON函数查询包含特定问卷ID的插槽
+     */
+    @Select("SELECT * FROM lvye_assessment_scenario_slot WHERE questionnaire_ids LIKE CONCAT('%', #{questionnaireId}, '%') AND deleted = 0")
+    List<AssessmentScenarioSlotDO> selectListByQuestionnaireId(Long questionnaireId);
+
+    /**
+     * 根据场景ID和问卷ID查询插槽
+     * 查询指定场景中包含特定问卷ID的插槽
+     */
+    @Select("SELECT * FROM lvye_assessment_scenario_slot WHERE scenario_id = #{scenarioId} AND questionnaire_ids LIKE CONCAT('%', #{questionnaireId}, '%') AND deleted = 0")
+    List<AssessmentScenarioSlotDO> selectListByScenarioIdAndQuestionnaireId(Long scenarioId, Long questionnaireId);
 
     /**
      * 物理删除指定场景的所有插槽

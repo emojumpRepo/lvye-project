@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * 学生档案 DO

@@ -1,7 +1,6 @@
 package cn.iocoder.yudao.module.psychology.service.assessment;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.iocoder.yudao.framework.common.biz.system.permission.dto.DeptDataPermissionRespDTO;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.date.DateUtils;
 import cn.iocoder.yudao.framework.common.util.number.NumberUtils;
