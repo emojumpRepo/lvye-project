@@ -69,37 +69,24 @@ public class QuestionnaireResultConfigController {
         return success(pageResult);
     }
 
-    @GetMapping("/list-by-questionnaire")
-    @Operation(summary = "根据问卷ID获取结果配置分页列表")
-    @Parameter(name = "questionnaireId", description = "问卷ID", required = true, example = "1024")
+    @GetMapping("/list-by-dimension")
+    @Operation(summary = "根据维度ID获取结果配置分页列表")
+    @Parameter(name = "dimensionId", description = "维度ID", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire-result-config:query')")
-    public CommonResult<PageResult<QuestionnaireResultConfigRespVO>> getQuestionnaireResultConfigPageByQuestionnaireId(
-            @RequestParam("questionnaireId") Long questionnaireId,
+    public CommonResult<PageResult<QuestionnaireResultConfigRespVO>> getQuestionnaireResultConfigPageByDimensionId(
+            @RequestParam("dimensionId") Long dimensionId,
             @Valid QuestionnaireResultConfigPageReqVO pageReqVO) {
-        pageReqVO.setQuestionnaireId(questionnaireId);
+        pageReqVO.setDimensionId(dimensionId);
         PageResult<QuestionnaireResultConfigRespVO> pageResult = questionnaireResultConfigService.getQuestionnaireResultConfigPage(pageReqVO);
         return success(pageResult);
     }
 
-    @GetMapping("/get-by-questionnaire-and-dimension")
-    @Operation(summary = "根据问卷ID和维度名称获取结果配置")
-    @Parameter(name = "questionnaireId", description = "问卷ID", required = true, example = "1024")
-    @Parameter(name = "dimensionName", description = "维度名称", required = true, example = "睡眠质量")
-    @PreAuthorize("@ss.hasPermission('psychology:questionnaire-result-config:query')")
-    public CommonResult<QuestionnaireResultConfigRespVO> getQuestionnaireResultConfigByQuestionnaireIdAndDimensionName(
-            @RequestParam("questionnaireId") Long questionnaireId,
-            @RequestParam("dimensionName") String dimensionName) {
-        QuestionnaireResultConfigRespVO config = QuestionnaireResultConfigConvert.INSTANCE.convert(
-                questionnaireResultConfigService.getQuestionnaireResultConfigByQuestionnaireIdAndDimensionName(questionnaireId, dimensionName));
-        return success(config);
-    }
-
-    @DeleteMapping("/delete-by-questionnaire")
-    @Operation(summary = "根据问卷ID删除结果配置")
-    @Parameter(name = "questionnaireId", description = "问卷ID", required = true, example = "1024")
+    @DeleteMapping("/delete-by-dimension")
+    @Operation(summary = "根据维度ID删除结果配置")
+    @Parameter(name = "dimensionId", description = "维度ID", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire-result-config:delete')")
-    public CommonResult<Boolean> deleteQuestionnaireResultConfigByQuestionnaireId(@RequestParam("questionnaireId") Long questionnaireId) {
-        questionnaireResultConfigService.deleteQuestionnaireResultConfigByQuestionnaireId(questionnaireId);
+    public CommonResult<Boolean> deleteQuestionnaireResultConfigByDimensionId(@RequestParam("dimensionId") Long dimensionId) {
+        questionnaireResultConfigService.deleteQuestionnaireResultConfigByDimensionId(dimensionId);
         return success(true);
     }
 
