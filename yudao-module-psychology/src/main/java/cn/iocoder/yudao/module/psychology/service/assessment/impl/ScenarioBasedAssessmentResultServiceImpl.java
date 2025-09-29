@@ -272,6 +272,24 @@ public class ScenarioBasedAssessmentResultServiceImpl implements ScenarioBasedAs
                 item.put("studentComment", dr.getStudentComment());
                 item.put("description", dr.getDescription());
                 item.put("questionnaireId", qr.getQuestionnaireId());
+                // 维度名称与维度描述来自问卷维度表
+                String dimName = null;
+                String dimDesc = null;
+                try {
+                    QuestionnaireDimensionRespVO dimVO = questionnaireDimensionService.getDimension(dr.getDimensionId());
+                    if (dimVO != null) {
+                        dimName = dimVO.getDimensionName();
+                        dimDesc = dimVO.getDescription();
+                    }
+                } catch (Exception ignore) {}
+                if (dimName == null || dimName.isEmpty()) {
+                    dimName = dr.getDimensionCode() != null ? dr.getDimensionCode() : ("DIM-" + dr.getDimensionId());
+                }
+                item.put("dimensionName", dimName);
+                // 若结果中的 description 为空，则补充维度表描述
+                if (item.get("description") == null || String.valueOf(item.get("description")).isEmpty()) {
+                    item.put("description", dimDesc);
+                }
                 payload.add(item);
             }
 
