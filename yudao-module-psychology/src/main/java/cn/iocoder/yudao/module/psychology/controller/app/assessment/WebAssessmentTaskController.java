@@ -82,20 +82,31 @@ public class WebAssessmentTaskController {
                     }
                     int progress = total == 0 ? 0 : (int) Math.round((completed * 100.0) / total);
                     resp.setProgress(progress);
-                    // 是否有结果正在生成：查询该任务下当前用户的所有问卷结果，存在 generation_status = GENERATING 即为 true
+                    // 是否有结果正在生成：先判断该任务下关联的所有问卷是否都已产生问卷结果记录
                     List<StudentAssessmentQuestionnaireDetailVO> rs =
                             questionnaireResultService.selectQuestionnaireResultByTaskNoAndUserId(resp.getTaskNo(), userId);
+                    boolean allHasResults = false;
                     boolean generating = false;
                     if (rs != null && !rs.isEmpty()) {
-                        Integer generatingCode = ResultGenerationStatusEnum.GENERATING.getStatus();
+                        java.util.Set<Long> resultQids = new java.util.HashSet<>();
                         for (StudentAssessmentQuestionnaireDetailVO r : rs) {
-                            if (r.getGenerationStatus() != null && r.getGenerationStatus().equals(generatingCode)) {
-                                generating = true;
-                                break;
+                            if (r.getQuestionnaireId() != null) {
+                                resultQids.add(r.getQuestionnaireId());
+                            }
+                        }
+                        allHasResults = resultQids.containsAll(resp.getQuestionnaireIds());
+
+                        if (allHasResults) {
+                            Integer generatingCode = ResultGenerationStatusEnum.GENERATING.getStatus();
+                            for (StudentAssessmentQuestionnaireDetailVO r : rs) {
+                                if (r.getGenerationStatus() != null && r.getGenerationStatus().equals(generatingCode)) {
+                                    generating = true;
+                                    break;
+                                }
                             }
                         }
                     }
-                    resp.setResultGenerating(generating);
+                    resp.setResultGenerating(allHasResults && generating);
                 } else {
                     resp.setProgress(0);
                     resp.setResultGenerating(false);
@@ -121,6 +132,7 @@ public class WebAssessmentTaskController {
 
                 boolean generating = false;
                 boolean allCompleted = false;
+                boolean allHasResults = false;
                 // 计算进度，同时判断是否有生成中结果
                 if (resp.getQuestionnaireIds() != null && !resp.getQuestionnaireIds().isEmpty()) {
                     int total = resp.getQuestionnaireIds().size();
@@ -137,10 +149,19 @@ public class WebAssessmentTaskController {
                     List<StudentAssessmentQuestionnaireDetailVO> rs =
                             questionnaireResultService.selectQuestionnaireResultByTaskNoAndUserId(resp.getTaskNo(), userId);
                     if (rs != null && !rs.isEmpty()) {
+                        java.util.Set<Long> resultQids = new java.util.HashSet<>();
                         for (StudentAssessmentQuestionnaireDetailVO r : rs) {
-                            if (r.getGenerationStatus() != null && r.getGenerationStatus().equals(generatingCode)) {
-                                generating = true;
-                                break;
+                            if (r.getQuestionnaireId() != null) {
+                                resultQids.add(r.getQuestionnaireId());
+                            }
+                        }
+                        allHasResults = resultQids.containsAll(resp.getQuestionnaireIds());
+                        if (allHasResults) {
+                            for (StudentAssessmentQuestionnaireDetailVO r : rs) {
+                                if (r.getGenerationStatus() != null && r.getGenerationStatus().equals(generatingCode)) {
+                                    generating = true;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -148,9 +169,9 @@ public class WebAssessmentTaskController {
                     resp.setProgress(0);
                 }
 
-                resp.setResultGenerating(generating);
-                // 仅返回“已完成全部问卷且仍在生成中”的任务
-                if (generating && allCompleted) {
+                resp.setResultGenerating(allHasResults && generating);
+                // 仅返回“已完成全部问卷且(全部有结果)且仍在生成中”的任务
+                if (generating && allCompleted && allHasResults) {
                     generatingTasks.add(resp);
                 }
             }

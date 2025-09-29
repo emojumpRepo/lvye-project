@@ -21,6 +21,8 @@ import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultCalculateService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireDimensionService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -182,8 +184,8 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
                 taskNo, userId, participateReqVO.getQuestionnaireId(), participateReqVO.getAnswers());
 
         // 事务提交后，异步进行计算与更新（并在计算完成后检测是否全部完成，若是则生成组合测评结果与时间线）
-        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-            new org.springframework.transaction.support.TransactionSynchronization() {
+        TransactionSynchronizationManager.registerSynchronization(
+            new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     questionnaireResultAsyncService.calculateAfterCommit(
