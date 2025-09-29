@@ -11,12 +11,15 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMap
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskQuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.DimensionResultMapper;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.DimensionResultDO;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.ParticipantCompletionStatusEnum;
 import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultCalculateService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireDimensionService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO;
 import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
@@ -59,6 +62,12 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Resource
     private QuestionnaireResultCalculateService resultCalculateService;
+    
+    @Resource
+    private DimensionResultMapper dimensionResultMapper;
+    
+    @Resource
+    private QuestionnaireDimensionService questionnaireDimensionService;
 
     @Resource
     private AssessmentTaskQuestionnaireMapper taskQuestionnaireMapper;
@@ -331,7 +340,45 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
             resultDO.setRiskLevel(1);
             log.info("问卷ID={} 未配置维度，跳过计算并标记为成功（无/低风险）", questionnaireId);
         }
-        resultDO.setResultData(JSON.toJSONString(answerResultList));
+        // 写入维度明细到 result_data
+        try {
+            java.util.List<DimensionResultDO> dimList = dimensionResultMapper.selectListByQuestionnaireResultId(questionnaireResultId);
+            java.util.List<java.util.Map<String, Object>> payload = new java.util.ArrayList<>();
+            if (dimList != null) {
+                for (DimensionResultDO dr : dimList) {
+                    java.util.Map<String, Object> item = new java.util.LinkedHashMap<>();
+                    item.put("dimensionId", dr.getDimensionId());
+                    item.put("dimensionCode", dr.getDimensionCode());
+                    item.put("score", dr.getScore());
+                    item.put("isAbnormal", dr.getIsAbnormal());
+                    item.put("riskLevel", dr.getRiskLevel());
+                    item.put("level", dr.getLevel());
+                    item.put("teacherComment", dr.getTeacherComment());
+                    item.put("studentComment", dr.getStudentComment());
+                    item.put("questionnaireId", questionnaireId);
+                    // 维度名称与描述
+                    String dimName = null;
+                    String dimDesc = null;
+                    try {
+                        var dimVO = questionnaireDimensionService.getDimension(dr.getDimensionId());
+                        if (dimVO != null) {
+                            dimName = dimVO.getDimensionName();
+                            dimDesc = dimVO.getDescription();
+                        }
+                    } catch (Exception ignore) {}
+                    if (dimName == null || dimName.isEmpty()) {
+                        dimName = dr.getDimensionCode() != null ? dr.getDimensionCode() : ("DIM-" + dr.getDimensionId());
+                    }
+                    item.put("dimensionName", dimName);
+                    item.put("description", dimDesc);
+                    payload.add(item);
+                }
+            }
+            resultDO.setResultData(com.alibaba.fastjson.JSON.toJSONString(payload));
+        } catch (Exception e) {
+            // 失败不阻塞主流程
+            log.warn("写入问卷维度明细失败 questionnaireResultId={}, err= {}", questionnaireResultId, e.getMessage());
+        }
         resultDO.setCompletedTime(new Date());
         questionnaireResultMapper.updateById(resultDO);
         return resultDO;
