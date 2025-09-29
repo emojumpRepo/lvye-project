@@ -28,6 +28,9 @@ import java.util.List;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.ResultGenerationContext;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.ResultGeneratorFactory;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.AssessmentResultVO;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireDimensionService;
+import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.DimensionResultMapper;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.DimensionResultDO;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.QuestionnaireResultVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +68,12 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     private StudentProfileMapper studentProfileMapper;
     @Resource
     private ResultGeneratorFactory resultGeneratorFactory;
+    @Resource
+    private ExpressionExecutor expressionExecutor; // 预留用于模块/测评层的表驱动规则执行
+    @Resource
+    private QuestionnaireDimensionService questionnaireDimensionService;
+    @Resource
+    private DimensionResultMapper dimensionResultMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -366,11 +375,51 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                             detailVO.setCompletedTime(originalResult.getCompletedTime());
                             detailVO.setGenerationStatus(originalResult.getGenerationStatus());
                             detailVO.setGenerationStatusDescription(getGenerationStatusDescription(originalResult.getGenerationStatus()));
+
+                            // 直接查询维度结果表，返回结构化维度明细
+                            try {
+                                java.util.List<DimensionResultDO> dimList =
+                                    dimensionResultMapper.selectListByQuestionnaireResultId(originalResult.getId());
+                                if (dimList != null && !dimList.isEmpty()) {
+                                    java.util.List<AssessmentResultDetailRespVO.DimensionDetailVO> dimsVO = new java.util.ArrayList<>();
+                                    for (DimensionResultDO dr : dimList) {
+                                        AssessmentResultDetailRespVO.DimensionDetailVO dvo = new AssessmentResultDetailRespVO.DimensionDetailVO();
+                                        dvo.setDimensionId(dr.getDimensionId());
+                                        // 名称
+                                        String dimName = null;
+                                        String dimDesc = null;
+                                        try {
+                                            var dimVO = questionnaireDimensionService.getDimension(dr.getDimensionId());
+                                            if (dimVO != null) {
+                                                dimName = dimVO.getDimensionName();
+                                                dimDesc = dimVO.getDescription();
+                                            }
+                                        } catch (Exception ignore) {}
+                                        if (dimName == null || dimName.isEmpty()) {
+                                            dimName = dr.getDimensionCode() != null ? dr.getDimensionCode() : ("DIM-" + dr.getDimensionId());
+                                        }
+                                        dvo.setName(dimName);
+                                        dvo.setScore(dr.getScore());
+                                        dvo.setIsAbnormal(dr.getIsAbnormal());
+                                        dvo.setRiskLevel(dr.getRiskLevel());
+                                        dvo.setLevel(dr.getLevel());
+                                        dvo.setTeacherComment(dr.getTeacherComment());
+                                        dvo.setStudentComment(dr.getStudentComment());
+                                        dvo.setDescription(dimDesc);
+                                        dimsVO.add(dvo);
+                                    }
+                                    detailVO.setDimensions(dimsVO);
+                                }
+                            } catch (Exception e) {
+                                log.warn("查询维度结果失败, questionnaireResultId={}", originalResult.getId(), e);
+                            }
                             break;
                         }
                     }
-
-                    questionnaireResults.add(detailVO);
+                    // 仅返回包含维度明细的问卷
+                    if (detailVO.getDimensions() != null && !detailVO.getDimensions().isEmpty()) {
+                        questionnaireResults.add(detailVO);
+                    }
                 }
             } catch (Exception e) {
                 log.error("解析问卷结果JSON失败, id={}", id, e);
