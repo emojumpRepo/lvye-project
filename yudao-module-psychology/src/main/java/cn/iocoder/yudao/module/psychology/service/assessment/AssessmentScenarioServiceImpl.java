@@ -3,13 +3,14 @@ package cn.iocoder.yudao.module.psychology.service.assessment;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
-import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
+import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioPageReqVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentScenarioMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentScenarioSlotMapper;
+import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import org.springframework.validation.annotation.Validated;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.ArrayList;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.*;
@@ -93,11 +95,13 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
     }
 
     @Override
+    @TenantIgnore
     public AssessmentScenarioDO getScenario(Long id) {
         return scenarioMapper.selectById(id);
     }
 
     @Override
+    @TenantIgnore
     public List<AssessmentScenarioVO> getActiveScenarioList() {
         List<AssessmentScenarioDO> activeList = scenarioMapper.selectList(AssessmentScenarioDO::getIsActive, true);
         if (activeList == null || activeList.isEmpty()) {
@@ -112,26 +116,34 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
             boolean allSlotsLinkedToQuestionnaire = true;
             java.util.List<AssessmentScenarioVO.ScenarioSlotVO> slotVOs = new java.util.ArrayList<>();
             for (AssessmentScenarioSlotDO slot : slots) {
-                if (slot.getQuestionnaireId() == null) {
+                if (slot.getQuestionnaireIds() == null || slot.getQuestionnaireIds().trim().isEmpty()) {
                     allSlotsLinkedToQuestionnaire = false;
                     break;
                 }
                 AssessmentScenarioVO.ScenarioSlotVO slotVO = BeanUtils.toBean(slot, AssessmentScenarioVO.ScenarioSlotVO.class);
+                
+                // 直接返回逗号分隔字符串给VO
+                slotVO.setQuestionnaireIds(slot.getQuestionnaireIds());
+                
                 // 查询问卷详情并填充
-                QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(slot.getQuestionnaireId());
-                if (questionnaire != null) {
-                    ScenarioQuestionnaireAccessVO info = new ScenarioQuestionnaireAccessVO();
-                    info.setId(questionnaire.getId());
-                    info.setTitle(questionnaire.getTitle());
-                    info.setDescription(questionnaire.getDescription());
-                    info.setQuestionnaireType(questionnaire.getQuestionnaireType());
-                    info.setTargetAudience(questionnaire.getTargetAudience());
-                    info.setQuestionCount(questionnaire.getQuestionCount());
-                    info.setExternalLink(questionnaire.getExternalLink());
-                    info.setEstimatedDuration(questionnaire.getEstimatedDuration());
-                    info.setStatus(questionnaire.getStatus());
-                    slotVO.setQuestionnaire(info);
+                List<ScenarioQuestionnaireAccessVO> questionnaires = new java.util.ArrayList<>();
+                for (Long questionnaireId : parseQuestionnaireIds(slot.getQuestionnaireIds())) {
+                    QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
+                    if (questionnaire != null) {
+                        ScenarioQuestionnaireAccessVO info = new ScenarioQuestionnaireAccessVO();
+                        info.setId(questionnaire.getId());
+                        info.setTitle(questionnaire.getTitle());
+                        info.setDescription(questionnaire.getDescription());
+                        info.setQuestionnaireType(questionnaire.getQuestionnaireType());
+                        info.setTargetAudience(questionnaire.getTargetAudience());
+                        info.setQuestionCount(questionnaire.getQuestionCount());
+                        info.setExternalLink(questionnaire.getExternalLink());
+                        info.setEstimatedDuration(questionnaire.getEstimatedDuration());
+                        info.setStatus(questionnaire.getStatus());
+                        questionnaires.add(info);
+                    }
                 }
+                slotVO.setQuestionnaires(questionnaires);
                 slotVOs.add(slotVO);
             }
             if (!allSlotsLinkedToQuestionnaire) {
@@ -145,6 +157,7 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
     }
 
     @Override
+    @TenantIgnore
     public PageResult<AssessmentScenarioDO> getScenarioPage(AssessmentScenarioPageReqVO pageReqVO) {
         return scenarioMapper.selectPage(pageReqVO, new LambdaQueryWrapperX<AssessmentScenarioDO>()
                 .likeIfPresent(AssessmentScenarioDO::getCode, pageReqVO.getCode())
@@ -155,7 +168,15 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
 
     @Override
     public List<AssessmentScenarioSlotDO> getScenarioSlots(Long scenarioId) {
-        return scenarioSlotMapper.selectListByScenarioId(scenarioId);
+        List<AssessmentScenarioSlotDO> slots = scenarioSlotMapper.selectListByScenarioId(scenarioId);
+        if (slots != null) {
+            for (AssessmentScenarioSlotDO slot : slots) {
+                // 解析逗号分隔字符串为数字数组，便于前端直接使用
+                List<Long> ids = parseQuestionnaireIds(slot.getQuestionnaireIds());
+                slot.setQuestionnaireIdList(ids);
+            }
+        }
+        return slots;
     }
 
     @Override
@@ -187,6 +208,7 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
     }
 
     @Override
+    @TenantIgnore
     public cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO getScenarioQuestionnaire(Long id, Long userId) {
         AssessmentScenarioDO scenario = scenarioMapper.selectById(id);
         if (scenario == null) {
@@ -203,8 +225,14 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
                 cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO.ScenarioSlotVO slotVO = BeanUtils.toBean(
                         slot,
                         cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.AssessmentScenarioVO.ScenarioSlotVO.class);
-                if (slot.getQuestionnaireId() != null) {
-                    cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(slot.getQuestionnaireId());
+                
+                // 直接返回逗号分隔字符串给VO
+                slotVO.setQuestionnaireIds(slot.getQuestionnaireIds());
+                
+                // 查询问卷详情并填充
+                List<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioQuestionnaireAccessVO> questionnaires = new ArrayList<>();
+                for (Long questionnaireId : parseQuestionnaireIds(slot.getQuestionnaireIds())) {
+                    cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
                     if (questionnaire != null) {
                         cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioQuestionnaireAccessVO info = new cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.ScenarioQuestionnaireAccessVO();
                         info.setId(questionnaire.getId());
@@ -216,9 +244,10 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
                         info.setExternalLink(questionnaire.getExternalLink());
                         info.setEstimatedDuration(questionnaire.getEstimatedDuration());
                         info.setStatus(questionnaire.getStatus());
-                        slotVO.setQuestionnaire(info);
+                        questionnaires.add(info);
                     }
                 }
+                slotVO.setQuestionnaires(questionnaires);
                 slotVOs.add(slotVO);
             }
         }
@@ -243,7 +272,6 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
         AssessmentScenarioDO scenario = scenarioMapper.selectOne(
             new LambdaQueryWrapperX<AssessmentScenarioDO>()
                 .eq(AssessmentScenarioDO::getCode, code)
-                .eq(AssessmentScenarioDO::getTenantId, TenantContextHolder.getRequiredTenantId())
         );
         if (scenario != null && !scenario.getId().equals(id)) {
             throw exception(ASSESSMENT_SCENARIO_CODE_DUPLICATE);
@@ -260,6 +288,8 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
         for (AssessmentScenarioVO.ScenarioSlotVO slotVO : slotVOs) {
             AssessmentScenarioSlotDO slot = BeanUtils.toBean(slotVO, AssessmentScenarioSlotDO.class);
             slot.setScenarioId(scenarioId);
+            // 序列化问卷ID列表为JSON字符串
+            slot.setQuestionnaireIds(serializeQuestionnaireIds(slotVO.getQuestionnaireIds()));
             // 清除ID，让数据库自动生成新的主键，避免主键冲突
             slot.setId(null);
             scenarioSlotMapper.insert(slot);
@@ -305,4 +335,26 @@ public class AssessmentScenarioServiceImpl implements AssessmentScenarioService 
             }
         }
     }
+
+    /**
+     * 解析问卷ID列表JSON字符串
+     */
+    private List<Long> parseQuestionnaireIds(String questionnaireIdsStr) {
+        if (questionnaireIdsStr == null || questionnaireIdsStr.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Long> list = new ArrayList<>();
+        for (String part : questionnaireIdsStr.split(",")) {
+            String s = part.trim();
+            if (!s.isEmpty()) {
+                try { list.add(Long.parseLong(s)); } catch (Exception ignore) {}
+            }
+        }
+        return list;
+    }
+
+    /**
+     * 序列化问卷ID列表为JSON字符串
+     */
+    private String serializeQuestionnaireIds(String questionnaireIds) { return questionnaireIds; }
 }
