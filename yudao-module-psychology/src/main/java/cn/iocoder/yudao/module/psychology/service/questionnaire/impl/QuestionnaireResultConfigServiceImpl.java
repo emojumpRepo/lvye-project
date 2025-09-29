@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.psychology.service.questionnaire.impl;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigPageReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigSaveReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigRespVO;
 import cn.iocoder.yudao.module.psychology.convert.questionnaire.QuestionnaireResultConfigConvert;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultConfigDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultConfigMapper;
@@ -63,13 +64,13 @@ public class QuestionnaireResultConfigServiceImpl implements QuestionnaireResult
     }
 
     @Override
-    public QuestionnaireResultConfigDO getQuestionnaireResultConfig(Long id) {
-        return questionnaireResultConfigMapper.selectById(id);
+    public QuestionnaireResultConfigRespVO getQuestionnaireResultConfig(Long id) {
+        return QuestionnaireResultConfigConvert.INSTANCE.convert(questionnaireResultConfigMapper.selectById(id));
     }
 
     @Override
-    public PageResult<QuestionnaireResultConfigDO> getQuestionnaireResultConfigPage(QuestionnaireResultConfigPageReqVO pageReqVO) {
-        return questionnaireResultConfigMapper.selectPage(pageReqVO);
+    public PageResult<QuestionnaireResultConfigRespVO> getQuestionnaireResultConfigPage(QuestionnaireResultConfigPageReqVO pageReqVO) {
+        return QuestionnaireResultConfigConvert.INSTANCE.convertPage(questionnaireResultConfigMapper.selectPage(pageReqVO));
     }
 
     @Override

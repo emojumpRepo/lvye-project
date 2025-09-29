@@ -16,7 +16,6 @@ import lombok.ToString;
 public class QuestionnaireWithSurveyRespVO extends QuestionnaireRespVO {
 
     @Schema(description = "问卷编码（外部系统提供的编码）", example = "ABC123")
-    @JsonProperty("survey_code")
     private String surveyCode;
 }
 

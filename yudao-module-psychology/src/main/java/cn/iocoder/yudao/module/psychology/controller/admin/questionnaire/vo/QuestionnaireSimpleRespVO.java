@@ -24,6 +24,9 @@ public class QuestionnaireSimpleRespVO {
     @Schema(description = "目标对象", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer targetAudience;
 
+    @Schema(description = "问卷编码", example = "SURVEY_001")
+    private String surveyCode;
+
     @Schema(description = "测评维度标签列表", example = "[\"情绪状态\", \"压力水平\"]")
     private List<String> assessmentDimensionLabels;
 

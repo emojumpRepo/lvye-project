@@ -26,6 +26,9 @@ public class AssessmentTaskStatisticsRespVO {
     @Schema(description = "完成率", requiredMode = Schema.RequiredMode.REQUIRED, example = "80.0")
     private BigDecimal completionRate;
 
+    @Schema(description = "风险等级统计")
+    private List<RiskLevelStatisticsVO> riskLevelStatistics;
+
     @Schema(description = "部门统计树，includeDeptTree=1 时返回")
     private List<AssessmentDeptNodeVO> deptTree;
 

@@ -26,6 +26,9 @@ public class QuestionnairePageReqVO extends PageParam {
     @Schema(description = "目标对象", example = "1")
     private Integer targetAudience;
 
+    @Schema(description = "问卷编码", example = "SURVEY_001")
+    private String surveyCode;
+
     @Schema(description = "状态", example = "1")
     private Integer status;
 

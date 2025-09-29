@@ -7,16 +7,21 @@ import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.RiskLevelInterventionVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentResultDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentResultMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentScenarioMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.enums.ResultGeneratorTypeEnum;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.QuestionnaireResultVO;
+import cn.iocoder.yudao.module.psychology.util.RiskLevelUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +38,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
@@ -48,6 +55,10 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     private AssessmentUserTaskMapper assessmentUserTaskMapper;
     @Resource
     private AssessmentResultMapper assessmentResultMapper;
+    @Resource
+    private AssessmentTaskMapper assessmentTaskMapper;
+    @Resource
+    private AssessmentScenarioMapper assessmentScenarioMapper;
     @Resource
     private QuestionnaireMapper questionnaireMapper;
     @Resource
@@ -94,6 +105,95 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
             if (r.getDimensionScores() != null) {
                 dimScores = JsonUtils.parseObjectQuietly(r.getDimensionScores(), new TypeReference<Map<String, BigDecimal>>() {});
             }
+            
+            // 解析维度异常状态（从resultData中提取）
+            Map<String, Boolean> dimAbnormalStatus = null;
+            if (r.getResultData() != null) {
+                try {
+                    // 输出resultData用于调试
+                    String preview = r.getResultData().length() > 300 ? 
+                        r.getResultData().substring(0, 300) + "..." : r.getResultData();
+                    log.info("问卷ID={} resultData预览: {}", r.getQuestionnaireId(), preview);
+                    
+                    // resultData 可能是数组格式
+                    if (r.getResultData().trim().startsWith("[")) {
+                        // 解析为数组
+                        List<Map> rawDataList = JsonUtils.parseArray(r.getResultData(), Map.class);
+                        
+                        if (rawDataList != null && !rawDataList.isEmpty()) {
+                            dimAbnormalStatus = new HashMap<>();
+                            int totalAbnormal = 0;
+                            
+                            for (Map dimension : rawDataList) {
+                                String dimensionName = (String) dimension.get("dimensionName");
+                                Object isAbnormalObj = dimension.get("isAbnormal");
+                                
+                                if (dimensionName != null && isAbnormalObj != null) {
+                                    Boolean isAbnormal = null;
+                                    if (isAbnormalObj instanceof Boolean) {
+                                        isAbnormal = (Boolean) isAbnormalObj;
+                                    } else if (isAbnormalObj instanceof Integer) {
+                                        isAbnormal = ((Integer) isAbnormalObj) == 1;
+                                    } else if (isAbnormalObj instanceof String) {
+                                        isAbnormal = "1".equals(isAbnormalObj);
+                                    }
+                                    
+                                    if (isAbnormal != null) {
+                                        dimAbnormalStatus.put(dimensionName, isAbnormal);
+                                        if (isAbnormal) {
+                                            totalAbnormal++;
+                                        }
+                                        log.info("维度 [{}] 异常状态: isAbnormal={}", dimensionName, isAbnormal);
+                                    }
+                                }
+                            }
+                            
+                            // 添加整体异常判断（如果有任何维度异常，则整体异常）
+                            dimAbnormalStatus.put("overall", totalAbnormal > 0);
+                            log.info("问卷ID={} 解析到{}个维度，{}个维度异常，整体异常状态={}", 
+                                r.getQuestionnaireId(), rawDataList.size(), totalAbnormal, totalAbnormal > 0);
+                        }
+                    } else {
+                        // 尝试解析为对象格式（兼容其他可能的格式）
+                        Map<String, Object> resultDataMap = JsonUtils.parseObjectQuietly(
+                            r.getResultData(), 
+                            new TypeReference<Map<String, Object>>() {}
+                        );
+                        
+                        if (resultDataMap != null) {
+                            // 直接获取根级别的 isAbnormal 字段
+                            Object isAbnormalObj = resultDataMap.get("isAbnormal");
+                            if (isAbnormalObj != null) {
+                                Boolean questionnaireAbnormal = null;
+                                if (isAbnormalObj instanceof Boolean) {
+                                    questionnaireAbnormal = (Boolean) isAbnormalObj;
+                                } else if (isAbnormalObj instanceof Integer) {
+                                    questionnaireAbnormal = ((Integer) isAbnormalObj) == 1;
+                                } else if (isAbnormalObj instanceof String) {
+                                    questionnaireAbnormal = "1".equals(isAbnormalObj);
+                                }
+                                
+                                if (questionnaireAbnormal != null) {
+                                    dimAbnormalStatus = new HashMap<>();
+                                    dimAbnormalStatus.put("overall", questionnaireAbnormal);
+                                    log.info("问卷ID={} 整体异常状态(从对象格式解析): isAbnormal={}", 
+                                        r.getQuestionnaireId(), questionnaireAbnormal);
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (dimAbnormalStatus == null || dimAbnormalStatus.isEmpty()) {
+                        log.warn("未能解析异常状态，问卷ID={}，resultData可能格式不同", r.getQuestionnaireId());
+                    }
+                } catch (Exception e) {
+                    log.error("解析异常状态失败, questionnaireResultId={}, questionnaireId={}", 
+                        r.getId(), r.getQuestionnaireId(), e);
+                }
+            } else {
+                log.warn("问卷ID={} 的 resultData 为空", r.getQuestionnaireId());
+            }
+            
             QuestionnaireResultVO vo = QuestionnaireResultVO.builder()
                     .questionnaireId(r.getQuestionnaireId())
                     .rawScore(r.getScore() == null ? BigDecimal.ZERO : r.getScore())
@@ -101,6 +201,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                     .riskLevel(r.getRiskLevel())
                     .levelDescription(r.getEvaluate())
                     .dimensionScores(dimScores)
+                    .dimensionAbnormalStatus(dimAbnormalStatus)  // 添加维度异常状态
                     .reportContent(r.getResultData())
                     .suggestions(r.getSuggestions())
                     .build();
@@ -112,12 +213,44 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         // participantId 使用学生档案ID
         Long participantId = studentProfileId;
 
+        // 查询场景编码
+        String scenarioCode = null;
+        AssessmentTaskDO assessmentTask = assessmentTaskMapper.selectByTaskNo(taskNo);
+        if (assessmentTask != null && assessmentTask.getScenarioId() != null) {
+            AssessmentScenarioDO scenario = assessmentScenarioMapper.selectById(assessmentTask.getScenarioId());
+            if (scenario != null) {
+                scenarioCode = scenario.getCode();
+                log.info("测评任务关联场景: taskNo={}, scenarioId={}, scenarioCode={}", 
+                        taskNo, assessmentTask.getScenarioId(), scenarioCode);
+            }
+        }
+
+        // 构建问卷ID到编码的映射
+        Map<Long, String> questionnaireCodeMap = new HashMap<>();
+        List<Long> questionnaireIds = resultDOList.stream()
+                .map(QuestionnaireResultDO::getQuestionnaireId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        if (!questionnaireIds.isEmpty()) {
+            List<QuestionnaireDO> questionnaires = questionnaireMapper.selectListByIds(questionnaireIds);
+            for (QuestionnaireDO questionnaire : questionnaires) {
+                if (questionnaire.getSurveyCode() != null) {
+                    questionnaireCodeMap.put(questionnaire.getId(), questionnaire.getSurveyCode());
+                    log.info("问卷编码映射: questionnaireId={}, surveyCode={}", 
+                            questionnaire.getId(), questionnaire.getSurveyCode());
+                }
+            }
+        }
+
         // 2) 调用生成器生成组合测评结果
         ResultGenerationContext context = ResultGenerationContext.builder()
                 .generationType(ResultGeneratorTypeEnum.COMBINED_ASSESSMENT)
                 .assessmentId(userTask != null ? userTask.getId() : null) // 暂以参与者任务ID代替assessmentId概念
                 .userId(userId) // 这里使用系统用户ID
                 .questionnaireResults(questionnaireResults)
+                .scenarioCode(scenarioCode)  // 传递场景编码
+                .questionnaireCodeMap(questionnaireCodeMap)  // 传递问卷编码映射
                 .build();
         AssessmentResultVO resultVO = resultGeneratorFactory.generateResult(ResultGeneratorTypeEnum.COMBINED_ASSESSMENT, context);
 
@@ -150,6 +283,10 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
             assessmentResultMapper.updateById(save);
             log.info("已保存组合测评结果(更新), participantId={}, id={}", participantId, save.getId());
         }
+        
+        // 5) 更新user_task表的risk_level字段
+        updateUserTaskRiskLevel(taskNo, userId, resultVO.getCombinedRiskLevel());
+        
         return save.getId();
     }
 
@@ -270,21 +407,8 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
      * 获取风险等级描述
      */
     private String getRiskLevelDescription(Integer riskLevel) {
-        if (riskLevel == null) {
-            return "未知";
-        }
-        switch (riskLevel) {
-            case 1:
-                return "正常";
-            case 2:
-                return "关注";
-            case 3:
-                return "预警";
-            case 4:
-                return "高风险";
-            default:
-                return "未知";
-        }
+        // 使用字典获取风险等级名称
+        return RiskLevelUtils.getRiskLevelNameFromDict(riskLevel);
     }
 
     /**
@@ -305,6 +429,27 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 return "生成失败";
             default:
                 return "未知";
+        }
+    }
+    
+    /**
+     * 更新用户任务表的风险等级
+     */
+    private void updateUserTaskRiskLevel(String taskNo, Long userId, Integer riskLevel) {
+        if (taskNo == null || userId == null || riskLevel == null) {
+            return;
+        }
+        
+        AssessmentUserTaskDO userTask = assessmentUserTaskMapper.selectOne(
+            new LambdaQueryWrapperX<AssessmentUserTaskDO>()
+                .eq(AssessmentUserTaskDO::getTaskNo, taskNo)
+                .eq(AssessmentUserTaskDO::getUserId, userId)
+        );
+        
+        if (userTask != null) {
+            userTask.setRiskLevel(riskLevel);
+            assessmentUserTaskMapper.updateById(userTask);
+            log.info("已更新用户任务风险等级, taskNo={}, userId={}, riskLevel={}", taskNo, userId, riskLevel);
         }
     }
 }

@@ -60,7 +60,7 @@ CREATE TABLE `lvye_assessment_scenario` (
     `deleted` BIT(1) DEFAULT b'0' COMMENT '是否删除',
     `tenant_id` BIGINT DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`) USING BTREE,
-    UNIQUE KEY `uk_code` (`code`) USING BTREE,
+    UNIQUE KEY `uk_tenant_code` (`tenant_id`, `code`) USING BTREE,
     KEY `idx_is_active` (`is_active`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评场景定义表';
 

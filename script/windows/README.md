@@ -26,8 +26,8 @@
 ## 本地构建产物位置
 
 - 前端 ZIP：
-  - Admin：`yudao-ui/lvye-project-frontend/apps/admin/dist.zip`
-  - Web：`yudao-ui/lvye-project-frontend/apps/web/dist.zip`
+  - Admin：`yudao-ui/mindtrip-project-frontend/apps/admin/dist.zip`
+  - Web：`yudao-ui/mindtrip-project-frontend/apps/web/dist.zip`
 - 后端 JAR：`yudao-server/target/yudao-server.jar`
 
 ## 依赖要求
@@ -72,7 +72,7 @@
 - 前端：
   ```bash
   # Admin
-  cd yudao-ui/lvye-project-frontend/apps/admin && pnpm install && pnpm build  # 生成 dist.zip
+  cd yudao-ui/mindtrip-project-frontend/apps/admin && pnpm install && pnpm build  # 生成 dist.zip
   cd ../../../..
   npm run deploy:frontend
   # 选择 1（Admin），输入服务器密码，等待完成

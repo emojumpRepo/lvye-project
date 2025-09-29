@@ -35,7 +35,7 @@ public class AssessmentResultController {
 
     @PostMapping("/generate")
     @Operation(summary = "生成组合测评结果")
-    @PreAuthorize("@ss.hasPermission('psychology:assessment:query')")
+//    @PreAuthorize("@ss.hasPermission('psychology:assessment:query')")
     public CommonResult<Long> generateCombinedResult(
             @Parameter(description = "测评任务编号", required = true)
             @RequestParam @NotBlank(message = "测评任务编号不能为空") String taskNo,

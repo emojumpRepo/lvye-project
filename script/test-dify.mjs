@@ -10,7 +10,7 @@ import chalk from 'chalk';
 import { execSync } from 'child_process';
 
 const CONFIG = {
-  apiKey: 'app-27WVHbSe1uUxcd54gDGKySl1',
+  apiKey: 'app-LTUF7HU291Ug9LAKD4ZC4ZHO',
   apiUrl: 'http://154.9.255.162/v1'
 };
 

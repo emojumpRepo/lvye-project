@@ -27,6 +27,9 @@ public class AssessmentDeptNodeVO {
     @Schema(description = "完成率，百分比，两位小数")
     private BigDecimal completionRate;
 
+    @Schema(description = "风险等级统计")
+    private List<RiskLevelStatisticsVO> riskLevelStatistics;
+
     @Schema(description = "子节点（班级列表，仅年级节点包含）")
     private List<AssessmentDeptNodeVO> children;
 }

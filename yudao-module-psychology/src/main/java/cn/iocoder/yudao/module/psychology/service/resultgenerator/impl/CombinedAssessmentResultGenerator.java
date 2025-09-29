@@ -5,6 +5,8 @@ import cn.iocoder.yudao.module.psychology.enums.RiskLevelEnum;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.ResultGenerationContext;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.ResultGeneratorStrategy;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.*;
+import cn.iocoder.yudao.module.psychology.util.RiskLevelUtils;
+import cn.iocoder.yudao.module.psychology.util.RiskLevelStrategyManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -36,19 +38,21 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
     @Override
     @SuppressWarnings("unchecked")
     public <T> T generateResult(ResultGenerationContext context) {
-        log.info("开始生成组合测评结果，测评ID: {}", context.getAssessmentId());
+        log.info("开始生成组合测评结果，测评ID: {}, 场景编码: {}", 
+            context.getAssessmentId(), context.getScenarioCode());
 
         // 1. 获取所有关联的问卷结果
         List<QuestionnaireResultVO> questionnaireResults = context.getQuestionnaireResults();
 
-        // 2. 获取组合测评配置
-        AssessmentConfigVO config = getAssessmentConfig(context.getAssessmentId());
+        // 2. 获取组合测评配置（传入context以获取场景信息）
+        AssessmentConfigVO config = getAssessmentConfig(context);
 
         // 3. 计算加权综合得分
         BigDecimal combinedScore = calculateCombinedScore(questionnaireResults, config.getWeightConfig());
 
-        // 4. 确定综合风险等级
-        RiskLevelEnum combinedRiskLevel = determineCombinedRiskLevel(questionnaireResults, config);
+        // 4. 确定综合风险等级（传入问卷编码映射）
+        RiskLevelEnum combinedRiskLevel = determineCombinedRiskLevel(
+            questionnaireResults, config, context.getQuestionnaireCodeMap());
 
         // 5. 分析风险因素
         List<RiskFactorVO> riskFactors = analyzeRiskFactors(questionnaireResults, config);
@@ -70,8 +74,11 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                 .comprehensiveReport(comprehensiveReport)
                 .questionnaireResults(questionnaireResults)
                 .build();
+        
+        // 获取场景特定的风险等级名称用于日志
+        String riskLevelName = getScenarioSpecificRiskLevelName(combinedRiskLevel, config.getScenarioCode());
 
-        log.info("组合测评结果生成完成，综合风险等级: {}", combinedRiskLevel.getName());
+        log.info("组合测评结果生成完成，综合风险等级: {}", riskLevelName);
         return (T) result;
     }
 
@@ -107,11 +114,14 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
     /**
      * 获取测评配置
      */
-    private AssessmentConfigVO getAssessmentConfig(Long assessmentId) {
+    private AssessmentConfigVO getAssessmentConfig(ResultGenerationContext context) {
         // TODO: 从数据库或缓存中获取测评配置
         // 这里返回一个模拟的配置
         AssessmentConfigVO config = new AssessmentConfigVO();
-        config.setAssessmentId(assessmentId);
+        config.setAssessmentId(context.getAssessmentId());
+        
+        // 从context获取场景编码
+        config.setScenarioCode(context.getScenarioCode());
 
         // 设置默认的权重配置
         WeightConfigVO weightConfig = new WeightConfigVO();
@@ -153,7 +163,27 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
      * 确定综合风险等级
      */
     private RiskLevelEnum determineCombinedRiskLevel(List<QuestionnaireResultVO> results,
-                                                   AssessmentConfigVO config) {
+                                                   AssessmentConfigVO config,
+                                                   Map<Long, String> questionnaireCodeMap) {
+        // 检查是否为CAMPUS_TRIP场景，如果是则应用PHCSS规则
+        // CAMPUS_TRIP场景应该只基于mental_health_survey问卷的异常维度数来判断
+        if ("CAMPUS_TRIP".equals(config.getScenarioCode())) {
+            // 通过问卷编码映射找到mental_health_survey对应的结果
+            Optional<QuestionnaireResultVO> mentalHealthResult = results.stream()
+                    .filter(r -> {
+                        String code = questionnaireCodeMap.get(r.getQuestionnaireId());
+                        return "mental_health_survey".equals(code);
+                    })
+                    .findFirst();
+            
+            if (mentalHealthResult.isPresent()) {
+                log.info("应用CAMPUS_TRIP场景规则，使用mental_health_survey问卷结果");
+                return applyCampusTripRule(mentalHealthResult.get());
+            } else {
+                log.warn("CAMPUS_TRIP场景未找到mental_health_survey问卷结果，使用默认规则");
+            }
+        }
+        
         // 检查是否包含PHCSS问卷（ID=12），如果有则应用PHCSS规则
         Optional<QuestionnaireResultVO> phcssResult = results.stream()
                 .filter(r -> Long.valueOf(12L).equals(r.getQuestionnaireId()))
@@ -335,12 +365,15 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                                              List<RiskFactorVO> riskFactors,
                                              AssessmentConfigVO config) {
         StringBuilder report = new StringBuilder();
+        
+        // 获取场景特定的风险等级名称
+        String riskLevelName = getScenarioSpecificRiskLevelName(combinedRiskLevel, config.getScenarioCode());
 
         report.append("综合测评结果报告\n");
         report.append("===================\n\n");
 
         report.append("综合得分: ").append(combinedScore).append("\n");
-        report.append("综合风险等级: ").append(combinedRiskLevel.getName()).append("\n\n");
+        report.append("综合风险等级: ").append(riskLevelName).append("\n\n");
 
         report.append("各问卷结果汇总:\n");
         for (QuestionnaireResultVO result : questionnaireResults) {
@@ -348,7 +381,8 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                   .append(": 标准分 ").append(result.getStandardScore())
                   .append(", 风险等级 ");
             RiskLevelEnum rle = safeRiskLevel(result.getRiskLevel());
-            report.append(rle != null ? rle.getName() : "未知");
+            String resultRiskName = getScenarioSpecificRiskLevelName(rle, config.getScenarioCode());
+            report.append(rle != null ? resultRiskName : "未知");
             // 来自 evaluate_config 的单卷评价/建议（在问卷结果阶段已计算），这里统一拼接到综合报告
             if (result.getLevelDescription() != null && !result.getLevelDescription().isEmpty()) {
                 report.append("，评价：").append(result.getLevelDescription());
@@ -367,18 +401,28 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
             }
         }
 
-        // 检查是否应用了PHCSS规则，如果是则添加PHCSS专用的评价和建议
-        Optional<QuestionnaireResultVO> phcssResult = questionnaireResults.stream()
-                .filter(r -> Long.valueOf(12L).equals(r.getQuestionnaireId()))
-                .findFirst();
-
-        if (phcssResult.isPresent()) {
+        // 检查是否应用了CAMPUS_TRIP规则，如果是则添加专用的评价和建议
+        if ("CAMPUS_TRIP".equals(config.getScenarioCode())) {
             String phcssEvaluation = getPhcssEvaluation(combinedRiskLevel);
             String phcssSuggestion = getPhcssSuggestion(combinedRiskLevel);
 
-            report.append("\n=== PHCSS测评结果解读 ===\n");
+            report.append("\n=== 心理健康测评结果解读 ===\n");
             report.append("评价：").append(phcssEvaluation).append("\n");
             report.append("建议：").append(phcssSuggestion).append("\n");
+        } else {
+            // 检查是否应用了PHCSS规则（兼容旧逻辑）
+            Optional<QuestionnaireResultVO> phcssResult = questionnaireResults.stream()
+                    .filter(r -> Long.valueOf(12L).equals(r.getQuestionnaireId()))
+                    .findFirst();
+
+            if (phcssResult.isPresent()) {
+                String phcssEvaluation = getPhcssEvaluation(combinedRiskLevel);
+                String phcssSuggestion = getPhcssSuggestion(combinedRiskLevel);
+
+                report.append("\n=== PHCSS测评结果解读 ===\n");
+                report.append("评价：").append(phcssEvaluation).append("\n");
+                report.append("建议：").append(phcssSuggestion).append("\n");
+            }
         }
 
         return report.toString();
@@ -428,8 +472,8 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
 
         log.info("PHCSS规则判定：共{}个维度低于临界值", belowThresholdCount);
 
-        // 根据低于界值的维度数量映射风险等级
-        return mapPhcssCountToRiskLevel(belowThresholdCount);
+        // 使用统一的风险等级策略管理器判断
+        return RiskLevelStrategyManager.determineRiskLevelByAbnormalCount(belowThresholdCount);
     }
 
     /**
@@ -460,20 +504,6 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
         return thresholds;
     }
 
-    /**
-     * 将PHCSS低于界值的维度数量映射到风险等级
-     */
-    private RiskLevelEnum mapPhcssCountToRiskLevel(int belowThresholdCount) {
-        if (belowThresholdCount == 0) {
-            return RiskLevelEnum.NORMAL; // 无/低风险
-        } else if (belowThresholdCount <= 2) {
-            return RiskLevelEnum.ATTENTION; // 轻度风险
-        } else if (belowThresholdCount == 3) {
-            return RiskLevelEnum.WARNING; // 中度风险
-        } else { // >= 4
-            return RiskLevelEnum.HIGH_RISK; // 重度风险
-        }
-    }
 
     /**
      * 获取PHCSS风险等级对应的评价文本
@@ -492,6 +522,16 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
                 return "心理状况评估结果未知。";
         }
     }
+    
+    /**
+     * 获取场景特定的风险等级名称
+     * @param riskLevel 风险等级枚举
+     * @param scenarioCode 场景编码
+     * @return 场景特定的风险等级名称
+     */
+    private String getScenarioSpecificRiskLevelName(RiskLevelEnum riskLevel, String scenarioCode) {
+        return RiskLevelUtils.getScenarioSpecificRiskLevelName(riskLevel, scenarioCode);
+    }
 
     /**
      * 获取PHCSS风险等级对应的建议文本
@@ -509,6 +549,47 @@ public class CombinedAssessmentResultGenerator implements ResultGeneratorStrateg
             default:
                 return "请咨询专业心理健康工作者获取进一步建议。";
         }
+    }
+    
+    /**
+     * 应用CAMPUS_TRIP场景规则
+     * 根据mental_health_survey问卷的异常维度数量确定风险等级
+     */
+    private RiskLevelEnum applyCampusTripRule(QuestionnaireResultVO mentalHealthResult) {
+        if (mentalHealthResult.getDimensionAbnormalStatus() == null || 
+            mentalHealthResult.getDimensionAbnormalStatus().isEmpty()) {
+            log.warn("mental_health_survey问卷结果缺少维度异常状态数据，使用兜底风险等级");
+            return RiskLevelEnum.NORMAL;
+        }
+        
+        // 统计异常维度数量（排除overall字段）
+        int abnormalCount = 0;
+        Map<String, Boolean> abnormalStatus = mentalHealthResult.getDimensionAbnormalStatus();
+        
+        log.info("CAMPUS_TRIP场景风险评估开始，mental_health_survey共{}个维度", 
+            abnormalStatus.size() - (abnormalStatus.containsKey("overall") ? 1 : 0));
+        
+        for (Map.Entry<String, Boolean> entry : abnormalStatus.entrySet()) {
+            String dimension = entry.getKey();
+            Boolean isAbnormal = entry.getValue();
+            
+            // 跳过overall字段，只统计具体维度
+            if ("overall".equals(dimension)) {
+                continue;
+            }
+            
+            if (Boolean.TRUE.equals(isAbnormal)) {
+                abnormalCount++;
+                log.info("维度 [{}] 异常", dimension);
+            } else {
+                log.info("维度 [{}] 正常", dimension);
+            }
+        }
+        
+        log.info("CAMPUS_TRIP规则判定：共{}个维度异常", abnormalCount);
+        
+        // 使用统一的风险等级策略管理器判断
+        return RiskLevelStrategyManager.determineRiskLevelByAbnormalCount(abnormalCount);
     }
 
 }

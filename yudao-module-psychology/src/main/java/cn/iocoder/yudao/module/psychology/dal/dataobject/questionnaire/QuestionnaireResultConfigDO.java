@@ -63,4 +63,14 @@ public class QuestionnaireResultConfigDO extends TenantBaseDO {
      */
     private Integer isAbnormal;
 
+    /**
+     * 等级：优秀、良好、一般、较差、很差
+     */
+    private String level;
+
+    /**
+     * 描述
+     */
+    private String description;
+
 }

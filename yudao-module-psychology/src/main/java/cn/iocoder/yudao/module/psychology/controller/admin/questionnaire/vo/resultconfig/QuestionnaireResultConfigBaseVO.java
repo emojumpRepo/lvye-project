@@ -42,4 +42,10 @@ public class QuestionnaireResultConfigBaseVO {
     @NotNull(message = "是否异常不能为空")
     private Integer isAbnormal;
 
+    @Schema(description = "等级：优秀、良好、一般、较差、很差", example = "优秀")
+    private String level;
+
+    @Schema(description = "描述", example = "用于说明该维度的解释与建议补充")
+    private String description;
+
 }
