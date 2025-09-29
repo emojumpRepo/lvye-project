@@ -96,6 +96,9 @@ public class AssessmentResultDetailRespVO {
         @Schema(description = "维度得分", example = "{\"dimension1\":45,\"dimension2\":40}")
         private String dimensionScores;
 
+        @Schema(description = "维度明细列表")
+        private java.util.List<DimensionDetailVO> dimensions;
+
         @Schema(description = "百分位排名", example = "75.5")
         private BigDecimal percentileRank;
 
@@ -113,5 +116,39 @@ public class AssessmentResultDetailRespVO {
 
         @Schema(description = "生成状态描述", example = "已生成")
         private String generationStatusDescription;
+    }
+
+    /**
+     * 维度明细
+     */
+    @Schema(description = "维度明细")
+    @Data
+    public static class DimensionDetailVO {
+        @Schema(description = "维度ID")
+        private Long dimensionId;
+
+        @Schema(description = "维度名称")
+        private String name;
+
+        @Schema(description = "分数")
+        private BigDecimal score;
+
+        @Schema(description = "是否异常(1异常/0正常)")
+        private Integer isAbnormal;
+
+        @Schema(description = "风险等级")
+        private Integer riskLevel;
+
+        @Schema(description = "等级描述")
+        private String level;
+
+        @Schema(description = "教师评语")
+        private String teacherComment;
+
+        @Schema(description = "学生评语")
+        private String studentComment;
+
+        @Schema(description = "维度描述")
+        private String description;
     }
 }
