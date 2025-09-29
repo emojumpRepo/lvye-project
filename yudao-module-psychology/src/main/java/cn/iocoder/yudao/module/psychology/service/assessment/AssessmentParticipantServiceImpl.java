@@ -28,7 +28,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
@@ -44,6 +45,8 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 @Validated
 @Slf4j
 public class AssessmentParticipantServiceImpl implements AssessmentParticipantService {
+
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Resource
     private AssessmentTaskService assessmentTaskService;
@@ -256,6 +259,7 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         resultDO.setGenerationStatus(1);
         String result = JSON.toJSONString(answerList);
         resultDO.setAnswers(result);
+        logger.info("问卷ID={} 保存问卷结果: {}", questionnaireId, resultDO);
         questionnaireResultMapper.insert(resultDO);
         return resultDO.getId();
     }
