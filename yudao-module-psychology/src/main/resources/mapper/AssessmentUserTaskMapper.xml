@@ -161,7 +161,8 @@
         r.completed_time as finish_time,
         r.risk_level as risk_level,
         r.score as score,
-        case when r.id is not null then r.id else null end as id
+        case when r.id is not null then r.id else null end as id,
+        r.result_data as result_data
         from lvye_assessment_user_task a
         left join lvye_student_profile s on s.user_id  = a.user_id
         left join system_dept c ON s.grade_dept_id = c.id

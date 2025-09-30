@@ -674,6 +674,34 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             userTaskMapper.selectQuestionnaireUserListByTaskNo(page, pageVO);
         } else {
             userTaskMapper.selectQuestionnaireUserListByTaskNoAndQuestionnaire(page, pageVO);
+            // 处理level和riskLevel字段：当有特定问卷ID且问卷名称不包含"心理健康评估"时，从result_data中提取
+            for (QuestionnaireUserVO user : page.getRecords()) {
+                if (user.getQuestionnaireName() != null &&
+                    !user.getQuestionnaireName().contains("心理健康评估") &&
+                    user.getResultData() != null) {
+                    try {
+                        // 解析result_data JSON数组，提取第一项的level和riskLevel值
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(user.getResultData());
+                        if (rootNode.isArray() && rootNode.size() > 0) {
+                            com.fasterxml.jackson.databind.JsonNode firstItem = rootNode.get(0);
+                            if (firstItem != null) {
+                                // 提取level值
+                                if (firstItem.has("level")) {
+                                    user.setLevel(firstItem.get("level").asText());
+                                }
+                                // 提取riskLevel值，覆盖原有的riskLevel
+                                if (firstItem.has("riskLevel")) {
+                                    Integer riskLevelValue = firstItem.get("riskLevel").asInt();
+                                    user.setRiskLevel(riskLevelValue);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("解析result_data失败: " + e.getMessage(), e);
+                    }
+                }
+            }
         }
         return new PageResult<>(page.getRecords(), page.getTotal());
     }
