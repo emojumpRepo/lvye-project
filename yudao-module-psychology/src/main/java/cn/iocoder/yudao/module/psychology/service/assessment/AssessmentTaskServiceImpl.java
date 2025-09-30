@@ -15,12 +15,14 @@ import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAss
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentResultDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskQuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentDeptTaskMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentResultMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskQuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
@@ -100,6 +102,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
     @Resource
     private QuestionnaireResultMapper questionnaireResultMapper;
+
+    @Resource
+    private AssessmentResultMapper assessmentResultMapper;
 
     @Resource
     private ConfigApi configApi;
@@ -674,31 +679,52 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             userTaskMapper.selectQuestionnaireUserListByTaskNo(page, pageVO);
         } else {
             userTaskMapper.selectQuestionnaireUserListByTaskNoAndQuestionnaire(page, pageVO);
-            // 处理level和riskLevel字段：当有特定问卷ID且问卷名称不包含"心理健康评估"时，从result_data中提取
+            // 根据问卷名称进行不同的处理
             for (QuestionnaireUserVO user : page.getRecords()) {
-                if (user.getQuestionnaireName() != null &&
-                    !user.getQuestionnaireName().contains("心理健康评估") &&
-                    user.getResultData() != null) {
-                    try {
-                        // 解析result_data JSON数组，提取第一项的level和riskLevel值
-                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                        com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(user.getResultData());
-                        if (rootNode.isArray() && rootNode.size() > 0) {
-                            com.fasterxml.jackson.databind.JsonNode firstItem = rootNode.get(0);
-                            if (firstItem != null) {
-                                // 提取level值
-                                if (firstItem.has("level")) {
-                                    user.setLevel(firstItem.get("level").asText());
-                                }
-                                // 提取riskLevel值，覆盖原有的riskLevel
-                                if (firstItem.has("riskLevel")) {
-                                    Integer riskLevelValue = firstItem.get("riskLevel").asInt();
-                                    user.setRiskLevel(riskLevelValue);
+                if (user.getQuestionnaireName() != null) {
+                    // 1. 电子游戏使用情况或睡眠质量：从result_data中提取level和riskLevel
+                    if ((user.getQuestionnaireName().contains("电子游戏使用情况") ||
+                         user.getQuestionnaireName().contains("睡眠质量")) &&
+                        user.getResultData() != null) {
+                        try {
+                            // 解析result_data JSON数组，提取第一项的level和riskLevel值
+                            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                            com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(user.getResultData());
+                            if (rootNode.isArray() && rootNode.size() > 0) {
+                                com.fasterxml.jackson.databind.JsonNode firstItem = rootNode.get(0);
+                                if (firstItem != null) {
+                                    // 提取level值
+                                    if (firstItem.has("level")) {
+                                        user.setLevel(firstItem.get("level").asText());
+                                    }
+                                    // 提取riskLevel值，覆盖原有的riskLevel
+                                    if (firstItem.has("riskLevel")) {
+                                        Integer riskLevelValue = firstItem.get("riskLevel").asInt();
+                                        user.setRiskLevel(riskLevelValue);
+                                    }
                                 }
                             }
+                        } catch (Exception e) {
+                            log.error("解析result_data失败: " + e.getMessage(), e);
                         }
-                    } catch (Exception e) {
-                        log.error("解析result_data失败: " + e.getMessage(), e);
+                    }
+                    // 2. 心理健康评估：从测评结果表中获取riskLevel
+                    else if (user.getQuestionnaireName().contains("心理健康评估") &&
+                             user.getStudentProfileId() != null) {
+                        try {
+                            // 查询测评结果表，获取该学生在此任务的综合风险等级
+                            AssessmentResultDO assessmentResult = assessmentResultMapper.selectOne(
+                                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<AssessmentResultDO>()
+                                    .eq(AssessmentResultDO::getParticipantId, user.getStudentProfileId())
+                                    .eq(AssessmentResultDO::getTaskNo, pageVO.getTaskNo())
+                                    .eq(AssessmentResultDO::getDimensionCode, "total")
+                            );
+                            if (assessmentResult != null && assessmentResult.getRiskLevel() != null) {
+                                user.setRiskLevel(assessmentResult.getRiskLevel());
+                            }
+                        } catch (Exception e) {
+                            log.error("查询测评结果失败: " + e.getMessage(), e);
+                        }
                     }
                 }
             }
