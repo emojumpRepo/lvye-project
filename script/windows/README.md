@@ -1,44 +1,93 @@
-# 曼朗-心之旅项目部署脚本说明（zx 版本）
+# 曼朗-心之旅项目部署脚本说明
 
-本目录下的部署脚本已统一为 zx（JavaScript）脚本，避免了 bat/ps1 的转义与编码问题。
+本目录下的部署脚本已统一为 JavaScript（Node.js）脚本，避免了 bat/ps1 的转义与编码问题。
 
 ## 可用脚本
 
-- 前端：script/windows/deploy-frontend.mjs
-- 后端：script/windows/deploy-backend.mjs
+### 前端部署
+- **传统部署**：`script/windows/deploy-frontend.mjs` - SSH上传到服务器
+- **COS+CDN部署**：`script/windows/deploy-frontend-cos.mjs` - 静态资源上传到COS，HTML部署到服务器
 
-建议使用根目录的 npm scripts 来执行：
+### 后端部署
+- **后端部署**：`script/windows/deploy-backend.mjs`
+
+### COS工具
+- **COSCLI安装**：`script/windows/tools/install-coscli-official.bat`
+- **COSCLI配置**：`script/windows/tools/quick-config-coscli.bat`
+
+## 推荐使用方式
+
+建议使用根目录的 npm scripts：
+
+### 传统部署
 - 前端：`npm run deploy:frontend`
 - 后端：`npm run deploy:backend`
+- 全部：`npm run deploy:all`
 
-也可直接使用 npx：
-- `npx zx script/windows/deploy-frontend.mjs`
-- `npx zx script/windows/deploy-backend.mjs`
+### COS+CDN部署（新增）
+- 前端：`npm run deploy:frontend:cos`
+- 全部：`npm run deploy:all:cos`
+
+### COS设置
+- 安装COSCLI：`npm run setup:cos`
+- 配置认证：`npm run config:cos`
+
+## COS+CDN部署特点
+
+新增的 `deploy-frontend-cos.mjs` 脚本实现了混合部署方式：
+- ✅ **静态资源** (JS/CSS/图片/字体) → 上传到腾讯云COS，通过CDN加速
+- ✅ **HTML文件** → 部署到Nginx服务器，保持SEO和路由控制
+- ✅ **自动验证** → 检查COS上传状态和关键文件
+- ✅ **兼容现有** → 保持与传统部署脚本相同的交互方式
+
+### COS+CDN配置信息
+- 存储桶：`mindtrip-1305613707`
+- 地域：`ap-guangzhou`  
+- CDN域名：`cdn.mindtrip.emojump.com`
+- 配置文件：`script/windows/cos-deployment-config.yaml`
 
 ## 服务器与路径（与脚本保持一致）
 
 - 服务器 IP：42.194.163.176
 - 前端路径：
-  - Admin 管理后台：`/work/project/mindtrip_apps/admin`
-  - Web 用户端：`/work/project/mindtrip_apps/web`
-- 后端路径：后端脚本运行时会询问，默认：`/www/wwwroot/lvye-server`（可按需修改）
+  - Admin 管理后台：`/root/mindfront/work/nginx/html/admin`
+  - Web 用户端：`/root/mindfront/work/nginx/html/web`
+- 后端路径：后端脚本运行时会询问，默认：`/www/wwwroot/lvye-server`
 
 ## 本地构建产物位置
 
-- 前端 ZIP：
-  - Admin：`yudao-ui/mindtrip-project-frontend/apps/admin/dist.zip`
-  - Web：`yudao-ui/mindtrip-project-frontend/apps/web/dist.zip`
+- 前端构建目录：
+  - Admin：`yudao-ui/lvye-project-frontend/apps/admin/dist/`
+  - Web：`yudao-ui/lvye-project-frontend/apps/web/dist/`
 - 后端 JAR：`yudao-server/target/yudao-server.jar`
 
 ## 依赖要求
 
-- Node.js（建议 16+）与 zx（脚本通过 npx 调用，无需全局安装）
-- WinSCP：需安装，脚本会优先使用 WinSCP.com；若仅有 winscp.exe，则自动加 `/console`
+### 基础环境
+- Node.js（建议 16+）
+- 项目依赖已在根 `package.json` 中定义
+
+### COS+CDN部署额外要求
+- **COSCLI工具**：腾讯云官方命令行工具
+  - 自动安装：`npm run setup:cos`
+  - 手动下载：https://github.com/tencentyun/coscli/releases
+  - 配置认证：`npm run config:cos`
+
+### 传统部署要求
+- WinSCP：用于SSH文件传输
   - Windows（推荐）：`scoop install winscp`
   - 官网下载：https://winscp.net
-- 服务器需安装 unzip（用于前端解压）和 Java（用于后端运行）
 
-## 前端部署流程（脚本自动完成）
+## COS+CDN部署流程（脚本自动完成）
+
+1. **检查环境**：验证COSCLI工具和本地构建产物
+2. **上传静态资源**：将JS/CSS/图片等上传到COS
+3. **部署HTML文件**：将HTML文件部署到Nginx服务器
+4. **验证部署**：检查COS文件和关键资源
+5. **CDN刷新**：等待CDN缓存更新（5-10分钟）
+
+## 前端部署流程（传统方式）
+
 1. 检查本地 dist.zip 是否存在
 2. 连接服务器并创建必要目录
 3. 备份现有文件到 `_backup/时间戳` 目录，仅保留最近 3 个
@@ -47,40 +96,49 @@
 6. 拷贝解压结果到目标目录
 7. 设置权限（755 与 www:www）
 
-## 后端部署流程（脚本自动完成）
-1. 检查本地 JAR 是否存在
-2. 连接服务器，准备目录与 temp
-3. 停止旧的 Java 进程（TERM → KILL）
-4. 备份旧 JAR 到 temp（带时间戳）
-5. 上传新的 JAR 为 .new 并原子替换
-6. 启动服务（`nohup java -jar`，可按需修改参数）
-7. 简单校验进程是否启动
-
 ## 常用访问地址
 
 - Admin 管理后台：http://42.194.163.176/admin/
 - Web 用户端：http://42.194.163.176/
-
-## 常见问题
-
-- “未找到 WinSCP”：请先安装，并确保 PATH 中包含 WinSCP.com；脚本也会尝试常见安装路径
-- “日志文件不存在”：之前使用 winscp.exe（GUI）执行脚本可能不产生日志，现已改为优先 WinSCP.com 或对 exe 自动加 `/console`
-- 中文乱码：请使用支持 UTF-8 的终端/PowerShell；zx 输出为 UTF-8
+- CDN静态资源：https://cdn.mindtrip.emojump.com/
 
 ## 使用示例
 
-- 前端：
-  ```bash
-  # Admin
-  cd yudao-ui/mindtrip-project-frontend/apps/admin && pnpm install && pnpm build  # 生成 dist.zip
-  cd ../../../..
-  npm run deploy:frontend
-  # 选择 1（Admin），输入服务器密码，等待完成
-  ```
+### COS+CDN部署（推荐）
+```bash
+# 1. 首次使用：安装和配置COSCLI
+npm run setup:cos
+npm run config:cos
 
-- 后端：
-  ```bash
-  mvn -f yudao-server clean package -DskipTests  # 生成 yudao-server.jar
-  npm run deploy:backend
-  # 输入远程目录（或回车使用默认），输入服务器密码，等待完成
-  ```
+# 2. 构建前端
+npm run build:frontend
+
+# 3. 部署前端（COS+CDN方式）
+npm run deploy:frontend:cos
+```
+
+### 传统部署
+```bash
+# Admin
+cd yudao-ui/lvye-project-frontend/apps/admin 
+pnpm install && pnpm build:antd  # 生成 dist 目录
+cd ../../../..
+npm run deploy:frontend
+```
+
+### 完整部署（后端+前端）
+```bash
+npm run build:all
+npm run deploy:all:cos  # 或 deploy:all
+```
+
+## 常见问题
+
+### COS+CDN相关
+- **"未找到 COSCLI"**：运行 `npm run setup:cos` 安装
+- **"配置验证失败"**：运行 `npm run config:cos` 重新配置
+- **"CDN未生效"**：等待5-10分钟缓存刷新
+
+### 传统部署相关
+- **"未找到 WinSCP"**：请先安装，并确保 PATH 中包含 WinSCP.com
+- **中文乱码**：请使用支持 UTF-8 的终端/PowerShell

@@ -127,4 +127,10 @@ public interface ErrorCodeConstants {
     // ========== 咨询师分配相关 1-003-016-000 ==========
     ErrorCode COUNSELOR_ASSIGNMENT_NOT_EXISTS = new ErrorCode(1_003_016_000, "咨询师分配记录不存在");
     ErrorCode COUNSELOR_ASSIGNMENT_DATE_INVALID = new ErrorCode(1_003_016_001, "分配日期无效，结束日期必须晚于开始日期");
+
+    // ========== 问卷维度相关 1-003-017-000 ==========
+    ErrorCode QUESTIONNAIRE_DIMENSION_NOT_EXISTS = new ErrorCode(1_003_017_000, "问卷维度不存在");
+    ErrorCode QUESTIONNAIRE_DIMENSION_CODE_DUPLICATE = new ErrorCode(1_003_017_001, "维度编码在同一问卷内重复");
+    ErrorCode QUESTIONNAIRE_DIMENSION_OPERATION_TYPE_INVALID = new ErrorCode(1_003_017_002, "维度操作类型无效");
+    ErrorCode QUESTIONNAIRE_DIMENSION_IN_USE = new ErrorCode(1_003_017_003, "维度正在被使用，无法删除");
 }
