@@ -212,4 +212,17 @@ public class CrisisInterventionController {
         interventionService.updateCrisisEventDescription(id, updateReqVO.getDescription());
         return success(true);
     }
+
+    @PutMapping("/event/process/{id}/update")
+    @Operation(summary = "更新事件处理记录",
+              description = "根据action类型更新不同字段：REASSIGN_HANDLER和CHOOSE_PROCESS更新reason字段，其他类型更新content字段")
+    @Parameter(name = "id", description = "处理记录ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> updateProcessRecord(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CrisisEventProcessUpdateReqVO updateReqVO) {
+        interventionService.updateProcessRecord(id, updateReqVO.getContent());
+        return success(true);
+    }
 }

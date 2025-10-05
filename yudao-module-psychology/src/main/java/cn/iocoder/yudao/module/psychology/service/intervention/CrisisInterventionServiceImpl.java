@@ -728,16 +728,26 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 验证事件存在
         CrisisInterventionDO event = validateEventExists(id);
 
+        Integer processMethod = processReqVO.getProcessMethod();
+
         // 更新处理方式和状态
-        event.setProcessMethod(processReqVO.getProcessMethod());
+        event.setProcessMethod(processMethod);
         event.setProcessReason(processReqVO.getProcessReason());
-        event.setStatus(3); // 已选择
-        event.setProgress(25);
+
+        // 根据处理方式设置不同的状态和进度
+        if (processMethod == 1 || processMethod == 2) {
+            event.setStatus(3); // 状态为3
+            event.setProgress(50); // 进度50%
+        } else if (processMethod == 3 || processMethod == 4) {
+            event.setStatus(4); // 状态为4（跳过处理步骤）
+            event.setProgress(75); // 进度75%
+        }
+
         crisisInterventionMapper.updateById(event);
 
         // 记录处理动作
         // 从字典获取处理方式名称
-        String methodName = getProcessMethodName(processReqVO.getProcessMethod());
+        String methodName = getProcessMethodName(processMethod);
         recordEventProcessWithUsers(id, "CHOOSE_PROCESS", methodName,
             processReqVO.getProcessReason(),
             null, null);
@@ -745,7 +755,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
         meta.put("eventId", id);
-        meta.put("processMethod", processReqVO.getProcessMethod());
+        meta.put("processMethod", processMethod);
         meta.put("processMethodName", methodName);
         meta.put("processReason", processReqVO.getProcessReason());
         meta.put("status", "处理中");
@@ -769,9 +779,16 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         CrisisInterventionDO event = validateEventExists(id);
 
         // 更新事件状态
-        event.setStatus(4); // 已结案
+        event.setStatus(6); // 已结案
         event.setClosureSummary(closeReqVO.getSummary());
         event.setProgress(100);
+        // 设置完成状态：3-持续关注 -> completedStatus=2, 4-直接解决 -> completedStatus=1
+        Integer followUpSuggestion = closeReqVO.getFollowUpSuggestion();
+        if (followUpSuggestion == 3) {
+                event.setCompletedStatus(2); // 持续关注
+        } else if (followUpSuggestion == 4) {
+                event.setCompletedStatus(1); // 已解决
+        }
         crisisInterventionMapper.updateById(event);
 
         // 保存最终评估
@@ -826,8 +843,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         assessment.setAssessmentType(1); // 阶段性评估
         eventAssessmentMapper.insert(assessment);
 
-        // 更新进度
+        // 更新进度和状态
         event.setProgress(Math.min(event.getProgress() + 25, 75));
+        // event.setStatus(5); // 已评估
         crisisInterventionMapper.updateById(event);
 
         // 记录评估动作
@@ -1203,7 +1221,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     private String getProcessMethodName(Integer method) {
         // 从字典获取处理方式名称
-        String label = DictFrameworkUtils.parseDictDataLabel("intervention_process_method", method);
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.INTERVENTION_PROCESS_METHOD, method);
         return label != null ? label : "未知";
     }
 
@@ -1227,11 +1245,11 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     private String getRiskLevelName(Integer level) {
         // 字典类型：crisis_level
         switch (level) {
-            case 1: return "待评";
+            case 1: return "待评估";
             case 2: return "持续观察";
-            case 3: return "一般";
-            case 4: return "严重";
-            case 5: return "重大";
+            case 3: return "一般关注(一类)";
+            case 4: return "严重风险(二类)";
+            case 5: return "重大风险(三类)";
             default: return "未知";
         }
     }
@@ -1305,5 +1323,31 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         recordEventProcess(id, "UPDATE_DESCRIPTION", "更新事件描述：" + description);
 
         log.info("更新危机事件描述，ID: {}, 描述: {}", id, description);
+    }
+
+    @Override
+    public void updateProcessRecord(Long id, String content) {
+        // 查询处理记录
+        CrisisEventProcessDO processRecord = eventProcessMapper.selectById(id);
+        if (processRecord == null) {
+            throw ServiceExceptionUtil.exception(CRISIS_INTERVENTION_NOT_EXISTS);
+        }
+
+        // 根据action类型决定更新哪个字段
+        CrisisEventProcessDO updateObj = new CrisisEventProcessDO();
+        updateObj.setId(id);
+
+        if ("REASSIGN_HANDLER".equals(processRecord.getAction()) ||
+            "CHOOSE_PROCESS".equals(processRecord.getAction())) {
+            // 如果是更改负责人或选择处理方式的操作，更新reason字段
+            updateObj.setReason(content);
+            log.info("更新危机事件处理记录reason，ID: {}, 内容: {}", id, content);
+        } else {
+            // 其他情况更新content字段
+            updateObj.setContent(content);
+            log.info("更新危机事件处理记录content，ID: {}, 内容: {}", id, content);
+        }
+
+        eventProcessMapper.updateById(updateObj);
     }
 }

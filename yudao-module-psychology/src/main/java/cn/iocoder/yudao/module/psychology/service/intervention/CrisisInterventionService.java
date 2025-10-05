@@ -161,6 +161,16 @@ public interface CrisisInterventionService {
     void updateCrisisEventDescription(Long id, String description);
 
     /**
+     * 更新危机事件处理记录
+     * 根据action字段值决定更新reason或content字段
+     * REASSIGN_HANDLER和CHOOSE_PROCESS类型更新reason字段，其他类型更新content字段
+     *
+     * @param id 处理记录ID
+     * @param content 更新内容
+     */
+    void updateProcessRecord(Long id, String content);
+
+    /**
      * 获取危机事件分配设置
      */
     InterventionAssignmentSettingVO getAssignmentSettings();
