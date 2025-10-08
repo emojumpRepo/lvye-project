@@ -638,6 +638,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 更新处理人和状态
         event.setHandlerUserId(assignReqVO.getHandlerUserId());
         event.setStatus(2); // 已分配
+        event.setProgress(25);
         event.setHandleAt(LocalDateTime.now());
         crisisInterventionMapper.updateById(event);
 
@@ -737,12 +738,10 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 根据处理方式设置不同的状态和进度
         if (processMethod == 1 || processMethod == 2) {
             event.setStatus(3); // 状态为3
-            event.setProgress(50); // 进度50%
         } else if (processMethod == 3 || processMethod == 4) {
             event.setStatus(4); // 状态为4（跳过处理步骤）
-            event.setProgress(75); // 进度75%
         }
-
+        event.setProgress(50); // 进度50%
         crisisInterventionMapper.updateById(event);
 
         // 记录处理动作
@@ -759,7 +758,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         meta.put("processMethodName", methodName);
         meta.put("processReason", processReqVO.getProcessReason());
         meta.put("status", "处理中");
-        meta.put("progress", 25);
+        meta.put("progress", 50);
         
         String content = String.format("开始处理危机事件，处理方式：%s", methodName);
         studentTimelineService.saveTimelineWithMeta(
@@ -844,8 +843,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         eventAssessmentMapper.insert(assessment);
 
         // 更新进度和状态
-        event.setProgress(Math.min(event.getProgress() + 25, 75));
-        // event.setStatus(5); // 已评估
+        event.setStatus(3); // 更新为处理中
+        // event.setProgress(88);
         crisisInterventionMapper.updateById(event);
 
         // 记录评估动作
