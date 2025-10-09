@@ -179,102 +179,116 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         if(!questionnaireIds.contains(participateReqVO.getQuestionnaireId())){
             throw exception(ErrorCodeConstants.QUESTIONNAIRE_NOT_EXISTS);
         }
+
         // 使用新事务保存初始结果( generation_status = 1 )，确保立刻可见
         Long questionnaireResultId = questionnaireResultTxService.saveInitialResultNewTx(
                 taskNo, userId, participateReqVO.getQuestionnaireId(), participateReqVO.getAnswers());
 
-        // 事务提交后，异步进行计算与更新（并在计算完成后检测是否全部完成，若是则生成组合测评结果与时间线）
+        // 异步进行结果计算和更新（在当前事务提交后执行）
         TransactionSynchronizationManager.registerSynchronization(
             new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    questionnaireResultAsyncService.calculateAfterCommit(
-                            participateReqVO.getQuestionnaireId(), userId, questionnaireResultId,
-                            participateReqVO.getAnswers(),
-                            () -> {
-                                List<QuestionnaireResultVO> resultCalculate = resultCalculateService.resultCalculate(
-                                        participateReqVO.getQuestionnaireId(), userId, questionnaireResultId, participateReqVO.getAnswers());
-                                // 更新问卷结果（设置得分、维度、风险、generation_status=2 等）
-                                QuestionnaireResultDO updated = updateQuestionnaireResult(
-                                        questionnaireResultId,
-                                        participateReqVO.getQuestionnaireId(),
-                                        participateReqVO.getAnswers(),
-                                        resultCalculate
-                                );
-
-                                // 更新任务风险等级与学生风险（若有）
-                                try {
-                                    if (updated != null && (updated.getRiskLevel() != null
-                                            || !StringUtils.isAnyBlank(updated.getEvaluate(), updated.getSuggestions()))) {
-                                        userTaskMapper.updateTaskRiskLevel(taskNo, userId, updated.getRiskLevel(), updated.getEvaluate(), updated.getSuggestions());
-                                        StudentProfileDO studentProfile2 = studentProfileService.getStudentProfileByUserId(userId);
-                                        if (studentProfile2 != null && updated.getRiskLevel() != null) {
-                                            studentProfileService.updateStudentRiskLevel(studentProfile2.getId(), updated.getRiskLevel());
-                                        }
-                                    }
-                                } catch (Exception ignore) {}
-
-                                // 重新计算该任务下该用户的完成情况
-                                List<Long> qids = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(taskNo, TenantContextHolder.getTenantId());
-                                Long finished = questionnaireResultMapper.selectCountByTaskNoAndUserId(taskNo, userId);
-                                if (qids != null && finished != null && Long.valueOf(qids.size()).equals(finished)) {
-                                    // 标记完成
-                                    userTaskMapper.updateFinishTask(taskNo, userId);
-
-                                    // 获取测评任务与学生信息（已在外层查过，这里兜底再查一次）
-                                    AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTaskByNo(taskNo);
-                                    StudentProfileDO studentProfile2 = studentProfileService.getStudentProfileByUserId(userId);
-
-                                    // 记录完成时间线（带上最新问卷结果简要信息）
-                                    Map<String, Object> meta = new HashMap<>();
-                                    meta.put("taskNo", taskNo);
-                                    if (assessmentTask != null) {
-                                        meta.put("taskName", assessmentTask.getTaskName());
-                                        meta.put("taskId", assessmentTask.getId());
-                                        meta.put("scenarioId", assessmentTask.getScenarioId());
-                                        meta.put("targetAudience", assessmentTask.getTargetAudience());
-                                    }
-                                    meta.put("questionnaireCount", qids.size());
-                                    meta.put("questionnaireIds", qids);
-                                    if (studentProfile2 != null) {
-                                        meta.put("studentId", studentProfile2.getId());
-                                        meta.put("studentNo", studentProfile2.getStudentNo());
-                                        meta.put("studentName", studentProfile2.getName());
-                                    }
-                                    if (updated != null) {
-                                        meta.put("riskLevel", updated.getRiskLevel());
-                                        meta.put("evaluate", updated.getEvaluate());
-                                        meta.put("suggestions", updated.getSuggestions());
-                                        meta.put("score", updated.getScore());
-                                        meta.put("resultId", updated.getId());
-                                    }
-                                    meta.put("completedAt", new Date());
-
-                                    String content = String.format("完成测评任务「%s」，包含%d份问卷",
-                                            assessmentTask != null ? assessmentTask.getTaskName() : taskNo, qids.size());
-                                    if (studentProfile2 != null) {
-                                        studentTimelineService.saveTimelineWithMeta(studentProfile2.getId(),
-                                                TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(),
-                                                TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(),
-                                                taskNo, content, meta);
-                                    }
-
-                                    // 触发组合测评结果生成
-                                    try {
-                                        if (studentProfile2 != null) {
-                                            assessmentResultService.generateAndSaveCombinedResult(taskNo, studentProfile2.getId());
-                                        }
-                                    } catch (Exception e) {
-                                        log.error("生成组合测评结果失败, taskNo={}, userId={}, err= {}", taskNo, userId, e.getMessage(), e);
-                                    }
-                                }
-                            }
-                    );
+                    // 完全异步处理，不阻塞响应
+                    processAssessmentResultAsync(taskNo, userId, questionnaireResultId, participateReqVO);
                 }
             }
         );
 
-        // 此处不再同步生成和更新，仅注册 afterCommit 异步流程
+        // 方法立即返回，提交成功
+    }
+
+    /**
+     * 异步处理测评结果计算和更新
+     */
+    private void processAssessmentResultAsync(String taskNo, Long userId, Long questionnaireResultId, WebAssessmentParticipateReqVO participateReqVO) {
+        try {
+            questionnaireResultAsyncService.calculateAfterCommit(
+                    participateReqVO.getQuestionnaireId(), userId, questionnaireResultId,
+                    participateReqVO.getAnswers(),
+                    () -> {
+                        List<QuestionnaireResultVO> resultCalculate = resultCalculateService.resultCalculate(
+                                participateReqVO.getQuestionnaireId(), userId, questionnaireResultId, participateReqVO.getAnswers());
+                        // 更新问卷结果（设置得分、维度、风险、generation_status=2 等）
+                        QuestionnaireResultDO updated = updateQuestionnaireResult(
+                                questionnaireResultId,
+                                participateReqVO.getQuestionnaireId(),
+                                participateReqVO.getAnswers(),
+                                resultCalculate
+                        );
+
+                        // 更新任务风险等级与学生风险（若有）
+                        try {
+                            if (updated != null && (updated.getRiskLevel() != null
+                                    || !StringUtils.isAnyBlank(updated.getEvaluate(), updated.getSuggestions()))) {
+                                userTaskMapper.updateTaskRiskLevel(taskNo, userId, updated.getRiskLevel(), updated.getEvaluate(), updated.getSuggestions());
+                                StudentProfileDO studentProfile2 = studentProfileService.getStudentProfileByUserId(userId);
+                                if (studentProfile2 != null && updated.getRiskLevel() != null) {
+                                    studentProfileService.updateStudentRiskLevel(studentProfile2.getId(), updated.getRiskLevel());
+                                }
+                            }
+                        } catch (Exception ignore) {}
+
+                        // 重新计算该任务下该用户的完成情况
+                        List<Long> qids = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(taskNo, TenantContextHolder.getTenantId());
+                        Long finished = questionnaireResultMapper.selectCountByTaskNoAndUserId(taskNo, userId);
+                        if (qids != null && finished != null && Long.valueOf(qids.size()).equals(finished)) {
+                            // 标记完成
+                            userTaskMapper.updateFinishTask(taskNo, userId);
+
+                            // 获取测评任务与学生信息（已在外层查过，这里兜底再查一次）
+                            AssessmentTaskDO assessmentTask = assessmentTaskService.getAssessmentTaskByNo(taskNo);
+                            StudentProfileDO studentProfile2 = studentProfileService.getStudentProfileByUserId(userId);
+
+                            // 记录完成时间线（带上最新问卷结果简要信息）
+                            Map<String, Object> meta = new HashMap<>();
+                            meta.put("taskNo", taskNo);
+                            if (assessmentTask != null) {
+                                meta.put("taskName", assessmentTask.getTaskName());
+                                meta.put("taskId", assessmentTask.getId());
+                                meta.put("scenarioId", assessmentTask.getScenarioId());
+                                meta.put("targetAudience", assessmentTask.getTargetAudience());
+                            }
+                            meta.put("questionnaireCount", qids.size());
+                            meta.put("questionnaireIds", qids);
+                            if (studentProfile2 != null) {
+                                meta.put("studentId", studentProfile2.getId());
+                                meta.put("studentNo", studentProfile2.getStudentNo());
+                                meta.put("studentName", studentProfile2.getName());
+                            }
+                            if (updated != null) {
+                                meta.put("riskLevel", updated.getRiskLevel());
+                                meta.put("evaluate", updated.getEvaluate());
+                                meta.put("suggestions", updated.getSuggestions());
+                                meta.put("score", updated.getScore());
+                                meta.put("resultId", updated.getId());
+                            }
+                            meta.put("completedAt", new Date());
+
+                            String content = String.format("完成测评任务「%s」，包含%d份问卷",
+                                    assessmentTask != null ? assessmentTask.getTaskName() : taskNo, qids.size());
+                            if (studentProfile2 != null) {
+                                studentTimelineService.saveTimelineWithMeta(studentProfile2.getId(),
+                                        TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(),
+                                        TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(),
+                                        taskNo, content, meta);
+                            }
+
+                            // 触发组合测评结果生成
+                            try {
+                                if (studentProfile2 != null) {
+                                    assessmentResultService.generateAndSaveCombinedResult(taskNo, studentProfile2.getId());
+                                }
+                            } catch (Exception e) {
+                                log.error("生成组合测评结果失败, taskNo={}, userId={}, err= {}", taskNo, userId, e.getMessage(), e);
+                            }
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            log.error("异步处理测评结果失败, taskNo={}, userId={}, questionnaireResultId={}, err= {}",
+                    taskNo, userId, questionnaireResultId, e.getMessage(), e);
+        }
     }
 
     @Override
@@ -329,7 +343,6 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         }
         
         // 基于维度计算结果设置风险等级和建议
-        Integer maxRiskLevel = null;
         StringBuilder combinedSuggestions = new StringBuilder();
         StringBuilder combinedEvaluate = new StringBuilder();
         int abnormalDimensionCount = 0;
@@ -356,20 +369,7 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
                 combinedEvaluate.append(answerResult.getDescription());
             }
         }
-        
-        // 根据异常维度数量设置风险等级
-        if (abnormalDimensionCount == 0) {
-            maxRiskLevel = 1; // 正常
-        } else if (abnormalDimensionCount == 1) {
-            maxRiskLevel = 2; // 关注
-        } else if (abnormalDimensionCount == 2) {
-            maxRiskLevel = 3; // 预警
-        } else {
-            maxRiskLevel = 4; // 高危
-        }
-        
-        // 设置计算结果
-        resultDO.setRiskLevel(maxRiskLevel);
+    
         if (combinedSuggestions.length() > 0) {
             resultDO.setSuggestions(combinedSuggestions.toString());
         }
@@ -380,7 +380,7 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         // 设置生成状态
         if (answerResultList != null && !answerResultList.isEmpty()) {
             resultDO.setGenerationStatus(2); // 已生成
-            log.info("问卷ID={} 计算完成，异常维度数量={}, 风险等级={}", questionnaireId, abnormalDimensionCount, maxRiskLevel);
+            log.info("问卷ID={} 计算完成，异常维度数量={}", questionnaireId, abnormalDimensionCount);
         } else {
             // 未配置维度：跳过计算，标记成功且无/低风险
             resultDO.setGenerationStatus(2);
