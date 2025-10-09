@@ -162,19 +162,35 @@
         r.risk_level as risk_level,
         r.score as score,
         case when r.id is not null then r.id else null end as id,
-        r.result_data as result_data
+        r.result_data as result_data,
+        <!-- 计算真实的风险等级用于筛选 -->
+        CASE
+            <!-- 电子游戏使用情况或睡眠质量：从result_data的JSON中提取 -->
+            WHEN (q.title LIKE '%电子游戏使用情况%' OR q.title LIKE '%睡眠质量%') AND r.result_data IS NOT NULL THEN
+                CAST(JSON_UNQUOTE(JSON_EXTRACT(r.result_data, '$[0].riskLevel')) AS UNSIGNED)
+            <!-- 心理健康评估：从assessment_result表中获取 -->
+            WHEN q.title LIKE '%心理健康评估%' THEN
+                ar.risk_level
+            <!-- 其他问卷：使用questionnaire_result表的risk_level -->
+            ELSE r.risk_level
+        END as actual_risk_level
         from lvye_assessment_user_task a
         left join lvye_student_profile s on s.user_id  = a.user_id
         left join system_dept c ON s.grade_dept_id = c.id
         left join system_dept d ON s.class_dept_id = d.id
         left join lvye_questionnaire_result r on r.assessment_task_no = a.task_no and r.questionnaire_id = #{pageReqVO.questionnaireId} and r.user_id = a.user_id
         left join lvye_questionnaire q on q.id = #{pageReqVO.questionnaireId} and q.deleted = 0
+        <!-- 心理健康评估问卷需要关联assessment_result表获取综合风险等级 -->
+        left join lvye_assessment_result ar on ar.participant_id = s.id
+            and ar.task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci
+            and ar.dimension_code = 'total'
+            and q.title LIKE '%心理健康评估%'
         <where>
             a.deleted = 0
             AND a.task_no = #{pageReqVO.taskNo}
             AND EXISTS (
-                SELECT 1 FROM lvye_assessment_task_questionnaire b 
-                WHERE b.task_no = a.task_no 
+                SELECT 1 FROM lvye_assessment_task_questionnaire b
+                WHERE b.task_no = a.task_no
                 AND b.questionnaire_id = #{pageReqVO.questionnaireId}
                 AND b.deleted = 0
             )
@@ -188,7 +204,16 @@
                 AND if(r.id is null ,0,1) = #{pageReqVO.status}
             </if>
             <if test="pageReqVO.riskLevel != null">
-                AND r.risk_level = #{pageReqVO.riskLevel}
+                <!-- 使用计算后的真实风险等级进行筛选 -->
+                AND (
+                    CASE
+                        WHEN (q.title LIKE '%电子游戏使用情况%' OR q.title LIKE '%睡眠质量%') AND r.result_data IS NOT NULL THEN
+                            CAST(JSON_UNQUOTE(JSON_EXTRACT(r.result_data, '$[0].riskLevel')) AS UNSIGNED)
+                        WHEN q.title LIKE '%心理健康评估%' THEN
+                            ar.risk_level
+                        ELSE r.risk_level
+                    END
+                ) = #{pageReqVO.riskLevel}
             </if>
             <if test="pageReqVO.classId != null and pageReqVO.classId.length > 0">
                 <choose>
