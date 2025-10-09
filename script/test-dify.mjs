@@ -8,11 +8,28 @@
 import axios from 'axios';
 import chalk from 'chalk';
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 加载环境变量
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const CONFIG = {
-  apiKey: 'app-LTUF7HU291Ug9LAKD4ZC4ZHO',
-  apiUrl: 'http://154.9.255.162/v1'
+  apiKey: process.env.DIFY_API_KEY,
+  apiUrl: process.env.DIFY_API_URL || 'http://154.9.255.162/v1'
 };
+
+// 验证配置
+if (!CONFIG.apiKey) {
+  console.log(chalk.red('❌ 错误：DIFY_API_KEY 未配置'));
+  console.log(chalk.yellow('请在 .env 文件中配置 DIFY_API_KEY'));
+  console.log(chalk.gray('参考 .env.example 文件'));
+  process.exit(1);
+}
 
 console.log(chalk.cyan('========================================'));
 console.log(chalk.cyan('      Dify Workflow API 测试工具'));
