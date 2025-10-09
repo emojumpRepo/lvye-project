@@ -34,9 +34,19 @@ public class ResultGenerationContext {
     private Long assessmentId;
 
     /**
+     * 场景ID（若绑定场景）
+     */
+    private Long scenarioId;
+
+    /**
      * 用户ID
      */
     private Long userId;
+
+    /**
+     * 学生档案ID
+     */
+    private Long studentProfileId;
 
     /**
      * 答题数据（单问卷）
@@ -75,4 +85,22 @@ public class ResultGenerationContext {
      */
     private Map<Long, String> questionnaireCodeMap;
 
+    /**
+     * 当前测评任务编号（用于限定本次任务的问卷结果）
+     */
+    private String taskNo;
+
+    // 显式提供getter，避免部分环境下Lombok处理不及时
+    public Long getScenarioId() {
+        return scenarioId;
+    }
+
+    public Long getStudentProfileId() {
+        return studentProfileId;
+    }
+
+    public String getTaskNo() {
+        return taskNo;
+    }
+ 
 }

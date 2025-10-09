@@ -73,10 +73,10 @@ public class AssessmentScenarioVO {
         @Schema(description = "元数据JSON，用于存储插槽的额外配置信息", example = "{\"theme\":\"dark\",\"layout\":\"vertical\"}")
         private String metadataJson;
 
-        @Schema(description = "关联问卷ID", example = "1001")
-        private Long questionnaireId;
+        @Schema(description = "关联问卷ID（逗号分隔）", example = "1001,1002,1003")
+        private String questionnaireIds;
 
-        @Schema(description = "问卷详情")
-        private ScenarioQuestionnaireAccessVO questionnaire;
+        @Schema(description = "问卷详情列表")
+        private List<ScenarioQuestionnaireAccessVO> questionnaires;
     }
 }

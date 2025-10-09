@@ -71,5 +71,23 @@ public interface QuestionnaireResultMapper extends BaseMapperX<QuestionnaireResu
                 .eq(QuestionnaireResultDO::getUserId, userId));
     }
 
+    /**
+     * 根据用户ID和问卷ID查询问卷结果列表
+     */
+    default List<QuestionnaireResultDO> selectListByUserIdAndQuestionnaireId(Long userId, Long questionnaireId) {
+        return selectList(new LambdaQueryWrapperX<QuestionnaireResultDO>()
+                .eq(QuestionnaireResultDO::getUserId, userId)
+                .eq(QuestionnaireResultDO::getQuestionnaireId, questionnaireId)
+                .orderByDesc(QuestionnaireResultDO::getCreateTime));
+    }
+
+    /**
+     * 根据任务编号查询所有问卷结果
+     */
+    default List<QuestionnaireResultDO> selectListByTaskNo(String taskNo) {
+        return selectList(new LambdaQueryWrapper<QuestionnaireResultDO>()
+                .eq(QuestionnaireResultDO::getAssessmentTaskNo, taskNo));
+    }
+
 
 }

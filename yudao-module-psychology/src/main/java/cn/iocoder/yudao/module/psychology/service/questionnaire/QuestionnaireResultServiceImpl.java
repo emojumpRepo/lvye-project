@@ -39,7 +39,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
         QuestionnaireResultDO result = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
         
         // 如果存在记录且score不为null，说明用户已经完成问卷
-        return result != null && result.getScore() != null;
+        return result != null;
     }
 
     @Override
@@ -71,6 +71,11 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
         QuestionnaireResultDO questionnaireResult = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
         StudentAssessmentQuestionnaireDetailVO questionnaireDetailVO = BeanUtils.toBean(questionnaireResult, StudentAssessmentQuestionnaireDetailVO.class);
         return questionnaireDetailVO;
+    }
+
+    @Override
+    public QuestionnaireResultDO getQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId) {
+        return questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
     }
 
     @Override
