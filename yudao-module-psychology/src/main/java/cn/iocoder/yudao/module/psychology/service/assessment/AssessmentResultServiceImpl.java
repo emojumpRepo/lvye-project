@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.psychology.service.assessment;
 import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.framework.common.util.spring.SpringUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.AssessmentResultDetailRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.RiskLevelInterventionVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentResultDO;
@@ -290,19 +291,39 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 .build();
 
         // 4) 幂等保存：根据 (taskNo, participantId, dimensionCode) 存在则更新，否则插入
-        AssessmentResultDO exist = assessmentResultMapper.selectOne(
-            new LambdaQueryWrapperX<AssessmentResultDO>()
-                .eq(AssessmentResultDO::getTaskNo, taskNo)
-                .eq(AssessmentResultDO::getParticipantId, participantId)
-                .eq(AssessmentResultDO::getDimensionCode, save.getDimensionCode())
-        );
-        if (exist == null) {
-            assessmentResultMapper.insert(save);
-            log.info("已保存组合测评结果(新增), participantId={}, id={}", participantId, save.getId());
-        } else {
-            save.setId(exist.getId());
-            assessmentResultMapper.updateById(save);
-            log.info("已保存组合测评结果(更新), participantId={}, id={}", participantId, save.getId());
+        // 为防止并发插入，使用synchronized同步块确保同一taskNo+participantId+dimensionCode组合只能有一个线程操作
+        String lockKey = taskNo + "_" + participantId + "_" + save.getDimensionCode();
+        synchronized (lockKey.intern()) {
+            List<AssessmentResultDO> existList = assessmentResultMapper.selectList(
+                new LambdaQueryWrapperX<AssessmentResultDO>()
+                    .eq(AssessmentResultDO::getTaskNo, taskNo)
+                    .eq(AssessmentResultDO::getParticipantId, participantId)
+                    .eq(AssessmentResultDO::getDimensionCode, save.getDimensionCode())
+            );
+
+            log.info("找到{}条重复的测评结果记录", existList.size());
+
+            if (CollUtil.isEmpty(existList)) {
+                // 不存在记录，插入新记录
+                assessmentResultMapper.insert(save);
+                log.info("已保存组合测评结果(新增), taskNo={}, participantId={}, id={}", taskNo, participantId, save.getId());
+            } else {
+                // 存在记录，更新第一条，删除其他重复记录
+                AssessmentResultDO exist = existList.get(0);
+                save.setId(exist.getId());
+                assessmentResultMapper.updateById(save);
+                log.info("已保存组合测评结果(更新), taskNo={}, participantId={}, id={}", taskNo, participantId, save.getId());
+
+                // 如果存在多条重复记录，删除其他记录
+                if (existList.size() > 1) {
+                    log.warn("发现{}条重复的测评结果记录, taskNo={}, participantId={}, dimensionCode={}, 将删除多余记录",
+                        existList.size(), taskNo, participantId, save.getDimensionCode());
+                    for (int i = 1; i < existList.size(); i++) {
+                        assessmentResultMapper.deleteById(existList.get(i).getId());
+                        log.info("已删除重复的测评结果记录, id={}", existList.get(i).getId());
+                    }
+                }
+            }
         }
         
         // 5) 更新user_task表的risk_level字段
@@ -512,6 +533,290 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
             assessmentUserTaskMapper.updateById(userTask);
             log.info("已更新用户任务风险等级, taskNo={}, userId={}, riskLevel={}", taskNo, userId, riskLevel);
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void recalculateAssessmentResults(String taskNo) {
+        // 调用带userIds参数的方法，传null表示计算所有用户
+        recalculateAssessmentResults(taskNo, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void recalculateAssessmentResults(String taskNo, List<Long> userIds) {
+        log.info("开始重新计算测评任务结果, taskNo={}, 指定用户数={}",
+            taskNo, userIds != null ? userIds.size() : "全部");
+
+        // 1. 查找该测评任务下的所有问卷结果
+        List<QuestionnaireResultDO> allResults = questionnaireResultMapper.selectListByTaskNo(taskNo);
+
+        log.info("找到{}条问卷结果记录", allResults.size());
+
+        if (CollUtil.isEmpty(allResults)) {
+            log.warn("未找到测评任务的问卷结果, taskNo={}", taskNo);
+            return;
+        }
+
+        // 2. 如果指定了用户ID，则只保留这些用户的结果
+        if (userIds != null && !userIds.isEmpty()) {
+            allResults = allResults.stream()
+                .filter(result -> userIds.contains(result.getUserId()))
+                .collect(Collectors.toList());
+            log.info("过滤后剩余{}条问卷结果记录（仅指定用户）", allResults.size());
+
+            if (allResults.isEmpty()) {
+                log.warn("指定的用户在该任务下没有问卷结果, taskNo={}, userIds={}", taskNo, userIds);
+                return;
+            }
+        }
+
+        // 3. 按用户分组，为每个用户重新计算结果
+        Map<Long, List<QuestionnaireResultDO>> userResultsMap = allResults.stream()
+            .collect(Collectors.groupingBy(QuestionnaireResultDO::getUserId));
+
+        int successCount = 0;
+        int errorCount = 0;
+
+        for (Map.Entry<Long, List<QuestionnaireResultDO>> entry : userResultsMap.entrySet()) {
+            Long userId = entry.getKey();
+            List<QuestionnaireResultDO> userResults = entry.getValue();
+
+            try {
+                log.info("开始重新计算用户{}的结果，包含{}个问卷", userId, userResults.size());
+
+                // 3.1 获取学生档案ID
+                List<StudentProfileDO> studentProfiles = studentProfileMapper.selectList(
+                    new LambdaQueryWrapperX<StudentProfileDO>()
+                        .eq(StudentProfileDO::getUserId, userId)
+                        .orderByDesc(StudentProfileDO::getCreateTime)
+                        .last("LIMIT 1")
+                );
+
+                if (CollUtil.isEmpty(studentProfiles)) {
+                    log.warn("未找到用户{}的学生档案，跳过", userId);
+                    errorCount++;
+                    continue;
+                }
+
+                StudentProfileDO studentProfile = studentProfiles.get(0);
+                if (studentProfiles.size() > 1) {
+                    log.warn("用户{}存在多个学生档案，使用最新的档案ID: {}", userId, studentProfile.getId());
+                }
+
+                // 3.2 为每个问卷结果重新计算维度结果
+                for (QuestionnaireResultDO result : userResults) {
+                    try {
+                        recalculateQuestionnaireResult(result);
+                    } catch (Exception e) {
+                        log.error("重新计算问卷结果失败, questionnaireResultId={}, questionnaireId={}",
+                            result.getId(), result.getQuestionnaireId(), e);
+                        errorCount++;
+                    }
+                }
+
+                // 3.3 重新生成组合测评结果
+                try {
+                    generateAndSaveCombinedResult(taskNo, studentProfile.getId());
+                    log.info("用户{}的组合测评结果重新生成成功", userId);
+                    successCount++;
+                } catch (Exception e) {
+                    log.error("重新生成组合测评结果失败, taskNo={}, userId={}", taskNo, userId, e);
+                    errorCount++;
+                }
+
+            } catch (Exception e) {
+                log.error("处理用户{}的结果时发生异常", userId, e);
+                errorCount++;
+            }
+        }
+
+        log.info("重新计算测评任务结果完成, taskNo={}, 成功用户数: {}, 失败用户数: {}",
+            taskNo, successCount, errorCount);
+    }
+
+    /**
+     * 重新计算单个问卷结果的维度结果和评估信息
+     */
+    private void recalculateQuestionnaireResult(QuestionnaireResultDO result) {
+        log.info("开始重新计算问卷结果, questionnaireResultId={}, questionnaireId={}",
+            result.getId(), result.getQuestionnaireId());
+
+        // 解析答题数据
+        if (result.getAnswers() == null || result.getAnswers().trim().isEmpty()) {
+            log.warn("问卷结果没有答题数据，跳过重新计算, questionnaireResultId={}", result.getId());
+            return;
+        }
+
+        List<cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList;
+        try {
+            answerList = JsonUtils.parseArray(result.getAnswers(),
+                cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO.AssessmentAnswerItem.class);
+        } catch (Exception e) {
+            log.error("解析答题数据失败, questionnaireResultId={}", result.getId(), e);
+            return;
+        }
+
+        if (CollUtil.isEmpty(answerList)) {
+            log.warn("问卷结果答题数据为空，跳过重新计算, questionnaireResultId={}", result.getId());
+            return;
+        }
+
+        // 获取计算服务
+        cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultCalculateService calculateService =
+            cn.iocoder.yudao.framework.common.util.spring.SpringUtils.getBean(
+                cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultCalculateService.class);
+
+        // 重新计算维度结果
+        List<cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO> calculatedResults;
+        try {
+            calculatedResults = calculateService.resultCalculate(
+                result.getQuestionnaireId(), result.getUserId(), result.getId(), answerList);
+        } catch (Exception e) {
+            log.error("调用计算服务失败, questionnaireResultId={}", result.getId(), e);
+            return;
+        }
+
+        // 更新问卷结果
+        updateRecalculatedQuestionnaireResult(result, answerList, calculatedResults);
+
+        log.info("问卷结果重新计算完成, questionnaireResultId={}", result.getId());
+    }
+
+    /**
+     * 更新重新计算后的问卷结果
+     */
+    private void updateRecalculatedQuestionnaireResult(
+            QuestionnaireResultDO originalResult,
+            List<cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList,
+            List<cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO> calculatedResults) {
+
+        QuestionnaireResultDO updateResult = new QuestionnaireResultDO();
+        updateResult.setId(originalResult.getId());
+
+        // 1. 计算问卷总分（使用所有答题项的原始分数总和）
+        int totalScore = answerList.stream().mapToInt(item -> item.getScore()).sum();
+        updateResult.setScore(new BigDecimal(totalScore));
+        log.info("问卷总分（原始答题分数）, questionnaireResultId={}, totalScore={}",
+            originalResult.getId(), totalScore);
+
+        // 2. 计算维度分数映射
+        Map<String, BigDecimal> dimensionScores = new HashMap<>();
+        if (calculatedResults != null) {
+            for (cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO calcResult : calculatedResults) {
+                if (calcResult.getDimensionName() != null && !calcResult.getDimensionName().isEmpty()) {
+                    BigDecimal dimensionScore = new BigDecimal(calcResult.getScore());
+                    dimensionScores.put(calcResult.getDimensionName(), dimensionScore);
+                    log.info("  维度分数: dimensionName={}, score={}",
+                        calcResult.getDimensionName(), calcResult.getScore());
+                }
+            }
+        }
+
+        if (!dimensionScores.isEmpty()) {
+            updateResult.setDimensionScores(JsonUtils.toJsonString(dimensionScores));
+            log.info("问卷维度分数, questionnaireResultId={}, 维度数={}",
+                originalResult.getId(), dimensionScores.size());
+        }
+
+        // 重新计算风险等级和建议
+        Integer maxRiskLevel = null;
+        StringBuilder combinedSuggestions = new StringBuilder();
+        StringBuilder combinedEvaluate = new StringBuilder();
+        int abnormalDimensionCount = 0;
+
+        for (cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO calcResult : calculatedResults) {
+            // 统计异常维度数量
+            if (calcResult.getIsAbnormal() != null && calcResult.getIsAbnormal() > 0) {
+                abnormalDimensionCount++;
+            }
+
+            // 收集建议内容
+            if (calcResult.getStudentComment() != null && !calcResult.getStudentComment().trim().isEmpty()) {
+                if (combinedSuggestions.length() > 0) {
+                    combinedSuggestions.append("\n");
+                }
+                combinedSuggestions.append(calcResult.getStudentComment());
+            }
+
+            // 收集评价内容
+            if (calcResult.getDescription() != null && !calcResult.getDescription().trim().isEmpty()) {
+                if (combinedEvaluate.length() > 0) {
+                    combinedEvaluate.append("\n");
+                }
+                combinedEvaluate.append(calcResult.getDescription());
+            }
+        }
+
+        // 根据异常维度数量设置风险等级
+        if (abnormalDimensionCount == 0) {
+            maxRiskLevel = 1; // 正常
+        } else if (abnormalDimensionCount == 1) {
+            maxRiskLevel = 2; // 关注
+        } else if (abnormalDimensionCount == 2) {
+            maxRiskLevel = 3; // 预警
+        } else {
+            maxRiskLevel = 4; // 高危
+        }
+
+        updateResult.setRiskLevel(maxRiskLevel);
+        if (combinedSuggestions.length() > 0) {
+            updateResult.setSuggestions(combinedSuggestions.toString());
+        }
+        if (combinedEvaluate.length() > 0) {
+            updateResult.setEvaluate(combinedEvaluate.toString());
+        }
+
+        // 更新生成状态
+        updateResult.setGenerationStatus(2); // 已生成
+
+        // 重新生成维度明细到 result_data
+        try {
+            List<DimensionResultDO> dimList = dimensionResultMapper.selectListByQuestionnaireResultId(originalResult.getId());
+            List<Map<String, Object>> payload = new ArrayList<>();
+            if (dimList != null) {
+                for (DimensionResultDO dr : dimList) {
+                    Map<String, Object> item = new java.util.LinkedHashMap<>();
+                    item.put("dimensionId", dr.getDimensionId());
+                    item.put("dimensionCode", dr.getDimensionCode());
+                    item.put("score", dr.getScore());
+                    item.put("isAbnormal", dr.getIsAbnormal());
+                    item.put("riskLevel", dr.getRiskLevel());
+                    item.put("level", dr.getLevel());
+                    item.put("teacherComment", dr.getTeacherComment());
+                    item.put("studentComment", dr.getStudentComment());
+                    item.put("questionnaireId", originalResult.getQuestionnaireId());
+
+                    // 获取维度名称与描述
+                    String dimName = null;
+                    String dimDesc = null;
+                    try {
+                        var dimVO = questionnaireDimensionService.getDimension(dr.getDimensionId());
+                        if (dimVO != null) {
+                            dimName = dimVO.getDimensionName();
+                            dimDesc = dimVO.getDescription();
+                        }
+                    } catch (Exception ignore) {}
+                    if (dimName == null || dimName.isEmpty()) {
+                        dimName = dr.getDimensionCode() != null ? dr.getDimensionCode() : ("DIM-" + dr.getDimensionId());
+                    }
+                    item.put("dimensionName", dimName);
+                    item.put("description", dimDesc);
+                    payload.add(item);
+                }
+            }
+            updateResult.setResultData(JsonUtils.toJsonString(payload));
+        } catch (Exception e) {
+            log.warn("重新生成维度明细失败, questionnaireResultId={}", originalResult.getId(), e);
+        }
+
+        updateResult.setCompletedTime(new java.util.Date());
+
+        // 执行更新
+        questionnaireResultMapper.updateById(updateResult);
+
+        log.info("问卷结果更新完成, questionnaireResultId={}, 异常维度数量={}, 风险等级={}",
+            originalResult.getId(), abnormalDimensionCount, maxRiskLevel);
     }
 }
 
