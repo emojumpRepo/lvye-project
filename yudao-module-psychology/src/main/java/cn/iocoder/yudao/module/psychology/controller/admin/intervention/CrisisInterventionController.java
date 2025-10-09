@@ -91,15 +91,15 @@ public class CrisisInterventionController {
     @Operation(summary = "获取危机事件统计")
     @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
     @DataPermission(enable = false)
-    public CommonResult<Map<String, Long>> getCrisisEventStatistics() {
+    public CommonResult<List<CrisisEventProcessStatisticsVO.StatisticsItem>> getCrisisEventStatistics() {
         return success(interventionService.getCrisisEventStatistics());
     }
 
-    @GetMapping("/event/status-statistics")
-    @Operation(summary = "获取危机事件状态分组统计")
+    @GetMapping("/event/process-statistics")
+    @Operation(summary = "获取危机事件处理统计")
     @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
     @DataPermission(enable = false)
-    public CommonResult<List<CrisisEventStatusStatisticsVO>> getCrisisEventStatusStatistics() {
+    public CommonResult<CrisisEventProcessStatisticsVO> getCrisisEventStatusStatistics() {
         return success(interventionService.getCrisisEventStatusStatistics());
     }
 

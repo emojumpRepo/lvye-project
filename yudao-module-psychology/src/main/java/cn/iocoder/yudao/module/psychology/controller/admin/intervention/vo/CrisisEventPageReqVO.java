@@ -48,4 +48,7 @@ public class CrisisEventPageReqVO extends PageParam {
 
     @Schema(description = "负责心理老师ID")
     private Long counselorUserId;
+
+    @Schema(description = "处理进度状态", example = "1")
+    private Integer processStatus;
 }

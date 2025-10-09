@@ -23,6 +23,7 @@ public interface CrisisInterventionMapper extends BaseMapperX<CrisisIntervention
                 .eqIfPresent(CrisisInterventionDO::getRiskLevel, reqVO.getRiskLevel())
                 .eqIfPresent(CrisisInterventionDO::getPriority, reqVO.getPriority())
                 .eqIfPresent(CrisisInterventionDO::getHandlerUserId, reqVO.getHandlerUserId())
+                .eqIfPresent(CrisisInterventionDO::getProcessStatus, reqVO.getProcessStatus())
                 .betweenIfPresent(CrisisInterventionDO::getReportedAt, reqVO.getStartTime(), reqVO.getEndTime())
                 .orderByDesc(CrisisInterventionDO::getPriority)
                 .orderByDesc(CrisisInterventionDO::getReportedAt));
@@ -47,6 +48,9 @@ public interface CrisisInterventionMapper extends BaseMapperX<CrisisIntervention
 
     @Select("SELECT status, COUNT(*) as count FROM lvye_crisis_intervention WHERE deleted = 0 GROUP BY status")
     List<CrisisEventStatusStatisticsVO> selectStatusStatistics();
+
+    @Select("SELECT COUNT(1) FROM lvye_crisis_intervention WHERE process_status = #{processStatus} AND deleted = 0")
+    Long countByProcessStatus(@Param("processStatus") Integer processStatus);
 }
 
 

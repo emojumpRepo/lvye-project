@@ -80,6 +80,7 @@ CREATE TABLE `lvye_crisis_intervention` (
   `process_reason` TEXT COMMENT '处理原因说明',
   `closure_summary` TEXT COMMENT '结案总结',
   `progress` INT DEFAULT 0 COMMENT '处理进度百分比',
+  `process_status` TINYINT COMMENT '处理状态',
   `auto_assigned` BOOLEAN DEFAULT FALSE COMMENT '是否自动分配',
   `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
   `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者',

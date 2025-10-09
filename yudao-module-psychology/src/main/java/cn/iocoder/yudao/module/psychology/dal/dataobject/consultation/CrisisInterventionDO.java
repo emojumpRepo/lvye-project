@@ -74,7 +74,10 @@ public class CrisisInterventionDO extends TenantBaseDO {
     
     /** 处理进度百分比 */
     private Integer progress;
-    
+
+    /** 处理状态 */
+    private Integer processStatus;
+
     /** 是否自动分配 */
     private Boolean autoAssigned;
     

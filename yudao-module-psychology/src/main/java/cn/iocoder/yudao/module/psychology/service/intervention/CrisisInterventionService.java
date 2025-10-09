@@ -75,18 +75,19 @@ public interface CrisisInterventionService {
     PageResult<CrisisEventRespVO> getCrisisEventPage(CrisisEventPageReqVO pageReqVO);
 
     /**
-     * 获取危机事件统计
+     * 获取危机事件统计（按 process_status 分组）
      *
-     * @return 统计数据
+     * @return 统计数据（type: 0-5）
      */
-    Map<String, Long> getCrisisEventStatistics();
+    List<CrisisEventProcessStatisticsVO.StatisticsItem> getCrisisEventStatistics();
 
     /**
-     * 获取危机事件状态分组统计
+     * 获取危机事件处理统计
+     * 包含：干预处理方式统计、后续建议统计、危机事件状态统计
      *
-     * @return 状态统计数据列表
+     * @return 处理统计数据
      */
-    List<CrisisEventStatusStatisticsVO> getCrisisEventStatusStatistics();
+    CrisisEventProcessStatisticsVO getCrisisEventStatusStatistics();
 
     /**
      * 获取危机事件详情

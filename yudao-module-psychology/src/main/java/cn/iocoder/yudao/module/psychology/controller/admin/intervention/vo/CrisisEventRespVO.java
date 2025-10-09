@@ -76,6 +76,9 @@ public class CrisisEventRespVO {
     @Schema(description = "处理进度百分比", example = "50")
     private Integer progress;
 
+    @Schema(description = "处理状态", example = "1")
+    private Integer processStatus;
+
     @Schema(description = "是否自动分配", example = "false")
     private Boolean autoAssigned;
 
@@ -96,6 +99,9 @@ public class CrisisEventRespVO {
 
     @Schema(description = "最新评估")
     private LatestAssessmentVO latestAssessment;
+
+    @Schema(description = "评估记录列表（按创建时间倒序）")
+    private List<AssessmentRecordVO> assessmentRecords;
 
     @Data
     public static class ProcessHistoryVO {
@@ -128,5 +134,41 @@ public class CrisisEventRespVO {
 
         @Schema(description = "后续建议")
         private Integer followUpSuggestion;
+    }
+
+    @Data
+    public static class AssessmentRecordVO {
+        @Schema(description = "评估ID")
+        private Long id;
+
+        @Schema(description = "评估人ID")
+        private Long assessorUserId;
+
+        @Schema(description = "评估人姓名")
+        private String assessorName;
+
+        @Schema(description = "评估类型（1-阶段性评估、2-最终评估）")
+        private Integer assessmentType;
+
+        @Schema(description = "风险等级")
+        private Integer riskLevel;
+
+        @Schema(description = "风险等级名称")
+        private String riskLevelName;
+
+        @Schema(description = "问题类型识别")
+        private List<String> problemTypes;
+
+        @Schema(description = "后续建议")
+        private Integer followUpSuggestion;
+
+        @Schema(description = "后续建议名称")
+        private String followUpSuggestionName;
+
+        @Schema(description = "评估详细内容")
+        private String content;
+
+        @Schema(description = "创建时间")
+        private LocalDateTime createTime;
     }
 }

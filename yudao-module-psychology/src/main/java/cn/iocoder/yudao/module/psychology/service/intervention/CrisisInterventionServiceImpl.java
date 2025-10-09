@@ -490,6 +490,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         event.setEventId(eventId);
         
         event.setStatus(1); // 已上报
+        event.setProcessStatus(0); // 处理状态设置为0
         event.setReporterUserId(currentUserId);
         event.setReportedAt(LocalDateTime.now());
         event.setProgress(0);
@@ -549,51 +550,107 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     }
 
     @Override
-    public Map<String, Long> getCrisisEventStatistics() {
-        Map<String, Long> statistics = new HashMap<>();
+    public List<CrisisEventProcessStatisticsVO.StatisticsItem> getCrisisEventStatistics() {
+        List<CrisisEventProcessStatisticsVO.StatisticsItem> result = new ArrayList<>();
 
-        statistics.put("pending", crisisInterventionMapper.countByStatus(1)); // 待处理
-        statistics.put("processing", crisisInterventionMapper.countByStatus(3)); // 处理中
-        statistics.put("resolved", crisisInterventionMapper.countByStatus(4)); // 已解决
-        statistics.put("monitoring", crisisInterventionMapper.countByStatus(5)); // 持续关注
-
-        return statistics;
-    }
-
-    @Override
-    public List<CrisisEventStatusStatisticsVO> getCrisisEventStatusStatistics() {
-        // 从数据库获取实际的统计数据
-        List<CrisisEventStatusStatisticsVO> dbStatistics = crisisInterventionMapper.selectStatusStatistics();
-
-        // 创建一个包含所有状态的Map，初始值都为0
-        Map<Integer, Long> statusMap = new HashMap<>();
-        // 1-已上报、2-已分配、3-处理中、4-已结案、5-持续关注
-        statusMap.put(1, 0L);
-        statusMap.put(2, 0L);
-        statusMap.put(3, 0L);
-        statusMap.put(4, 0L);
-        statusMap.put(5, 0L);
-
-        // 用数据库查询结果更新Map
-        for (CrisisEventStatusStatisticsVO stat : dbStatistics) {
-            if (stat.getStatus() != null) {
-                statusMap.put(stat.getStatus(), stat.getCount());
-            }
-        }
-
-        // 将Map转换为List返回
-        List<CrisisEventStatusStatisticsVO> result = new ArrayList<>();
-        for (Map.Entry<Integer, Long> entry : statusMap.entrySet()) {
-            result.add(CrisisEventStatusStatisticsVO.builder()
-                    .status(entry.getKey())
-                    .count(entry.getValue())
+        // 统计 process_status 0-5 的所有类型
+        for (int i = 0; i <= 5; i++) {
+            Long count = crisisInterventionMapper.countByProcessStatus(i);
+            result.add(CrisisEventProcessStatisticsVO.StatisticsItem.builder()
+                    .type(i)
+                    .count(count != null ? count : 0L)
                     .build());
         }
 
-        // 按状态值排序
-        result.sort((a, b) -> a.getStatus().compareTo(b.getStatus()));
-
         return result;
+    }
+
+    @Override
+    public CrisisEventProcessStatisticsVO getCrisisEventStatusStatistics() {
+        // 查询所有危机事件
+        List<CrisisInterventionDO> allEvents = crisisInterventionMapper.selectList();
+
+        // 初始化统计Map（所有类型初始值为0）
+        Map<Integer, Long> processMethodMap = new HashMap<>();
+        processMethodMap.put(1, 0L); // 心理访谈
+        processMethodMap.put(2, 0L); // 量表评估
+        processMethodMap.put(3, 0L); // 持续关注
+        processMethodMap.put(4, 0L); // 直接解决
+
+        Map<Integer, Long> followUpSuggestionMap = new HashMap<>();
+        followUpSuggestionMap.put(1, 0L); // 继续访谈
+        followUpSuggestionMap.put(2, 0L); // 继续评估
+        followUpSuggestionMap.put(3, 0L); // 持续关注
+        followUpSuggestionMap.put(4, 0L); // 问题解决
+        followUpSuggestionMap.put(5, 0L); // 其他
+
+        Map<Integer, Long> crisisEventStatusMap = new HashMap<>();
+        crisisEventStatusMap.put(1, 0L); // 已上报
+        crisisEventStatusMap.put(2, 0L); // 已分配
+
+        // 遍历所有事件进行统计
+        for (CrisisInterventionDO event : allEvents) {
+            Integer status = event.getStatus();
+
+            // 规则1：如果status是1或2，则crisis_event_status对应类型+1
+            if (status != null && (status == 1 || status == 2)) {
+                crisisEventStatusMap.put(status, crisisEventStatusMap.get(status) + 1);
+            }
+            // 规则2：如果status不是1或2
+            else {
+                // 查找最新的评估记录
+                CrisisEventAssessmentDO latestAssessment = eventAssessmentMapper.selectLatestByEventId(event.getId());
+
+                if (latestAssessment != null && latestAssessment.getFollowUpSuggestion() != null) {
+                    // 如果找到评估记录，根据follow_up_suggestion统计
+                    Integer followUpSuggestion = latestAssessment.getFollowUpSuggestion();
+                    // 确保follow_up_suggestion值在1-5范围内
+                    if (followUpSuggestion >= 1 && followUpSuggestion <= 5) {
+                        followUpSuggestionMap.put(followUpSuggestion,
+                            followUpSuggestionMap.getOrDefault(followUpSuggestion, 0L) + 1);
+                    }
+                } else if (event.getProcessMethod() != null) {
+                    // 如果没有评估记录，根据process_method统计
+                    Integer processMethod = event.getProcessMethod();
+                    // 确保process_method值在1-4范围内
+                    if (processMethod >= 1 && processMethod <= 4) {
+                        processMethodMap.put(processMethod,
+                            processMethodMap.getOrDefault(processMethod, 0L) + 1);
+                    }
+                }
+            }
+        }
+
+        // 转换为返回VO
+        List<CrisisEventProcessStatisticsVO.StatisticsItem> processMethodList = new ArrayList<>();
+        for (int i = 1; i <= 4; i++) {
+            processMethodList.add(CrisisEventProcessStatisticsVO.StatisticsItem.builder()
+                    .type(i)
+                    .count(processMethodMap.get(i))
+                    .build());
+        }
+
+        List<CrisisEventProcessStatisticsVO.StatisticsItem> followUpSuggestionList = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            followUpSuggestionList.add(CrisisEventProcessStatisticsVO.StatisticsItem.builder()
+                    .type(i)
+                    .count(followUpSuggestionMap.get(i))
+                    .build());
+        }
+
+        List<CrisisEventProcessStatisticsVO.StatisticsItem> crisisEventStatusList = new ArrayList<>();
+        for (int i = 1; i <= 2; i++) {
+            crisisEventStatusList.add(CrisisEventProcessStatisticsVO.StatisticsItem.builder()
+                    .type(i)
+                    .count(crisisEventStatusMap.get(i))
+                    .build());
+        }
+
+        return CrisisEventProcessStatisticsVO.builder()
+                .interventionProcessMethod(processMethodList)
+                .followUpSuggestion(followUpSuggestionList)
+                .crisisEventStatus(crisisEventStatusList)
+                .build();
     }
 
     @Override
@@ -607,8 +664,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         CrisisEventRespVO vo = voList.get(0);
 
         // 加载处理历史
-        List<CrisisEventProcessDO> processList = eventProcessMapper.selectListByEventId(id);
-        vo.setProcessHistory(convertProcessHistory(processList));
+        // List<CrisisEventProcessDO> processList = eventProcessMapper.selectListByEventId(id);
+        // vo.setProcessHistory(convertProcessHistory(processList));
 
         // 加载最新评估
         CrisisEventAssessmentDO latestAssessment = eventAssessmentMapper.selectLatestByEventId(id);
@@ -620,6 +677,10 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             assessmentVO.setFollowUpSuggestion(latestAssessment.getFollowUpSuggestion());
             vo.setLatestAssessment(assessmentVO);
         }
+
+        // 添加评估记录（按创建时间倒序）
+        List<CrisisEventAssessmentDO> assessmentList = eventAssessmentMapper.selectListByEventIdOrderByCreateTimeDesc(id);
+        vo.setAssessmentRecords(convertAssessmentRecords(assessmentList));
 
         return vo;
     }
@@ -734,13 +795,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 更新处理方式和状态
         event.setProcessMethod(processMethod);
         event.setProcessReason(processReqVO.getProcessReason());
-
-        // 根据处理方式设置不同的状态和进度
-        if (processMethod == 1 || processMethod == 2) {
-            event.setStatus(3); // 状态为3
-        } else if (processMethod == 3 || processMethod == 4) {
-            event.setStatus(4); // 状态为4（跳过处理步骤）
-        }
+        event.setStatus(3); // 状态为3
+        event.setProcessStatus(processMethod); // 更新处理状态为选择方式
         event.setProgress(50); // 进度50%
         crisisInterventionMapper.updateById(event);
 
@@ -781,6 +837,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         event.setStatus(6); // 已结案
         event.setClosureSummary(closeReqVO.getSummary());
         event.setProgress(100);
+        event.setProcessStatus(closeReqVO.getFollowUpSuggestion()); // 更新处理状态为最终评估
         // 设置完成状态：3-持续关注 -> completedStatus=2, 4-直接解决 -> completedStatus=1
         Integer followUpSuggestion = closeReqVO.getFollowUpSuggestion();
         if (followUpSuggestion == 3) {
@@ -845,6 +902,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 更新进度和状态
         event.setStatus(3); // 更新为处理中
         // event.setProgress(88);
+        event.setProcessStatus(assessmentReqVO.getFollowUpSuggestion()); // 更新处理状态为阶段性评估
         crisisInterventionMapper.updateById(event);
 
         // 记录评估动作
@@ -853,8 +911,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             null, null);
 
         // 根据后续建议决定下一步
-        if (assessmentReqVO.getFollowUpSuggestion() == 4) { // 问题基本解决
-            event.setStatus(4); // 可以考虑结案
+        if (assessmentReqVO.getFollowUpSuggestion() == 5) { // 转介
+            event.setStatus(5); // 可以考虑结案
             crisisInterventionMapper.updateById(event);
         }
     }
@@ -1289,6 +1347,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             event.setReporterUserId(SecurityFrameworkUtils.getLoginUserId());
             event.setReportedAt(LocalDateTime.now());
             event.setProgress(0);
+            event.setProcessStatus(0); // 处理状态设置为0
             event.setAutoAssigned(true);
             event.setSourceType(1); // 系统自动
 
@@ -1348,5 +1407,61 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         }
 
         eventProcessMapper.updateById(updateObj);
+    }
+
+    /**
+     * 转换评估记录为VO
+     */
+    private List<CrisisEventRespVO.AssessmentRecordVO> convertAssessmentRecords(List<CrisisEventAssessmentDO> assessments) {
+        if (CollUtil.isEmpty(assessments)) {
+            return new ArrayList<>();
+        }
+
+        // 收集所有评估人ID
+        List<Long> assessorIds = assessments.stream()
+                .map(CrisisEventAssessmentDO::getAssessorUserId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 批量获取评估人信息
+        Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(assessorIds);
+
+        return assessments.stream().map(assessment -> {
+            CrisisEventRespVO.AssessmentRecordVO vo = new CrisisEventRespVO.AssessmentRecordVO();
+            vo.setId(assessment.getId());
+            vo.setAssessorUserId(assessment.getAssessorUserId());
+            vo.setAssessmentType(assessment.getAssessmentType());
+            vo.setRiskLevel(assessment.getRiskLevel());
+            vo.setRiskLevelName(getRiskLevelName(assessment.getRiskLevel()));
+            vo.setProblemTypes(assessment.getProblemTypes());
+            vo.setFollowUpSuggestion(assessment.getFollowUpSuggestion());
+            vo.setFollowUpSuggestionName(getFollowUpSuggestionName(assessment.getFollowUpSuggestion()));
+            vo.setContent(assessment.getContent());
+            vo.setCreateTime(assessment.getCreateTime());
+
+            // 设置评估人姓名
+            AdminUserRespDTO assessor = userMap.get(assessment.getAssessorUserId());
+            if (assessor != null) {
+                vo.setAssessorName(assessor.getNickname());
+            }
+
+            return vo;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 获取后续建议名称
+     */
+    private String getFollowUpSuggestionName(Integer followUpSuggestion) {
+        if (followUpSuggestion == null) {
+            return "";
+        }
+        switch (followUpSuggestion) {
+            case 1: return "继续访谈";
+            case 2: return "继续评估";
+            case 3: return "持续关注";
+            case 4: return "问题解决";
+            default: return "未知";
+        }
     }
 }
