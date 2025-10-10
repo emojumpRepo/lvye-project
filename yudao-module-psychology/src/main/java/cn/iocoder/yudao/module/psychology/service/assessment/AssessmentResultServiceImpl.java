@@ -449,10 +449,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                             break;
                         }
                     }
-                    // 仅返回包含维度明细的问卷
-                    if (detailVO.getDimensions() != null && !detailVO.getDimensions().isEmpty()) {
-                        questionnaireResults.add(detailVO);
-                    }
+                    questionnaireResults.add(detailVO);
                 }
             } catch (Exception e) {
                 log.error("解析问卷结果JSON失败, id={}", id, e);
