@@ -880,9 +880,26 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             meta
         );
 
+        // 构建结案评估信息
+        String riskLevelInfo = "风险等级：" + getRiskLevelName(closeReqVO.getRiskLevel());
+
+        // 处理问题类型数组
+        String problemTypesInfo = "问题类型：";
+        if (CollUtil.isNotEmpty(closeReqVO.getProblemTypes())) {
+            problemTypesInfo += String.join("、", closeReqVO.getProblemTypes());
+        } else {
+            problemTypesInfo += "无";
+        }
+
+        // 获取后续建议
+        String followUpInfo = "后续建议：" + getFollowUpSuggestionName(closeReqVO.getFollowUpSuggestion());
+
+        // 组合完整的评估信息
+        String closeAssessmentInfo = riskLevelInfo + "，" + problemTypesInfo + "，" + followUpInfo;
+
         // 使用结构化方式记录结案动作
         recordEventProcessWithUsers(id, "CLOSE", closeReqVO.getSummary(),
-            "风险等级：" + getRiskLevelName(closeReqVO.getRiskLevel()),
+            closeAssessmentInfo,
             null, null);
     }
 
@@ -905,9 +922,26 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         event.setProcessStatus(assessmentReqVO.getFollowUpSuggestion()); // 更新处理状态为阶段性评估
         crisisInterventionMapper.updateById(event);
 
+        // 构建评估信息
+        String riskLevelInfo = "风险等级：" + getRiskLevelName(assessmentReqVO.getRiskLevel());
+
+        // 处理问题类型数组
+        String problemTypesInfo = "问题类型：";
+        if (CollUtil.isNotEmpty(assessmentReqVO.getProblemTypes())) {
+            problemTypesInfo += String.join("、", assessmentReqVO.getProblemTypes());
+        } else {
+            problemTypesInfo += "无";
+        }
+
+        // 获取后续建议
+        String followUpInfo = "后续建议：" + getFollowUpSuggestionName(assessmentReqVO.getFollowUpSuggestion());
+
+        // 组合完整的评估信息
+        String assessmentInfo = riskLevelInfo + "," + problemTypesInfo + "," + followUpInfo;
+
         // 记录评估动作
         recordEventProcessWithUsers(id, "STAGE_ASSESSMENT", assessmentReqVO.getContent(),
-            "风险等级：" + getRiskLevelName(assessmentReqVO.getRiskLevel()),
+            assessmentInfo,
             null, null);
 
         // 根据后续建议决定下一步
