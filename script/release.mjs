@@ -61,7 +61,16 @@ function updateProjectVersion(projectType, newVersion) {
     const filePath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend/version.json');
     const versionFile = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     versionFile.version = newVersion;
-    versionFile.buildTime = new Date().toISOString().split('T')[0];
+    // 使用北京时间，包含时分
+    versionFile.buildTime = new Date().toLocaleString('zh-CN', { 
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(/\//g, '-');
     fs.writeFileSync(filePath, JSON.stringify(versionFile, null, 2));
     console.log(chalk.green(`✓ 前端版本更新为 ${newVersion}`));
   }

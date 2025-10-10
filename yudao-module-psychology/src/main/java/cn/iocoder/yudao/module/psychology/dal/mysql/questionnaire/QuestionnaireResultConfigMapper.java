@@ -6,6 +6,8 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.resultconfig.QuestionnaireResultConfigPageReqVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultConfigDO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -22,38 +24,37 @@ public interface QuestionnaireResultConfigMapper extends BaseMapperX<Questionnai
      */
     default PageResult<QuestionnaireResultConfigDO> selectPage(QuestionnaireResultConfigPageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<QuestionnaireResultConfigDO>()
-                .eqIfPresent(QuestionnaireResultConfigDO::getQuestionnaireId, reqVO.getQuestionnaireId())
-                .likeIfPresent(QuestionnaireResultConfigDO::getDimensionName, reqVO.getDimensionName())
+                .eqIfPresent(QuestionnaireResultConfigDO::getDimensionId, reqVO.getDimensionId())
                 .eqIfPresent(QuestionnaireResultConfigDO::getCalculateType, reqVO.getCalculateType())
                 .eqIfPresent(QuestionnaireResultConfigDO::getIsAbnormal, reqVO.getIsAbnormal())
+                .eqIfPresent(QuestionnaireResultConfigDO::getRiskLevel, reqVO.getRiskLevel())
                 .likeIfPresent(QuestionnaireResultConfigDO::getLevel, reqVO.getLevel())
-                .likeIfPresent(QuestionnaireResultConfigDO::getDescription, reqVO.getDimensionName())
                 .betweenIfPresent(QuestionnaireResultConfigDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(QuestionnaireResultConfigDO::getId));
     }
 
     /**
-     * 根据问卷ID查询结果配置列表
+     * 根据维度ID查询结果配置列表
      */
-    default List<QuestionnaireResultConfigDO> selectListByQuestionnaireId(Long questionnaireId) {
-        return selectList(QuestionnaireResultConfigDO::getQuestionnaireId, questionnaireId);
+    default List<QuestionnaireResultConfigDO> selectListByDimensionId(Long dimensionId) {
+        return selectList(QuestionnaireResultConfigDO::getDimensionId, dimensionId);
     }
 
     /**
-     * 根据问卷ID和维度名称查询结果配置
+     * 根据维度ID删除结果配置
      */
-    default QuestionnaireResultConfigDO selectByQuestionnaireIdAndDimensionName(Long questionnaireId, String dimensionName) {
-        return selectOne(new LambdaQueryWrapperX<QuestionnaireResultConfigDO>()
-                .eq(QuestionnaireResultConfigDO::getQuestionnaireId, questionnaireId)
-                .eq(QuestionnaireResultConfigDO::getDimensionName, dimensionName));
-    }
-
-    /**
-     * 根据问卷ID删除结果配置
-     */
-    default void deleteByQuestionnaireId(Long questionnaireId) {
+    default void deleteByDimensionId(Long dimensionId) {
         delete(new LambdaQueryWrapperX<QuestionnaireResultConfigDO>()
-                .eq(QuestionnaireResultConfigDO::getQuestionnaireId, questionnaireId));
+                .eq(QuestionnaireResultConfigDO::getDimensionId, dimensionId));
     }
+
+    /**
+     * 根据问卷ID获取所有维度的结果配置列表（通过维度表关联查询）
+     */
+    @Select("SELECT qrc.* FROM lvye_questionnaire_result_config qrc " +
+            "INNER JOIN lvye_questionnaire_dimension qd ON qrc.dimension_id = qd.id " +
+            "WHERE qd.questionnaire_id = #{questionnaireId} " +
+            "ORDER BY qd.sort_order, qrc.id")
+    List<QuestionnaireResultConfigDO> selectListByQuestionnaireId(@Param("questionnaireId") Long questionnaireId);
 
 }

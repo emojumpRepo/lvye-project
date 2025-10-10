@@ -56,6 +56,11 @@ public interface QuestionnaireResultService {
     StudentAssessmentQuestionnaireDetailVO selectQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId);
 
     /**
+     * 根据唯一键查询原始问卷结果DO（用于取generation_status等原始字段）
+     */
+    QuestionnaireResultDO getQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId);
+
+    /**
      * 根据ID获取问卷结果
      *
      * @param id 问卷结果ID

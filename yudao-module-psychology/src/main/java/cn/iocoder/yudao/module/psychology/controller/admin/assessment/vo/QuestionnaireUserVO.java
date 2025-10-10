@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -92,5 +93,17 @@ public class QuestionnaireUserVO {
      */
     @Schema(description = "问卷结果ID（格式：id:xxx，未完成时为null）")
     private String id;
+
+    /**
+     * 等级（从result_data中提取的level值）
+     */
+    @Schema(description = "等级（从result_data中提取的level值）")
+    private String level;
+
+    /**
+     * 结果数据（仅用于内部处理，不返回给前端）
+     */
+    @JsonIgnore
+    private String resultData;
 
 }

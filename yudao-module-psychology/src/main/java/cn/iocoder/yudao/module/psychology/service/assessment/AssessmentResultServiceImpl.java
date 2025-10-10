@@ -21,6 +21,7 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.enums.ResultGeneratorTypeEnum;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.QuestionnaireResultVO;
+import cn.iocoder.yudao.module.psychology.rule.executor.ExpressionExecutor;
 import cn.iocoder.yudao.module.psychology.util.RiskLevelUtils;
 
 import java.util.ArrayList;
@@ -127,13 +128,15 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                     // resultData 可能是数组格式
                     if (r.getResultData().trim().startsWith("[")) {
                         // 解析为数组
-                        List<Map> rawDataList = JsonUtils.parseArray(r.getResultData(), Map.class);
+                        List<Map<String, Object>> rawDataList = JsonUtils.parseObjectQuietly(
+                            r.getResultData(), new TypeReference<List<Map<String, Object>>>() {}
+                        );
                         
                         if (rawDataList != null && !rawDataList.isEmpty()) {
                             dimAbnormalStatus = new HashMap<>();
                             int totalAbnormal = 0;
                             
-                            for (Map dimension : rawDataList) {
+                            for (Map<String, Object> dimension : rawDataList) {
                                 String dimensionName = (String) dimension.get("dimensionName");
                                 Object isAbnormalObj = dimension.get("isAbnormal");
                                 
@@ -148,6 +151,10 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                                     }
                                     
                                     if (isAbnormal != null) {
+                                        if (dimensionName == null || dimensionName.isEmpty()) {
+                                            // 兜底命名，防止缺失名称导致统计为0
+                                            dimensionName = "dim_" + (dimAbnormalStatus.size() + 1);
+                                        }
                                         dimAbnormalStatus.put(dimensionName, isAbnormal);
                                         if (isAbnormal) {
                                             totalAbnormal++;
@@ -224,13 +231,15 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
 
         // 查询场景编码
         String scenarioCode = null;
+        Long scenarioId = null;
         AssessmentTaskDO assessmentTask = assessmentTaskMapper.selectByTaskNo(taskNo);
         if (assessmentTask != null && assessmentTask.getScenarioId() != null) {
+            scenarioId = assessmentTask.getScenarioId();
             AssessmentScenarioDO scenario = assessmentScenarioMapper.selectById(assessmentTask.getScenarioId());
             if (scenario != null) {
                 scenarioCode = scenario.getCode();
                 log.info("测评任务关联场景: taskNo={}, scenarioId={}, scenarioCode={}", 
-                        taskNo, assessmentTask.getScenarioId(), scenarioCode);
+                        taskNo, scenarioId, scenarioCode);
             }
         }
 
@@ -257,9 +266,12 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 .generationType(ResultGeneratorTypeEnum.COMBINED_ASSESSMENT)
                 .assessmentId(userTask != null ? userTask.getId() : null) // 暂以参与者任务ID代替assessmentId概念
                 .userId(userId) // 这里使用系统用户ID
+                .studentProfileId(participantId) // 传递学生档案ID用于场景化服务
                 .questionnaireResults(questionnaireResults)
                 .scenarioCode(scenarioCode)  // 传递场景编码
+                .scenarioId(scenarioId)      // 传递场景ID，触发场景化计算路径
                 .questionnaireCodeMap(questionnaireCodeMap)  // 传递问卷编码映射
+                .taskNo(taskNo)              // 传递本次测评任务编号
                 .build();
         AssessmentResultVO resultVO = resultGeneratorFactory.generateResult(ResultGeneratorTypeEnum.COMBINED_ASSESSMENT, context);
 
