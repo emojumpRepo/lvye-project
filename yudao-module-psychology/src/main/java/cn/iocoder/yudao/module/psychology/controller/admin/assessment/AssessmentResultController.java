@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -82,6 +83,27 @@ public class AssessmentResultController {
             }
         } catch (Exception e) {
             log.error("获取测评结果详情时发生异常，id={}", id, e);
+            throw e;
+        }
+    }
+
+    @PostMapping("/recalculate")
+    @Operation(summary = "重新计算测评任务结果")
+    // @PreAuthorize("@ss.hasPermission('psychology:assessment:update')")
+    public CommonResult<Void> recalculateAssessmentResults(
+            @Parameter(description = "测评任务编号", required = true)
+            @RequestParam @NotBlank(message = "测评任务编号不能为空") String taskNo,
+            @Parameter(description = "用户ID列表（可选，不传则计算所有用户）", required = false)
+            @RequestParam(required = false) List<Long> userIds) {
+
+        log.info("开始重新计算测评任务结果，taskNo={}, userIds={}", taskNo, userIds);
+
+        try {
+            assessmentResultService.recalculateAssessmentResults(taskNo, userIds);
+            log.info("重新计算测评任务结果成功，taskNo={}, userIds={}", taskNo, userIds);
+            return success(null);
+        } catch (Exception e) {
+            log.error("重新计算测评任务结果时发生异常，taskNo={}, userIds={}", taskNo, userIds, e);
             throw e;
         }
     }

@@ -81,5 +81,13 @@ public interface QuestionnaireResultMapper extends BaseMapperX<QuestionnaireResu
                 .orderByDesc(QuestionnaireResultDO::getCreateTime));
     }
 
+    /**
+     * 根据任务编号查询所有问卷结果
+     */
+    default List<QuestionnaireResultDO> selectListByTaskNo(String taskNo) {
+        return selectList(new LambdaQueryWrapper<QuestionnaireResultDO>()
+                .eq(QuestionnaireResultDO::getAssessmentTaskNo, taskNo));
+    }
+
 
 }
