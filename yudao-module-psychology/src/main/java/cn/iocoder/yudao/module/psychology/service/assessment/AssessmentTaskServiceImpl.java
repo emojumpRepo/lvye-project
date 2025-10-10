@@ -207,6 +207,10 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             List<StudentProfileDO> userList = studentProfileService.getStudentListByClassIds(deptIds);
             if (!CollUtil.isEmpty(userList)) {
                 for (StudentProfileDO studentProfileDO : userList) {
+                    // 过滤已毕业学生（graduationStatus == 1）
+                    if (studentProfileDO.getGraduationStatus() != null && studentProfileDO.getGraduationStatus() == 1) {
+                        continue;
+                    }
                     AssessmentUserTaskDO assessmentUserTaskDO = new AssessmentUserTaskDO();
                     assessmentUserTaskDO.setTaskNo(createReqVO.getTaskNo());
                     assessmentUserTaskDO.setUserId(studentProfileDO.getUserId());
@@ -220,6 +224,15 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         //请求报文的用户
         if (createReqVO.getUserIdList() != null && !createReqVO.getUserIdList().isEmpty()) {
             for (Long userId : createReqVO.getUserIdList()) {
+                // 查询学生档案，检查毕业状态
+                StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(userId);
+
+                // 过滤：学生档案不存在 或 已毕业（graduationStatus == 1）
+                if (studentProfile == null ||
+                    (studentProfile.getGraduationStatus() != null && studentProfile.getGraduationStatus() == 1)) {
+                    continue;
+                }
+
                 AssessmentUserTaskDO assessmentUserTaskDO = new AssessmentUserTaskDO();
                 assessmentUserTaskDO.setTaskNo(createReqVO.getTaskNo());
                 assessmentUserTaskDO.setUserId(userId);
