@@ -125,10 +125,38 @@ public class ScenarioBasedAssessmentResultServiceImpl implements ScenarioBasedAs
             }
         }
 
-        // 7. 保存测评结果
+        // 7. 保存测评结果（先查询是否已存在，存在则更新，否则插入）
         if (result != null) {
-            assessmentResultMapper.insert(result);
-            logger.info("测评结果计算完成并保存: assessmentResultId={}", result.getId());
+            // 查询是否已存在相同 taskNo + participantId + dimensionCode 的记录
+            List<AssessmentResultDO> existList = assessmentResultMapper.selectList(
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<AssessmentResultDO>()
+                    .eq(AssessmentResultDO::getTaskNo, result.getTaskNo())
+                    .eq(AssessmentResultDO::getParticipantId, result.getParticipantId())
+                    .eq(AssessmentResultDO::getDimensionCode, result.getDimensionCode())
+            );
+
+            if (existList == null || existList.isEmpty()) {
+                // 不存在，插入新记录
+                assessmentResultMapper.insert(result);
+                logger.info("测评结果计算完成并保存(新增): assessmentResultId={}", result.getId());
+            } else {
+                // 已存在，更新第一条记录
+                AssessmentResultDO exist = existList.get(0);
+                result.setId(exist.getId());
+                assessmentResultMapper.updateById(result);
+                logger.info("测评结果计算完成并保存(更新): assessmentResultId={}, taskNo={}, participantId={}",
+                    result.getId(), result.getTaskNo(), result.getParticipantId());
+
+                // 如果存在多条重复记录，删除其他记录
+                if (existList.size() > 1) {
+                    logger.warn("发现{}条重复的测评结果记录, taskNo={}, participantId={}, 将删除多余记录",
+                        existList.size(), result.getTaskNo(), result.getParticipantId());
+                    for (int i = 1; i < existList.size(); i++) {
+                        assessmentResultMapper.deleteById(existList.get(i).getId());
+                        logger.info("已删除重复的测评结果记录, id={}", existList.get(i).getId());
+                    }
+                }
+            }
         }
 
         return result;
