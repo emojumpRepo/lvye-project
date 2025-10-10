@@ -361,6 +361,19 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         respVO.setCreateTime(assessmentResult.getCreateTime());
         respVO.setUpdateTime(assessmentResult.getUpdateTime());
 
+        // 查询并设置场景名称
+        if (assessmentResult.getTaskNo() != null) {
+            AssessmentTaskDO assessmentTask = assessmentTaskMapper.selectByTaskNo(assessmentResult.getTaskNo());
+            if (assessmentTask != null && assessmentTask.getScenarioId() != null) {
+                AssessmentScenarioDO scenario = assessmentScenarioMapper.selectById(assessmentTask.getScenarioId());
+                if (scenario != null) {
+                    respVO.setScenarioName(scenario.getName());
+                    log.info("获取场景名称成功, taskNo={}, scenarioId={}, scenarioName={}",
+                        assessmentResult.getTaskNo(), assessmentTask.getScenarioId(), scenario.getName());
+                }
+            }
+        }
+
         // 3. 解析问卷结果JSON并添加问卷名称和答题结果
         List<AssessmentResultDetailRespVO.QuestionnaireResultDetailVO> questionnaireResults = new ArrayList<>();
 
@@ -449,10 +462,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                             break;
                         }
                     }
-                    // 仅返回包含维度明细的问卷
-                    if (detailVO.getDimensions() != null && !detailVO.getDimensions().isEmpty()) {
-                        questionnaireResults.add(detailVO);
-                    }
+                    questionnaireResults.add(detailVO);
                 }
             } catch (Exception e) {
                 log.error("解析问卷结果JSON失败, id={}", id, e);

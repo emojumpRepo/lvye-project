@@ -26,6 +26,9 @@ public class AssessmentResultDetailRespVO {
     @Schema(description = "测评任务编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "TASK_20250904174506_906195")
     private String taskNo;
 
+    @Schema(description = "场景名称", example = "入学新生心理普查")
+    private String scenarioName;
+
     @Schema(description = "维度代码", requiredMode = Schema.RequiredMode.REQUIRED, example = "total")
     private String dimensionCode;
 
