@@ -1081,14 +1081,13 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         meta.put("taskNo", taskNo);
         meta.put("action", "CREATE_ASSESSMENT");
 
-        String title = String.format("危机事件(%s)发布测评任务", event.getEventId());
         String timelineContent = String.format("危机事件(%s)发布了测评任务：%s", event.getEventId(), taskNo);
 
         studentTimelineService.saveTimelineWithMeta(
             event.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
-            title,
-            "crisis_event_" + eventId,
+            "危机事件(" + event.getEventId() + ")发布测评任务",
+            event.getEventId(),
             timelineContent,
             meta
         );

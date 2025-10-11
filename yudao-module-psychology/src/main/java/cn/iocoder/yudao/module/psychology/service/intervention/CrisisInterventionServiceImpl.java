@@ -520,8 +520,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         studentTimelineService.saveTimelineWithMeta(
             createReqVO.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
-            "危机事件上报",
-            "crisis_event_" + event.getId(),
+            "危机事件(" + event.getEventId() + ")上报",
+            event.getEventId(),
             content,
             meta
         );
@@ -727,7 +727,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             event.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
             "危机事件(" + event.getEventId() + ")分配",
-            "crisis_event_" + id,
+            event.getEventId(),
             content,
             meta
         );
@@ -778,7 +778,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             event.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
             "危机事件(" + event.getEventId() + ")负责人变更",
-            "crisis_event_" + id,
+            event.getEventId(),
             content,
             meta
         );
@@ -820,8 +820,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         studentTimelineService.saveTimelineWithMeta(
             event.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
-            "危机事件处理",
-            "crisis_event_" + id,
+            "危机事件(" + event.getEventId() + ")处理",
+            event.getEventId(),
             content,
             meta
         );
@@ -874,8 +874,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         studentTimelineService.saveTimelineWithMeta(
             event.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
-            "危机事件结案",
-            "crisis_event_" + id,
+            "危机事件(" + event.getEventId() + ")结案",
+            event.getEventId(),
             content,
             meta
         );
