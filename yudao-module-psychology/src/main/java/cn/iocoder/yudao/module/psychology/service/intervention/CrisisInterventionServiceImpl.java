@@ -937,7 +937,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         String followUpInfo = "后续建议：" + getFollowUpSuggestionName(assessmentReqVO.getFollowUpSuggestion());
 
         // 组合完整的评估信息
-        String assessmentInfo = riskLevelInfo + "," + problemTypesInfo + "," + followUpInfo;
+        String assessmentInfo = riskLevelInfo + "，" + problemTypesInfo + "，" + followUpInfo;
 
         // 记录评估动作
         recordEventProcessWithUsers(id, "STAGE_ASSESSMENT", assessmentReqVO.getContent(),
@@ -1196,6 +1196,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
                 vo.setStudentName(student.getName());
                 vo.setStudentNumber(student.getStudentNo());
                 vo.setClassName(student.getClassName());
+                vo.setStudentUserId(student.getUserId());
             }
 
             // 填充处理人信息
@@ -1310,40 +1311,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         }).collect(Collectors.toList());
     }
 
-    private String getProcessMethodName(Integer method) {
-        // 从字典获取处理方式名称
-        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.INTERVENTION_PROCESS_METHOD, method);
-        return label != null ? label : "未知";
-    }
 
-    private String getActionName(String action) {
-        // TODO: 从字典获取操作类型名称
-        if (StrUtil.isBlank(action)) {
-            return "";
-        }
-        switch (action) {
-            case "REPORT": return "上报事件";
-            case "ASSIGN_HANDLER": return "分配负责人";
-            case "REASSIGN_HANDLER": return "更改负责人";
-            case "CHOOSE_PROCESS": return "选择处理方式";
-            case "STAGE_ASSESSMENT": return "阶段性评估";
-            case "CLOSE": return "结案";
-            case "REOPEN": return "重新开启";
-            default: return action;
-        }
-    }
-
-    private String getRiskLevelName(Integer level) {
-        // 字典类型：crisis_level
-        switch (level) {
-            case 1: return "待评估";
-            case 2: return "持续观察";
-            case 3: return "一般关注(一类)";
-            case 4: return "严重风险(二类)";
-            case 5: return "重大风险(三类)";
-            default: return "未知";
-        }
-    }
 
     /**
      * 自动创建干预记录
@@ -1483,19 +1451,53 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         }).collect(Collectors.toList());
     }
 
+
+    // ============================= 获取字典标签 =============================
     /**
-     * 获取后续建议名称
+     * 获取评估后续建议名称
      */
     private String getFollowUpSuggestionName(Integer followUpSuggestion) {
         if (followUpSuggestion == null) {
-            return "";
+            return "未知";
         }
-        switch (followUpSuggestion) {
-            case 1: return "继续访谈";
-            case 2: return "继续评估";
-            case 3: return "持续关注";
-            case 4: return "问题解决";
-            default: return "未知";
+
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.FOLLOW_UP_SUGGESTION, followUpSuggestion);
+        return label != null ? label : "未知";
+    }
+
+    /**
+     * 获取危机事件处理方式名称
+     */
+    private String getProcessMethodName(Integer method) {
+        if (method == null) {
+            return "未知";
         }
+
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.INTERVENTION_PROCESS_METHOD, method);
+        return label != null ? label : "未知";
+    }
+
+    /**
+     * 获取事件历史记录处理动作名称
+     */
+    private String getActionName(String action) {
+        if (StrUtil.isBlank(action)) {
+            return "未知";
+        }
+        
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.CRISIS_EVENT_ACTION, action);
+        return label != null ? label : "未知";
+    }
+
+    /**
+     * 获取测评风险等级名称
+     */
+    private String getRiskLevelName(Integer level) {
+        if(level == null){
+            return "未知";
+        }
+
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.RISK_LEVEL, level);
+        return label != null ? label : "未知";
     }
 }

@@ -28,6 +28,9 @@ public class CrisisEventRespVO {
     @Schema(description = "班级名称", example = "高一(1)班")
     private String className;
 
+    @Schema(description = "学生用户ID", example = "1")
+    private Long studentUserId;
+
     @Schema(description = "事件标题")
     private String title;
 

@@ -51,4 +51,7 @@ public class AssessmentTaskBaseVO {
     @Schema(description = "任务描述", example = "这是一个心理健康测评任务")
     private String description;
 
+    @Schema(description = "危机事件ID", example = "1")
+    private Long eventId;
+
 }

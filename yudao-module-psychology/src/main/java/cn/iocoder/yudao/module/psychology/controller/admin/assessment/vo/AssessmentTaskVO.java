@@ -115,6 +115,12 @@ public class AssessmentTaskVO {
     private String description;
 
     /**
+     * 危机事件ID
+     */
+    @Schema(description = "危机事件ID")
+    private Long eventId;
+
+    /**
      * 问卷ID字符串（用于数据库查询）
      */
     @Schema(hidden = true)

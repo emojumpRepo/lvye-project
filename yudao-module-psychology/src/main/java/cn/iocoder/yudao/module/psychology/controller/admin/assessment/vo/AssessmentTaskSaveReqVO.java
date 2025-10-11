@@ -67,4 +67,7 @@ public class AssessmentTaskSaveReqVO{
     @Length(max = 2000, message = "任务描述不能超过 2000 字符")
     private String description;
 
+    @Schema(description = "危机事件ID", example = "1")
+    private Long eventId;
+
 }
