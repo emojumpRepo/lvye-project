@@ -10,10 +10,14 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.*;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTaskDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisEventAssessmentDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisEventProcessDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisInterventionDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.intervention.InterventionLevelHistoryDO;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventAssessmentMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventProcessMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisInterventionMapper;
@@ -81,6 +85,12 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Resource
     private ConfigService configService;
+
+    @Resource
+    private AssessmentTaskMapper assessmentTaskMapper;
+
+    @Resource
+    private AssessmentUserTaskMapper assessmentUserTaskMapper;
 
     // 配置键常量
     private static final String CONFIG_KEY_ASSIGNMENT_MODE = "intervention.assignment.mode";
@@ -681,6 +691,20 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 添加评估记录（按创建时间倒序）
         List<CrisisEventAssessmentDO> assessmentList = eventAssessmentMapper.selectListByEventIdOrderByCreateTimeDesc(id);
         vo.setAssessmentRecords(convertAssessmentRecords(assessmentList));
+
+        // 添加最新测评任务
+        AssessmentTaskDO latestTask = assessmentTaskMapper.selectLatestByEventId(id);
+        if (latestTask != null && vo.getStudentUserId() != null) {
+            AssessmentUserTaskDO userTask = assessmentUserTaskMapper.selectByTaskNoAndUserId(
+                latestTask.getTaskNo(), vo.getStudentUserId());
+            
+            CrisisEventRespVO.LatestAssessmentTaskVO taskVO = new CrisisEventRespVO.LatestAssessmentTaskVO();
+            taskVO.setTaskId(latestTask.getId());
+            taskVO.setTaskNo(latestTask.getTaskNo());
+            taskVO.setTaskName(latestTask.getTaskName());
+            taskVO.setStatus(userTask != null ? userTask.getStatus() : null);
+            vo.setLatestAssessmentTask(taskVO);
+        }
 
         return vo;
     }

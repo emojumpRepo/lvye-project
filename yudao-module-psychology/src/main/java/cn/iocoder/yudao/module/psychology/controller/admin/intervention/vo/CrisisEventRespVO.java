@@ -106,6 +106,9 @@ public class CrisisEventRespVO {
     @Schema(description = "评估记录列表（按创建时间倒序）")
     private List<AssessmentRecordVO> assessmentRecords;
 
+    @Schema(description = "最新测评任务")
+    private LatestAssessmentTaskVO latestAssessmentTask;
+
     @Data
     public static class ProcessHistoryVO {
         @Schema(description = "操作时间")
@@ -173,5 +176,20 @@ public class CrisisEventRespVO {
 
         @Schema(description = "创建时间")
         private LocalDateTime createTime;
+    }
+
+    @Data
+    public static class LatestAssessmentTaskVO {
+        @Schema(description = "任务ID")
+        private Long taskId;
+
+        @Schema(description = "任务编号")
+        private String taskNo;
+
+        @Schema(description = "任务名称")
+        private String taskName;
+
+        @Schema(description = "完成状态")
+        private Integer status;
     }
 }

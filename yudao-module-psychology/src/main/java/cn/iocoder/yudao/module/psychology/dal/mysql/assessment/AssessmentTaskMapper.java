@@ -34,6 +34,13 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
         return selectOne(AssessmentTaskDO::getTaskNo, taskNo);
     }
 
+    default AssessmentTaskDO selectLatestByEventId(Long eventId) {
+        return selectOne(new LambdaQueryWrapperX<AssessmentTaskDO>()
+                .eq(AssessmentTaskDO::getEventId, eventId)
+                .orderByDesc(AssessmentTaskDO::getCreateTime)
+                .last("LIMIT 1"));
+    }
+
     default int updateStatusByTaskNo(AssessmentTaskDO updateObj) {
         return update(new LambdaUpdateWrapper<AssessmentTaskDO>()
                 .eq(AssessmentTaskDO::getTaskNo, updateObj.getTaskNo()).set(AssessmentTaskDO::getStatus, updateObj.getStatus()));
