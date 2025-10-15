@@ -11,6 +11,8 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMap
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskQuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisInterventionMapper;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisInterventionDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.DimensionResultMapper;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.DimensionResultDO;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
@@ -88,6 +90,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Resource
     private cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultAsyncService questionnaireResultAsyncService;
+
+    @Resource
+    private CrisisInterventionMapper crisisInterventionMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -257,6 +262,18 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
                                                 TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getType(),
                                                 TimelineEventTypeEnum.ASSESSMENT_COMPLETED.getName(),
                                                 taskNo, content, meta);
+                                    }
+
+                                    // 更新危机事件状态（如果存在）
+                                    if (assessmentTask != null && assessmentTask.getEventId() != null) {
+                                        try {
+                                            CrisisInterventionDO event = new CrisisInterventionDO();
+                                            event.setId(assessmentTask.getEventId());
+                                            event.setStatus(3);
+                                            crisisInterventionMapper.updateById(event);
+                                        } catch (Exception e) {
+                                            log.warn("更新危机事件状态失败, eventId={}, err={} ", assessmentTask.getEventId(), e.getMessage());
+                                        }
                                     }
 
                                     // 触发组合测评结果生成

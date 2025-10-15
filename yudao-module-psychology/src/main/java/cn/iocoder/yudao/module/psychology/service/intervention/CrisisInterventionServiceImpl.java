@@ -692,18 +692,29 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         List<CrisisEventAssessmentDO> assessmentList = eventAssessmentMapper.selectListByEventIdOrderByCreateTimeDesc(id);
         vo.setAssessmentRecords(convertAssessmentRecords(assessmentList));
 
-        // 添加最新测评任务
-        AssessmentTaskDO latestTask = assessmentTaskMapper.selectLatestByEventId(id);
-        if (latestTask != null && vo.getStudentUserId() != null) {
-            AssessmentUserTaskDO userTask = assessmentUserTaskMapper.selectByTaskNoAndUserId(
-                latestTask.getTaskNo(), vo.getStudentUserId());
+        // 添加正在进行的测评任务（未完成状态，包含未开始和进行中）
+        if (vo.getStudentUserId() != null) {
+            AssessmentUserTaskDO ongoingUserTask = assessmentUserTaskMapper.selectOngoingTaskByEventIdAndUserId(
+                id, vo.getStudentUserId());
             
-            CrisisEventRespVO.LatestAssessmentTaskVO taskVO = new CrisisEventRespVO.LatestAssessmentTaskVO();
-            taskVO.setTaskId(latestTask.getId());
-            taskVO.setTaskNo(latestTask.getTaskNo());
-            taskVO.setTaskName(latestTask.getTaskName());
-            taskVO.setStatus(userTask != null ? userTask.getStatus() : null);
-            vo.setLatestAssessmentTask(taskVO);
+            if (ongoingUserTask != null) {
+                AssessmentTaskDO task = assessmentTaskMapper.selectByTaskNo(ongoingUserTask.getTaskNo());
+                if (task != null) {
+                    CrisisEventRespVO.PendingAssessmentTaskVO taskVO = new CrisisEventRespVO.PendingAssessmentTaskVO();
+                    taskVO.setTaskId(task.getId());
+                    taskVO.setTaskNo(task.getTaskNo());
+                    taskVO.setTaskName(task.getTaskName());
+                    taskVO.setStatus(ongoingUserTask.getStatus());
+                    vo.setPendingAssessmentTask(taskVO);
+                }
+            }
+        }
+
+        // 加载测评任务列表
+        if (vo.getStudentUserId() != null) {
+            List<CrisisEventRespVO.AssessmentTaskVO> assessmentTasks = 
+                assessmentUserTaskMapper.selectAllTasksByEventIdAndUserId(id, vo.getStudentUserId());
+            vo.setAssessmentTasks(assessmentTasks);
         }
 
         return vo;
@@ -819,7 +830,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 更新处理方式和状态
         event.setProcessMethod(processMethod);
         event.setProcessReason(processReqVO.getProcessReason());
-        event.setStatus(3); // 状态为3
+        if(processMethod == 3 || processMethod == 4) {
+            event.setStatus(3); // 状态为3
+        }
         event.setProcessStatus(processMethod); // 更新处理状态为选择方式
         event.setProgress(50); // 进度50%
         crisisInterventionMapper.updateById(event);
@@ -858,7 +871,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         CrisisInterventionDO event = validateEventExists(id);
 
         // 更新事件状态
-        event.setStatus(6); // 已结案
+        event.setStatus(5); // 已结案
         event.setClosureSummary(closeReqVO.getSummary());
         event.setProgress(100);
         event.setProcessStatus(closeReqVO.getFollowUpSuggestion()); // 更新处理状态为最终评估
@@ -941,7 +954,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         eventAssessmentMapper.insert(assessment);
 
         // 更新进度和状态
-        event.setStatus(3); // 更新为处理中
+        event.setStatus(3); // 状态为3
         // event.setProgress(88);
         event.setProcessStatus(assessmentReqVO.getFollowUpSuggestion()); // 更新处理状态为阶段性评估
         crisisInterventionMapper.updateById(event);
@@ -970,7 +983,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
         // 根据后续建议决定下一步
         if (assessmentReqVO.getFollowUpSuggestion() == 5) { // 转介
-            event.setStatus(5); // 可以考虑结案
+            event.setStatus(4); // 可以考虑结案
             crisisInterventionMapper.updateById(event);
         }
     }

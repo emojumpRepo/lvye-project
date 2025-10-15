@@ -278,7 +278,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         // 如果传入了 eventId，记录危机事件处理过程和学生时间线
         if (createReqVO.getEventId() != null) {
             try {
-                recordCrisisEventAssessmentTask(createReqVO.getEventId(), assessmentTask.getTaskNo());
+                recordCrisisEventAssessmentTask(createReqVO.getEventId(), assessmentTask.getTaskNo(), assessmentTask.getTaskName());
             } catch (Exception e) {
                 log.error("记录危机事件测评任务失败，eventId: {}, taskNo: {}",
                     createReqVO.getEventId(), assessmentTask.getTaskNo(), e);
@@ -1062,7 +1062,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
      * @param eventId 危机事件ID
      * @param taskNo 测评任务编号
      */
-    private void recordCrisisEventAssessmentTask(Long eventId, String taskNo) {
+    private void recordCrisisEventAssessmentTask(Long eventId, String taskNo, String taskName) {
         // 查询危机事件
         CrisisInterventionDO event = crisisInterventionMapper.selectById(eventId);
         if (event == null) {
@@ -1071,7 +1071,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         }
 
         // 1. 使用 recordEventProcessWithUsers 添加危机事件处理记录
-        String content = "发布测评任务：" + taskNo;
+        String content = "发布测评任务：" + taskName + "(" + taskNo + ")";
         recordEventProcessWithUsers(eventId, "CREATE_ASSESSMENT", content, null, null, null);
 
         // 2. 使用 saveTimelineWithMeta 添加学生时间线记录
@@ -1081,7 +1081,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         meta.put("taskNo", taskNo);
         meta.put("action", "CREATE_ASSESSMENT");
 
-        String timelineContent = String.format("危机事件(%s)发布了测评任务：%s", event.getEventId(), taskNo);
+        String timelineContent = String.format("危机事件(%s)发布了测评任务：%s(%s)", event.getEventId(),taskName, taskNo);
 
         studentTimelineService.saveTimelineWithMeta(
             event.getStudentProfileId(),

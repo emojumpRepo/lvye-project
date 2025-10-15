@@ -93,6 +93,38 @@
         select count(*) from lvye_assessment_user_task where task_no = #{taskNo} and status = #{status} and deleted = 0
     </select>
 
+    <select id="selectOngoingTaskByEventIdAndUserId"
+            resultType="cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO">
+        select a.*
+        from lvye_assessment_user_task a
+        inner join lvye_assessment_task b on a.task_no = b.task_no and b.deleted = 0
+        where b.event_id = #{eventId}
+        and a.user_id = #{userId}
+        and a.status != 2
+        and a.deleted = 0
+        order by a.create_time desc
+        limit 1
+    </select>
+
+    <select id="selectAllTasksByEventIdAndUserId"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.CrisisEventRespVO$AssessmentTaskVO">
+        select 
+            b.id as task_id,
+            b.task_no,
+            b.task_name,
+            a.status,
+            a.risk_level,
+            b.startline,
+            b.deadline,
+            a.submit_time
+        from lvye_assessment_user_task a
+        inner join lvye_assessment_task b on a.task_no = b.task_no and b.deleted = 0
+        where b.event_id = #{eventId}
+        and a.user_id = #{userId}
+        and a.deleted = 0
+        order by a.create_time desc
+    </select>
+
     <select id="selectStudentAssessmentTaskList"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskHisVO">
         select

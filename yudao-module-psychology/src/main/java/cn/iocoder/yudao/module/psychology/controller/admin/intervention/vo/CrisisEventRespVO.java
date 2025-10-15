@@ -106,8 +106,11 @@ public class CrisisEventRespVO {
     @Schema(description = "评估记录列表（按创建时间倒序）")
     private List<AssessmentRecordVO> assessmentRecords;
 
-    @Schema(description = "最新测评任务")
-    private LatestAssessmentTaskVO latestAssessmentTask;
+    @Schema(description = "正在进行的测评任务（未完成状态，包含未开始和进行中）")
+    private PendingAssessmentTaskVO pendingAssessmentTask;
+
+    @Schema(description = "测评任务列表（该危机事件关联的所有测评任务）")
+    private List<AssessmentTaskVO> assessmentTasks;
 
     @Data
     public static class ProcessHistoryVO {
@@ -179,7 +182,7 @@ public class CrisisEventRespVO {
     }
 
     @Data
-    public static class LatestAssessmentTaskVO {
+    public static class PendingAssessmentTaskVO {
         @Schema(description = "任务ID")
         private Long taskId;
 
@@ -191,5 +194,32 @@ public class CrisisEventRespVO {
 
         @Schema(description = "完成状态")
         private Integer status;
+    }
+
+    @Data
+    public static class AssessmentTaskVO {
+        @Schema(description = "任务ID")
+        private Long taskId;
+
+        @Schema(description = "任务编号")
+        private String taskNo;
+
+        @Schema(description = "任务名称")
+        private String taskName;
+
+        @Schema(description = "完成状态")
+        private Integer status;
+
+        @Schema(description = "风险等级")
+        private Integer riskLevel;
+
+        @Schema(description = "任务开始时间")
+        private LocalDateTime startline;
+
+        @Schema(description = "任务截止时间")
+        private LocalDateTime deadline;
+
+        @Schema(description = "提交时间")
+        private LocalDateTime submitTime;
     }
 }
