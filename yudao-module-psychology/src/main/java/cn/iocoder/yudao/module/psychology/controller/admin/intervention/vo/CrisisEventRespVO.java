@@ -114,6 +114,12 @@ public class CrisisEventRespVO {
 
     @Data
     public static class ProcessHistoryVO {
+        @Schema(description = "处理记录ID")
+        private Long id;
+
+        @Schema(description = "危机事件ID")
+        private Long eventId;
+
         @Schema(description = "操作时间")
         private LocalDateTime operateTime;
 
@@ -126,8 +132,14 @@ public class CrisisEventRespVO {
         @Schema(description = "操作内容")
         private String content;
 
+        @Schema(description = "操作原因")
+        private String reason;
+
         @Schema(description = "附件列表")
         private List<String> attachments;
+
+        @Schema(description = "测评结果ID")
+        private Long taskResultId;
     }
 
     @Data

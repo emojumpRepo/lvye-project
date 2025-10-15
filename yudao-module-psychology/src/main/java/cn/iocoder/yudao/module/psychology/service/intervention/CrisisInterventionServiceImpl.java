@@ -18,6 +18,8 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisInte
 import cn.iocoder.yudao.module.psychology.dal.dataobject.intervention.InterventionLevelHistoryDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentResultMapper;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentResultDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventAssessmentMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventProcessMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisInterventionMapper;
@@ -91,6 +93,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Resource
     private AssessmentUserTaskMapper assessmentUserTaskMapper;
+
+    @Resource
+    private AssessmentResultMapper assessmentResultMapper;
 
     // 配置键常量
     private static final String CONFIG_KEY_ASSIGNMENT_MODE = "intervention.assignment.mode";
@@ -674,8 +679,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         CrisisEventRespVO vo = voList.get(0);
 
         // 加载处理历史
-        // List<CrisisEventProcessDO> processList = eventProcessMapper.selectListByEventId(id);
-        // vo.setProcessHistory(convertProcessHistory(processList));
+        List<CrisisEventProcessDO> processList = eventProcessMapper.selectListByEventId(id);
+        vo.setProcessHistory(convertProcessHistory(processList, vo.getStudentProfileId()));
 
         // 加载最新评估
         CrisisEventAssessmentDO latestAssessment = eventAssessmentMapper.selectLatestByEventId(id);
@@ -688,9 +693,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             vo.setLatestAssessment(assessmentVO);
         }
 
-        // 添加评估记录（按创建时间倒序）
-        List<CrisisEventAssessmentDO> assessmentList = eventAssessmentMapper.selectListByEventIdOrderByCreateTimeDesc(id);
-        vo.setAssessmentRecords(convertAssessmentRecords(assessmentList));
+        // // 添加评估记录（按创建时间倒序）
+        // List<CrisisEventAssessmentDO> assessmentList = eventAssessmentMapper.selectListByEventIdOrderByCreateTimeDesc(id);
+        // vo.setAssessmentRecords(convertAssessmentRecords(assessmentList));
 
         // 添加正在进行的测评任务（未完成状态，包含未开始和进行中）
         if (vo.getStudentUserId() != null) {
@@ -711,11 +716,11 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         }
 
         // 加载测评任务列表
-        if (vo.getStudentUserId() != null) {
-            List<CrisisEventRespVO.AssessmentTaskVO> assessmentTasks = 
-                assessmentUserTaskMapper.selectAllTasksByEventIdAndUserId(id, vo.getStudentUserId());
-            vo.setAssessmentTasks(assessmentTasks);
-        }
+        // if (vo.getStudentUserId() != null) {
+        //     List<CrisisEventRespVO.AssessmentTaskVO> assessmentTasks = 
+        //         assessmentUserTaskMapper.selectAllTasksByEventIdAndUserId(id, vo.getStudentUserId());
+        //     vo.setAssessmentTasks(assessmentTasks);
+        // }
 
         return vo;
     }
@@ -1255,7 +1260,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         }).collect(Collectors.toList());
     }
 
-    private List<CrisisEventRespVO.ProcessHistoryVO> convertProcessHistory(List<CrisisEventProcessDO> processList) {
+    private List<CrisisEventRespVO.ProcessHistoryVO> convertProcessHistory(List<CrisisEventProcessDO> processList, Long studentProfileId) {
         if (CollUtil.isEmpty(processList)) {
             return new ArrayList<>();
         }
@@ -1267,16 +1272,41 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             .collect(Collectors.toList());
         Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(userIds);
 
+        // 批量查询测评结果
+        Map<String, Long> taskResultMap = new HashMap<>();
+        if (studentProfileId != null) {
+            for (CrisisEventProcessDO process : processList) {
+                if (StrUtil.isNotBlank(process.getTaskNo())) {
+                    AssessmentResultDO result = assessmentResultMapper.selectByTaskNoAndParticipantId(
+                        process.getTaskNo(), studentProfileId);
+                    if (result != null) {
+                        taskResultMap.put(process.getTaskNo(), result.getId());
+                    }
+                }
+            }
+        }
+
         return processList.stream().map(process -> {
             CrisisEventRespVO.ProcessHistoryVO vo = new CrisisEventRespVO.ProcessHistoryVO();
+            vo.setId(process.getId());
+            vo.setEventId(process.getEventId());
             vo.setOperateTime(process.getCreateTime());
             vo.setAction(process.getAction());
             vo.setContent(process.getContent());
+            vo.setReason(process.getReason());
             vo.setAttachments(process.getAttachments());
 
             AdminUserRespDTO operator = userMap.get(process.getOperatorUserId());
             if (operator != null) {
                 vo.setOperatorName(operator.getNickname());
+            }
+
+            // 设置测评结果ID
+            if (StrUtil.isNotBlank(process.getTaskNo())) {
+                Long taskResultId = taskResultMap.get(process.getTaskNo());
+                if (taskResultId != null) {
+                    vo.setTaskResultId(taskResultId);
+                }
             }
 
             return vo;
