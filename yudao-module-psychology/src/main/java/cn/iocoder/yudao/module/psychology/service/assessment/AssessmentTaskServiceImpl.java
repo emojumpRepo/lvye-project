@@ -1072,7 +1072,7 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
 
         // 1. 使用 recordEventProcessWithUsers 添加危机事件处理记录
         String content = "发布测评任务：" + taskName + "(" + taskNo + ")";
-        recordEventProcessWithUsers(eventId, "CREATE_ASSESSMENT", content, null, null, null);
+        recordEventProcessWithUsers(eventId, "CREATE_ASSESSMENT", content, null, null, null, taskNo);
 
         // 2. 使用 saveTimelineWithMeta 添加学生时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -1101,9 +1101,10 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
      * 参考 CrisisInterventionServiceImpl.recordEventProcessWithUsers
      */
     private void recordEventProcessWithUsers(Long eventId, String action, String content,
-                                            String reason, Long relatedUserId, Long originalUserId) {
+                                            String reason, Long relatedUserId, Long originalUserId, String taskNo) {
         CrisisEventProcessDO process = new CrisisEventProcessDO();
         process.setEventId(eventId);
+        process.setTaskNo(taskNo);
         process.setOperatorUserId(SecurityFrameworkUtils.getLoginUserId());
         process.setAction(action);
         process.setContent(content != null && !content.isEmpty() ? content : action);

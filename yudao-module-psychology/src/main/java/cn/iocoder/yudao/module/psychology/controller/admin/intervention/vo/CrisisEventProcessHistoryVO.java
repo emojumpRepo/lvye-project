@@ -15,6 +15,9 @@ public class CrisisEventProcessHistoryVO {
 
     @Schema(description = "事件ID", example = "1")
     private Long eventId;
+    
+    @Schema(description = "测评任务编号", example = "1")
+    private String taskNo;
 
     @Schema(description = "操作人ID", example = "1")
     private Long operatorUserId;

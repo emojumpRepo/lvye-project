@@ -268,12 +268,8 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
                                     if (assessmentTask != null && assessmentTask.getEventId() != null) {
                                         try {
                                             CrisisInterventionDO event = new CrisisInterventionDO();
-                                            event.setId(assessmentTask.getEventId());
                                             event.setStatus(3);
                                             crisisInterventionMapper.updateById(event);
-
-                                            // TODO: 更新危机事件记录表，添加测评结果ID
-
                                         } catch (Exception e) {
                                             log.warn("更新危机事件状态失败, eventId={}, err={} ", assessmentTask.getEventId(), e.getMessage());
                                         }

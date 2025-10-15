@@ -35,6 +35,11 @@ public class CrisisEventProcessDO extends TenantBaseDO {
     private Long eventId;
 
     /**
+     * 测评任务编号
+     */
+    private String taskNo;
+
+    /**
      * 操作人管理员编号
      */
     private Long operatorUserId;
@@ -64,6 +69,7 @@ public class CrisisEventProcessDO extends TenantBaseDO {
      * 原用户ID（用于记录变更前的负责人等）
      */
     private Long originalUserId;
+
 
     /**
      * 附件URL列表（JSON数组）
