@@ -19,7 +19,7 @@ public interface CrisisEventAssessmentMapper extends BaseMapperX<CrisisEventAsse
         return selectList(CrisisEventAssessmentDO::getEventId, eventId);
     }
 
-    default List<CrisisEventAssessmentDO> selectListByEventIdOrderByCreateTimeDesc(Long eventId) {
+    default List<CrisisEventAssessmentDO> selectListByEventIdOrder(Long eventId) {
         return selectList(new LambdaQueryWrapperX<CrisisEventAssessmentDO>()
                 .eq(CrisisEventAssessmentDO::getEventId, eventId)
                 .orderByDesc(CrisisEventAssessmentDO::getCreateTime));

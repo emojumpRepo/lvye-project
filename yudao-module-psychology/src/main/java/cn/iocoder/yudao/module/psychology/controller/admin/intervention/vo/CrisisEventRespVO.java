@@ -104,7 +104,7 @@ public class CrisisEventRespVO {
     private LatestAssessmentVO latestAssessment;
 
     @Schema(description = "评估记录列表（按创建时间倒序）")
-    private List<AssessmentRecordVO> assessmentRecords;
+    private List<AssessmentRecordVO> latestAssessments;
 
     @Schema(description = "正在进行的测评任务（未完成状态，包含未开始和进行中）")
     private PendingAssessmentTaskVO pendingAssessmentTask;

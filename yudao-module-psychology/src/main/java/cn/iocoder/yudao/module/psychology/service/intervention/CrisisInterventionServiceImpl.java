@@ -683,19 +683,20 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         vo.setProcessHistory(convertProcessHistory(processList, vo.getStudentProfileId()));
 
         // 加载最新评估
-        CrisisEventAssessmentDO latestAssessment = eventAssessmentMapper.selectLatestByEventId(id);
-        if (latestAssessment != null) {
-            CrisisEventRespVO.LatestAssessmentVO assessmentVO = new CrisisEventRespVO.LatestAssessmentVO();
-            assessmentVO.setAssessTime(latestAssessment.getCreateTime());
-            assessmentVO.setRiskLevel(latestAssessment.getRiskLevel());
-            assessmentVO.setProblemTypes(latestAssessment.getProblemTypes());
-            assessmentVO.setFollowUpSuggestion(latestAssessment.getFollowUpSuggestion());
-            vo.setLatestAssessment(assessmentVO);
-        }
+        // CrisisEventAssessmentDO latestAssessment = eventAssessmentMapper.selectLatestByEventId(id);
+        // if (latestAssessment != null) {
+        //     CrisisEventRespVO.LatestAssessmentVO assessmentVO = new CrisisEventRespVO.LatestAssessmentVO();
+        //     assessmentVO.setAssessTime(latestAssessment.getCreateTime());
+        //     assessmentVO.setRiskLevel(latestAssessment.getRiskLevel());
+        //     assessmentVO.setProblemTypes(latestAssessment.getProblemTypes());
+        //     assessmentVO.setFollowUpSuggestion(latestAssessment.getFollowUpSuggestion());
+        //     vo.setLatestAssessment(assessmentVO);
+        // }
 
-        // // 添加评估记录（按创建时间倒序）
-        // List<CrisisEventAssessmentDO> assessmentList = eventAssessmentMapper.selectListByEventIdOrderByCreateTimeDesc(id);
-        // vo.setAssessmentRecords(convertAssessmentRecords(assessmentList));
+        // 加载最新两条评估记录
+        List<CrisisEventAssessmentDO> assessmentList = eventAssessmentMapper.selectListByEventIdOrder(id);
+        List<CrisisEventAssessmentDO> latestTwoAssessments = assessmentList.stream().limit(2).sorted(Comparator.comparing(CrisisEventAssessmentDO::getCreateTime)).collect(Collectors.toList());
+        vo.setLatestAssessments(convertAssessmentRecords(latestTwoAssessments));
 
         // 添加正在进行的测评任务（未完成状态，包含未开始和进行中）
         if (vo.getStudentUserId() != null) {
