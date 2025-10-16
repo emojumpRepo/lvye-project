@@ -172,4 +172,12 @@ public interface AssessmentTaskService {
 
     AssessmentTaskRiskLevelStatisticsVO getTaskRiskStatistics(String taskNo);
 
+    /**
+     * 移除测评任务中的已毕业学生
+     *
+     * @param taskNo 任务编号
+     * @return 移除的学生数量
+     */
+    Integer removeGraduatedStudents(String taskNo);
+
 }
