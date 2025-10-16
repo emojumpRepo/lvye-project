@@ -65,6 +65,10 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
 
     List<StudentClassVO> selectGradeStudentCount();
 
+    default List<StudentProfileDO> selectGraduatedStudents() {
+        return selectList(StudentProfileDO::getGraduationStatus, 1);
+    }
+
 }
 
 

@@ -335,4 +335,13 @@ public class AssessmentTaskController {
         return success(assessmentTaskService.getTaskRiskStatistics(taskNo));
     }
 
+    @PostMapping("/remove-graduated-students")
+    @Operation(summary = "移除已毕业学生")
+    @Parameter(name = "taskNo", description = "任务编号", required = true)
+    @DataPermission(enable = false)
+    public CommonResult<Integer> removeGraduatedStudents(@RequestParam("taskNo") String taskNo) {
+        Integer removedCount = assessmentTaskService.removeGraduatedStudents(taskNo);
+        return success(removedCount);
+    }
+
 }
