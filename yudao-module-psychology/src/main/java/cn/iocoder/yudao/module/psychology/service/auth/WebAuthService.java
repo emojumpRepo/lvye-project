@@ -23,4 +23,12 @@ public interface WebAuthService {
      */
     void logout(String token, Integer logType);
 
+    /**
+     * 刷新访问令牌
+     *
+     * @param refreshToken 刷新令牌
+     * @return 登录结果
+     */
+    WebAuthLoginRespVO  refreshToken(String refreshToken);
+
 }

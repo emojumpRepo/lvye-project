@@ -1,201 +1,177 @@
--- Psychology module core tables (H2/MySQL compatible subset)
+-- Psychology module test database tables for H2
+-- 心理模块测试数据库表结构（H2兼容版本）
 
-CREATE TABLE IF NOT EXISTS psy_student_profile (
-    id                BIGINT PRIMARY KEY,
-    tenant_id         BIGINT,
-    member_user_id    BIGINT,
-    student_no        VARCHAR(64) NOT NULL,
-    name              VARCHAR(64),
-    sex               TINYINT,
-    mobile            VARCHAR(32),
-    grade_dept_id     BIGINT,
-    class_dept_id     BIGINT,
-    graduation_status INT,
-    psychological_status INT,
-    risk_level        INT,
-    remark            VARCHAR(512),
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
--- Indexes
-CREATE UNIQUE INDEX IF NOT EXISTS uk_lvye_assessment_task_no ON lvye_assessment_task(task_no);
-CREATE INDEX IF NOT EXISTS idx_psy_participant_task ON lvye_assessment_participant(task_id);
-CREATE INDEX IF NOT EXISTS idx_psy_participant_student ON lvye_assessment_participant(student_profile_id);
-CREATE INDEX IF NOT EXISTS idx_psy_answer_participant ON lvye_assessment_answer(participant_id);
-CREATE INDEX IF NOT EXISTS idx_psy_result_participant ON lvye_assessment_result(participant_id);
-CREATE INDEX IF NOT EXISTS idx_psy_timeline_student ON lvye_student_timeline(student_profile_id);
-CREATE INDEX IF NOT EXISTS idx_psy_timeline_event ON lvye_student_timeline(event_type);
-CREATE INDEX IF NOT EXISTS idx_psy_crisis_student ON lvye_crisis_intervention(student_profile_id);
-CREATE INDEX IF NOT EXISTS idx_psy_crisis_source ON lvye_crisis_intervention(source_type);
-CREATE INDEX IF NOT EXISTS idx_psy_crisis_reporter_source ON lvye_crisis_intervention(reporter_user_id, source_type);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_psy_dept_ext_dept ON lvye_dept_ext(dept_id);
-
-CREATE TABLE IF NOT EXISTS lvye_assessment_task (
-    id                BIGINT PRIMARY KEY,
-    tenant_id         BIGINT,
-    task_no           VARCHAR(64) NOT NULL,
-    task_name         VARCHAR(128) NOT NULL,
-    scale_code        VARCHAR(64) NOT NULL,
-    target_audience   INT NOT NULL,
-    status            INT NOT NULL,
-    publish_user_id   BIGINT,
-    startline         TIMESTAMP,
-    deadline          TIMESTAMP,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
-CREATE TABLE IF NOT EXISTS lvye_assessment_user_task (
-    id                BIGINT PRIMARY KEY,
-    tenant_id         BIGINT,
-    task_no           VARCHAR(64) NOT NULL,
-    user_id           BIGINT NOT NULL,
-    parent_flag       INT NOT NULL,
-    status            INT NOT NULL,
-    risk_level        INT,
-    start_time        TIMESTAMP,
-    submit_time       TIMESTAMP,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
-CREATE TABLE IF NOT EXISTS lvye_assessment_dept_task (
-    id                BIGINT PRIMARY KEY,
-    tenant_id         BIGINT,
-    task_no           VARCHAR(64) NOT NULL,
-    dept_id           BIGINT NOT NULL,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
-CREATE TABLE IF NOT EXISTS lvye_assessment_participant (
-    id                   BIGINT PRIMARY KEY,
-    tenant_id            BIGINT,
-    task_id              BIGINT NOT NULL,
-    student_profile_id   BIGINT NOT NULL,
-    is_parent            BIT,
-    completion_status    INT NOT NULL,
-    start_time           TIMESTAMP,
-    submit_time          TIMESTAMP,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
-CREATE TABLE IF NOT EXISTS lvye_assessment_answer (
-    id                BIGINT PRIMARY KEY,
-    tenant_id         BIGINT,
-    participant_id    BIGINT NOT NULL,
-    question_index    INT NOT NULL,
-    answer            VARCHAR(256),
-    score             INT,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
-CREATE TABLE IF NOT EXISTS lvye_assessment_result (
-    id                BIGINT PRIMARY KEY,
-    tenant_id         BIGINT,
-    participant_id    BIGINT NOT NULL,
-    dimension_code    VARCHAR(64) NOT NULL,
-    score             INT,
-    risk_level        INT,
-    suggestion        VARCHAR(1024),
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
-CREATE TABLE IF NOT EXISTS lvye_student_timeline (
-    id                  BIGINT PRIMARY KEY,
-    tenant_id           BIGINT,
-    student_profile_id  BIGINT NOT NULL,
-    event_type          INT NOT NULL,
-    title               VARCHAR(128),
-    content             VARCHAR(2048),
-    biz_id              BIGINT,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
--- Removed: psy_quick_report folded into crisis_intervention via sourceType/reporterUserId/reportedAt/urgencyLevel
-
-CREATE TABLE IF NOT EXISTS lvye_consultation_record (
-    id                  BIGINT PRIMARY KEY,
-    tenant_id           BIGINT,
-    student_profile_id  BIGINT NOT NULL,
-    counselor_user_id   BIGINT,
-    type                INT,
-    method              INT,
-    start_time          TIMESTAMP,
-    end_time            TIMESTAMP,
-    duration_minutes    INT,
-    content             VARCHAR(2048),
-    suggestion          VARCHAR(2048),
-    status              INT,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
-CREATE TABLE IF NOT EXISTS lvye_crisis_intervention (
-    id                  BIGINT PRIMARY KEY,
-    tenant_id           BIGINT,
-    student_profile_id  BIGINT NOT NULL,
-    title               VARCHAR(128),
-    description         VARCHAR(2048),
-    risk_level          INT,
-    status              INT NOT NULL,
-    handler_user_id     BIGINT,
-    source_type         INT NOT NULL,
-    reporter_user_id    BIGINT,
-    reported_at         TIMESTAMP,
-    urgency_level       INT,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
-);
-
-CREATE TABLE IF NOT EXISTS lvye_dept_ext (
-    id                  BIGINT PRIMARY KEY,
-    tenant_id           BIGINT,
-    dept_id             BIGINT,
-    dept_type           INT,
-    grade_no            INT,
-    class_no            INT,
-    head_teacher_user_id BIGINT,
-    creator           VARCHAR(64),
-    updater           VARCHAR(64),
-    create_time       TIMESTAMP,
-    update_time       TIMESTAMP,
-    deleted           BIT
+-- ----------------------------
+-- Table structure for lvye_questionnaire
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS "lvye_questionnaire" (
+    "id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "title" varchar(255) NOT NULL,
+    "description" varchar(2000),
+    "questionnaire_type" tinyint NOT NULL,
+    "target_audience" tinyint NOT NULL,
+    "external_id" varchar(100),
+    "external_link" varchar(500),
+    "question_count" int,
+    "estimated_duration" int,
+    "content" varchar(10000),
+    "scoring_rules" varchar(2000),
+    "result_template" varchar(2000),
+    "status" tinyint DEFAULT 0,
+    "is_open" tinyint DEFAULT 1,
+    "sort_order" int DEFAULT 0,
+    "creator" varchar(64) DEFAULT '',
+    "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "updater" varchar(64) DEFAULT '',
+    "update_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "deleted" bit DEFAULT FALSE,
+    "tenant_id" bigint DEFAULT 0,
+    PRIMARY KEY ("id")
 );
 
 
+-- ----------------------------
+-- Table structure for lvye_questionnaire_result_config
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS "lvye_questionnaire_result_config" (
+    "id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "questionnaire_id" bigint NOT NULL,
+    "dimension_name" varchar(255) NOT NULL,
+    "question_index" varchar(255),
+    "calculate_type" int,
+    "calculate_formula" varchar(2000),
+    "teacher_comment" varchar(2000),
+    "student_comment" varchar(2000),
+    "risk_level" int DEFAULT 0 COMMENT '风险等级：1-无/低风险，2-轻度风险，3-中度风险，4-重度风险',
+    "is_abnormal" int DEFAULT 0,
+    "level" varchar(20),
+    "description" varchar(2000),
+    "status" int DEFAULT 1,
+    "creator" varchar(64) DEFAULT '',
+    "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "updater" varchar(64) DEFAULT '',
+    "update_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "deleted" bit DEFAULT FALSE,
+    "tenant_id" bigint DEFAULT 0,
+    PRIMARY KEY ("id")
+);
+
+-- ----------------------------
+-- Table structure for lvye_assessment_scenario
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS "lvye_assessment_scenario" (
+    "id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "code" varchar(64) NOT NULL,
+    "name" varchar(128) NOT NULL,
+    "max_questionnaire_count" int,
+    "frontend_route" varchar(128) NOT NULL,
+    "is_active" bit NOT NULL DEFAULT TRUE,
+    "metadata_json" varchar(2000),
+    "creator" varchar(64) DEFAULT '',
+    "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "updater" varchar(64) DEFAULT '',
+    "update_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "deleted" bit DEFAULT FALSE,
+    "tenant_id" bigint DEFAULT 0,
+    PRIMARY KEY ("id")
+);
+
+-- ----------------------------
+-- Table structure for lvye_assessment_scenario_slot
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS "lvye_assessment_scenario_slot" (
+    "id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "scenario_id" bigint NOT NULL,
+    "slot_key" varchar(64) NOT NULL,
+    "slot_name" varchar(128) NOT NULL,
+    "slot_order" int NOT NULL DEFAULT 0,
+    "allowed_questionnaire_types" varchar(256),
+    "frontend_component" varchar(128),
+    "metadata_json" varchar(2000),
+    "questionnaire_id" bigint,
+    "creator" varchar(64) DEFAULT '',
+    "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "updater" varchar(64) DEFAULT '',
+    "update_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "deleted" bit DEFAULT FALSE,
+    "tenant_id" bigint DEFAULT 0,
+    PRIMARY KEY ("id")
+);
+
+-- ----------------------------
+-- Table structure for lvye_assessment_task
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS "lvye_assessment_task" (
+    "id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "task_no" varchar(64) NOT NULL,
+    "task_name" varchar(120),
+    "target_audience" tinyint,
+    "status" tinyint DEFAULT 0,
+    "publish_user_id" bigint,
+    "startline" datetime,
+    "deadline" datetime,
+    "scenario_id" bigint,
+    "description" varchar(2000),
+    "creator" varchar(64) DEFAULT '',
+    "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "updater" varchar(64) DEFAULT '',
+    "update_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "deleted" bit DEFAULT FALSE,
+    "tenant_id" bigint DEFAULT 0,
+    PRIMARY KEY ("id"),
+    UNIQUE KEY "idx_task_no" ("task_no", "tenant_id")
+);
+
+-- ----------------------------
+-- Table structure for lvye_assessment_task_questionnaire
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS "lvye_assessment_task_questionnaire" (
+    "id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "task_no" varchar(64) NOT NULL,
+    "questionnaire_id" bigint NOT NULL,
+    "slot_key" varchar(64),
+    "slot_order" int,
+    "creator" varchar(64) DEFAULT '',
+    "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "updater" varchar(64) DEFAULT '',
+    "update_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "deleted" bit DEFAULT FALSE,
+    "tenant_id" bigint DEFAULT 0,
+    PRIMARY KEY ("id")
+);
+
+-- ----------------------------
+-- Table structure for lvye_assessment_result
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS "lvye_assessment_result" (
+    "id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "questionnaire_results" varchar(5000),
+    "combined_risk_level" tinyint,
+    "risk_factors" varchar(2000),
+    "intervention_suggestions" varchar(2000),
+    "generation_config_version" varchar(50),
+    "creator" varchar(64) DEFAULT '',
+    "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "updater" varchar(64) DEFAULT '',
+    "update_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "deleted" bit DEFAULT FALSE,
+    "tenant_id" bigint DEFAULT 0,
+    PRIMARY KEY ("id")
+);
+
+-- ----------------------------
+-- Table structure for lvye_student_profile
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS "lvye_student_profile" (
+    "id" bigint NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+    "student_id" bigint NOT NULL,
+    "name" varchar(100),
+    "sex" tinyint,
+    "creator" varchar(64) DEFAULT '',
+    "create_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "updater" varchar(64) DEFAULT '',
+    "update_time" datetime DEFAULT CURRENT_TIMESTAMP,
+    "deleted" bit DEFAULT FALSE,
+    "tenant_id" bigint DEFAULT 0,
+    PRIMARY KEY ("id")
+);

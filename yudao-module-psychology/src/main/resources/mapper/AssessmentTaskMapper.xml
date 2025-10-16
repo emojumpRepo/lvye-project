@@ -9,7 +9,8 @@
         b.nickname AS publishUser,
         (select count(*) from lvye_assessment_user_task c where a.task_no = c.task_no and status = 2 and c.deleted = 0)
         as finish_num,
-        (select count(*) from lvye_assessment_user_task c where a.task_no = c.task_no and c.deleted = 0) as total_num
+        (select count(*) from lvye_assessment_user_task c where a.task_no = c.task_no and c.deleted = 0) as total_num,
+        (select GROUP_CONCAT(questionnaire_id) from lvye_assessment_task_questionnaire d where a.task_no = d.task_no and d.deleted = 0 and d.tenant_id = a.tenant_id) as questionnaire_ids_str
         FROM lvye_assessment_task a
         LEFT JOIN system_users b ON a.publish_user_id = b.id
         <where>
@@ -24,10 +25,13 @@
                 AND a.task_no = #{pageReqVO.taskNo}
             </if>
             <if test="pageReqVO.name != null and pageReqVO.name !=''">
-                AND a.name = #{pageReqVO.name}
+                AND a.task_name LIKE CONCAT('%', #{pageReqVO.name}, '%')
             </if>
-            <if test="pageReqVO.scaleCode != null and pageReqVO.scaleCode !=''">
-                AND a.scale_code LIKE CONCAT('%',#{pageReqVO.scaleCode},'%')
+            <if test="pageReqVO.questionnaireId != null">
+                AND EXISTS (
+                  SELECT 1 FROM lvye_assessment_task_questionnaire t
+                  WHERE t.task_no = a.task_no AND t.questionnaire_id = #{pageReqVO.questionnaireId}
+                )
             </if>
             <if test="pageReqVO.targetAudience != null">
                 AND a.target_audience = #{pageReqVO.targetAudience}
@@ -43,10 +47,20 @@
     </select>
 
     <select id="selectListByUserId"
-            resultType="cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskRespVO">
-        SELECT a.id, a.task_no, a.task_name, a.scale_code, a.status, a.startline, a.deadline, b.nickname AS publishUser
-        FROM lvye_assessment_task a LEFT JOIN system_users b ON a.publish_user_id = b.id
-        WHERE a.task_no in (select task_no from lvye_assessment_user_task where user_id = #{userId}) and a.deleted = 0
+            resultType="cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentTaskVO">
+        SELECT a.id, a.task_no, a.task_name, a.status, a.scenario_id AS scenarioId, a.startline, a.deadline, b.nickname AS publishUser,
+               GROUP_CONCAT(d.title) AS scaleName,
+               GROUP_CONCAT(c.questionnaire_id) AS questionnaire_ids_str
+        FROM lvye_assessment_task a
+        LEFT JOIN system_users b ON a.publish_user_id = b.id
+        LEFT JOIN lvye_assessment_task_questionnaire c ON a.task_no = c.task_no
+        LEFT JOIN lvye_questionnaire d ON d.id = c.questionnaire_id
+        WHERE a.task_no in (
+        select task_no from lvye_assessment_user_task where user_id = #{userId} and parent_flag = #{isParent} and deleted = 0
+        ) and a.status in (1,2,3) and a.deleted = 0
+        group by a.id, a.task_no, a.task_name, a.status, a.scenario_id, a.startline, a.deadline, b.nickname
     </select>
+
+    <!-- 可根据需求扩展查询任务关联的问卷ID列表 -->
 
 </mapper>

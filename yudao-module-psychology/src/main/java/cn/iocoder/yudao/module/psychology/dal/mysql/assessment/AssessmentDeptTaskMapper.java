@@ -23,7 +23,7 @@ public interface AssessmentDeptTaskMapper extends BaseMapperX<AssessmentDeptTask
                 .eq(AssessmentDeptTaskDO::getTaskNo, taskNo));
     }
 
-    List<Long> selectTaskListByDeptIds(@Param("deptIds") Set<Long> deptIds);
+    List<String> selectTaskListByDeptIds(@Param("deptIds") Set<Long> deptIds);
 
 
 

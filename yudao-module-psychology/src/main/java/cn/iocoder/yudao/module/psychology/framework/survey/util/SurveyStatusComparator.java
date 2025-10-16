@@ -93,22 +93,17 @@ public class SurveyStatusComparator {
      */
     public static StatusChangeResult compareStatus(QuestionnaireDO localQuestionnaire, ExternalSurveyRespVO externalSurvey) {
         Integer newStatus = SurveyDataConverter.convertStatus(externalSurvey);
-        Integer newIsOpen = SurveyDataConverter.isOpen(externalSurvey);
         
         Integer oldStatus = localQuestionnaire.getStatus();
-        Integer oldIsOpen = localQuestionnaire.getIsOpen();
 
         StatusChangeResult result = new StatusChangeResult(false);
         result.setOldStatus(oldStatus);
         result.setNewStatus(newStatus);
-        result.setOldIsOpen(oldIsOpen);
-        result.setNewIsOpen(newIsOpen);
 
         // 检查状态是否发生变化
         boolean statusChanged = !Objects.equals(oldStatus, newStatus);
-        boolean isOpenChanged = !Objects.equals(oldIsOpen, newIsOpen);
 
-        if (statusChanged || isOpenChanged) {
+        if (statusChanged) {
             result.setChanged(true);
             
             StringBuilder description = new StringBuilder();
@@ -116,15 +111,6 @@ public class SurveyStatusComparator {
             if (statusChanged) {
                 description.append(String.format("状态: %s -> %s", 
                     getStatusDescription(oldStatus), getStatusDescription(newStatus)));
-            }
-            
-            if (isOpenChanged) {
-                if (description.length() > 0) {
-                    description.append(", ");
-                }
-                description.append(String.format("开放状态: %s -> %s", 
-                    (oldIsOpen != null && oldIsOpen == 1) ? "开放" : "关闭", 
-                    (newIsOpen != null && newIsOpen == 1) ? "开放" : "关闭"));
             }
 
             // 添加暂停状态的特殊说明

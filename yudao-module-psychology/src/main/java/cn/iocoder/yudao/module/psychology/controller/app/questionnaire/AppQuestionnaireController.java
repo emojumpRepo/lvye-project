@@ -44,7 +44,8 @@ public class AppQuestionnaireController {
     @Operation(summary = "获取可用问卷列表（带完成与可访问标记）")
     // @PreAuthenticated
     public CommonResult<List<Map<String, Object>>> getAvailableQuestionnaireList(
-            @RequestParam("studentProfileId") Long studentProfileId,
+            @RequestParam("userId") Long userId,
+            @RequestParam("taskNo")  String taskNo,
             @RequestParam(value = "targetAudience", required = false) Integer targetAudience) {
 
         // 获取所有问卷列表，然后根据 targetAudience 进行筛选
@@ -68,8 +69,8 @@ public class AppQuestionnaireController {
             item.put("id", q.getId());
             item.put("title", q.getTitle());
             item.put("description", q.getDescription());
-            boolean completed = questionnaireResultService.hasUserCompletedQuestionnaire(q.getId(), studentProfileId);
-            boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(q.getId(), studentProfileId);
+            boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, q.getId(), userId);
+            boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(q.getId(), userId);
             item.put("completed", completed);
             item.put("accessible", accessible);
             resp.add(item);
@@ -82,14 +83,15 @@ public class AppQuestionnaireController {
     // @PreAuthenticated
     public CommonResult<Map<String, Object>> getQuestionnaire(
             @RequestParam("id") Long id,
-            @RequestParam("studentProfileId") Long studentProfileId) {
+            @RequestParam("taskNo")  String taskNo,
+            @RequestParam("userId") Long userId) {
 
         QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(id);
         if (questionnaire == null) {
             return success(new HashMap<>());
         }
-        boolean completed = questionnaireResultService.hasUserCompletedQuestionnaire(id, studentProfileId);
-        boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(id, studentProfileId);
+        boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, id, userId);
+        boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(id, userId);
 
         Map<String, Object> data = new HashMap<>();
         data.put("id", questionnaire.getId());
@@ -109,7 +111,7 @@ public class AppQuestionnaireController {
 
         // 权限检查
         boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(
-                accessReqVO.getQuestionnaireId(), accessReqVO.getStudentProfileId());
+                accessReqVO.getQuestionnaireId(), accessReqVO.getUserId());
         AppQuestionnaireAccessRespVO respVO = new AppQuestionnaireAccessRespVO();
         if (!accessible) {
             respVO.setAccessible(false);
@@ -128,7 +130,7 @@ public class AppQuestionnaireController {
         String clientIp = accessReqVO.getAccessIp() != null ? accessReqVO.getAccessIp() : "127.0.0.1";
         Long accessId = questionnaireAccessService.recordQuestionnaireAccess(
                 accessReqVO.getQuestionnaireId(),
-                accessReqVO.getStudentProfileId(),
+                accessReqVO.getUserId(),
                 clientIp,
                 accessReqVO.getUserAgent(),
                 accessReqVO.getAccessSource()
@@ -158,8 +160,9 @@ public class AppQuestionnaireController {
     // @PreAuthenticated
     public CommonResult<Boolean> checkQuestionnaireCompletion(
             @RequestParam("questionnaireId") Long questionnaireId,
-            @RequestParam("studentProfileId") Long studentProfileId) {
-        boolean completed = questionnaireResultService.hasUserCompletedQuestionnaire(questionnaireId, studentProfileId);
+            @RequestParam("taskNo") String taskNo,
+            @RequestParam("userId") Long userId) {
+        boolean completed = questionnaireResultService.hasUserCompletedTaskQuestionnaire(taskNo, questionnaireId, userId);
         return success(completed);
     }
 
@@ -177,7 +180,8 @@ public class AppQuestionnaireController {
     @Operation(summary = "获取推荐问卷列表")
     // @PreAuthenticated
     public CommonResult<List<Map<String, Object>>> getRecommendedQuestionnaires(
-            @RequestParam("studentProfileId") Long studentProfileId,
+            @RequestParam("userId") Long userId,
+            @RequestParam("taskNo")  String taskNo,
             @RequestParam(value = "limit", defaultValue = "3") Integer limit) {
 
         // 获取所有问卷列表
@@ -197,8 +201,8 @@ public class AppQuestionnaireController {
             Map<String, Object> item = new HashMap<>();
             item.put("id", q.getId());
             item.put("title", q.getTitle());
-            boolean completed = questionnaireResultService.hasUserCompletedQuestionnaire(q.getId(), studentProfileId);
-            boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(q.getId(), studentProfileId);
+            boolean completed = questionnaireResultService.hasUserCompletedQuestionnaire(q.getId(), userId);
+            boolean accessible = questionnaireAccessService.checkQuestionnaireAccess(q.getId(), userId);
             item.put("completed", completed);
             item.put("accessible", accessible);
             resp.add(item);

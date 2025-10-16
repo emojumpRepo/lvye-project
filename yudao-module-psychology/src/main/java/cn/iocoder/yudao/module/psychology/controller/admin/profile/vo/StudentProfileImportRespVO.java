@@ -13,4 +13,7 @@ public class StudentProfileImportRespVO {
     @Schema(description = "失败数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
     private Integer failureCount;
 
+    @Schema(description = "失败原因", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")
+    private String failReason;
+
 }

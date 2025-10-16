@@ -6,7 +6,7 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
         SELECT a.id, a.user_id, a.student_no, a.name,
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
-               a.home_address, b.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.home_address, a.sex, a.ethnicity, a.guardian_mobile, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
                a.create_time, a.update_time,
                b.mobile, c.name AS gradeName, d.name AS className
@@ -17,13 +17,16 @@
         <where>
             a.deleted = 0
             <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
-                AND a.student_no = #{pageReqVO.studentNo}
+                AND a.student_no LIKE CONCAT('%', #{pageReqVO.studentNo}, '%')
             </if>
             <if test="pageReqVO.name != null and pageReqVO.name !=''">
-                AND a.name = #{pageReqVO.name}
+                AND a.name LIKE CONCAT('%', #{pageReqVO.name}, '%')
             </if>
             <if test="pageReqVO.sex != null">
-                AND b.sex = #{pageReqVO.sex}
+                AND a.sex = #{pageReqVO.sex}
+            </if>
+            <if test="pageReqVO.ethnicity != null">
+                AND a.ethnicity = #{pageReqVO.ethnicity}
             </if>
             <if test="pageReqVO.gradeDeptId != null">
                 AND a.grade_dept_id = #{pageReqVO.gradeDeptId}
@@ -40,6 +43,24 @@
             <if test="pageReqVO.riskLevel != null">
                 AND a.risk_level = #{pageReqVO.riskLevel}
             </if>
+            <!-- 数据权限：按可见部门与本人过滤 -->
+            <if test="(deptIds != null and deptIds.size > 0) or selfUserId != null">
+                AND (
+                <if test="deptIds != null and deptIds.size > 0">
+                    (
+                        a.class_dept_id IN
+                        <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+                        OR
+                        a.grade_dept_id IN
+                        <foreach collection="deptIds" item="gid" open="(" separator="," close=")">#{gid}</foreach>
+                    )
+                </if>
+                <if test="selfUserId != null">
+                    <if test="deptIds != null and deptIds.size > 0"> OR </if>
+                    a.user_id = #{selfUserId}
+                </if>
+                )
+            </if>
             ORDER BY a.id DESC
         </where>
     </select>
@@ -48,14 +69,16 @@
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
         SELECT a.id, a.user_id, a.student_no, a.name,
                CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
-               a.home_address, b.sex, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.home_address, a.sex, a.ethnicity, a.guardian_mobile, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
                a.psychological_status, a.risk_level, a.special_marks, a.remark,
                a.create_time, a.update_time,
-               b.mobile, c.name AS gradeName, d.name AS className
+               b.mobile, c.name AS gradeName, d.name AS className,
+               e.nickname AS updater
         FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        LEFT JOIN system_users e ON a.updater = e.id
         <where>
             a.deleted = 0 and a.id = #{studentProfileId}
         </where>
@@ -63,13 +86,22 @@
 
     <select id="selectInfoByUserId"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
-        SELECT a.*,b.sex,b.mobile,c.name AS gradeName, d.name AS className FROM lvye_student_profile a
+        SELECT a.*,b.mobile,c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
         LEFT JOIN system_users b ON a.user_id = b.id
         LEFT JOIN system_dept c ON a.grade_dept_id = c.id
         LEFT JOIN system_dept d ON a.class_dept_id = d.id
         <where>
             a.deleted = 0 and a.user_id = #{userId}
         </where>
+    </select>
+
+    <select id="selectClassStudentCount" resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO">
+        select class_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 and graduation_status != 1 group by class_dept_id;
+    </select>
+
+    <select id="selectGradeStudentCount" resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO">
+        select grade_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 and graduation_status != 1 group by grade_dept_id;
     </select>
 
 </mapper>

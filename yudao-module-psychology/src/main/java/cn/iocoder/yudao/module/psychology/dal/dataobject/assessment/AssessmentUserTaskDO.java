@@ -38,7 +38,7 @@ public class AssessmentUserTaskDO extends TenantBaseDO {
 
     /**
      *
-     * 参与人员标识：1 家长；0 学生
+     * 参与人员标识：0 学生；1 家长
      */
     private int parentFlag;
 
@@ -51,6 +51,16 @@ public class AssessmentUserTaskDO extends TenantBaseDO {
      * 风险等级
      */
     private Integer riskLevel;
+
+    /**
+     * 评价
+     */
+    private String evaluate;
+
+    /**
+     * 建议内容
+     */
+    private String suggestions;
 
     /**
      * 开始作答时间

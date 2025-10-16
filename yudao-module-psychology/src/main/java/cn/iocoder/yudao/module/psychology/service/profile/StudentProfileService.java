@@ -3,8 +3,10 @@ package cn.iocoder.yudao.module.psychology.service.profile;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import jakarta.validation.Valid;
 
+import java.util.Collection;
 import java.util.List;
 
 
@@ -76,12 +78,20 @@ public interface StudentProfileService {
     StudentProfileDO getStudentProfileByUserId(Long userId);
 
     /**
-     * 批量导入学生档案
+     * 根据身份证号获取学生档案
      *
-     * @param importReqVO 导入请求
-     * @return 导入结果
+     * @param idCard 身份证号
+     * @return 学生档案
      */
-    StudentProfileImportRespVO importStudentProfile(StudentProfileImportReqVO importReqVO);
+    StudentProfileDO getStudentProfileByIdCard(String idCard);
+
+    /**
+     * 批量导入学生档案
+     * @param studentList
+     * @param isUpdateSupport
+     * @return
+     */
+    StudentProfileImportRespVO importStudentProfile(List<StudentImportExcelVO> studentList, boolean isUpdateSupport);
 
     /**
      * 更新学生心理状态
@@ -106,5 +116,35 @@ public interface StudentProfileService {
      * @return 学生档案
      */
     StudentProfileVO getStudentProfileDetailByUserId(Long userId);
+
+    /**
+     * 获得指定班级的学生数组
+     *
+     * @param classIds 班级数组
+     * @return 学生数组
+     */
+    List<StudentProfileDO> getStudentListByClassIds(Collection<Long> classIds);
+
+    /**
+     * 更新学生基本信息
+     *
+     * @param updateReqVO 更新信息
+     */
+    void updateStudentBasicInfo(@Valid StudentProfileBasicInfoUpdateReqVO updateReqVO);
+
+    /**
+     * 检查学生档案信息完善情况
+     *
+     * @param id 学生档案ID
+     * @return 信息完善情况
+     */
+    StudentProfileCompletenessRespVO checkProfileCompleteness(Long id);
+
+    /**
+     * 更新学生风险等级
+     * @param studentProfileId
+     * @param riskLevel
+     */
+    void updateStudentRiskLevel(Long studentProfileId, Integer riskLevel);
 
 }

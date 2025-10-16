@@ -1,0 +1,13 @@
+{
+  "message": "This is a test JSON file",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "data": {
+    "id": 1,
+    "name": "test",
+    "type": "file_client_test"
+  },
+  "config": {
+    "testMode": true,
+    "version": "1.0.0"
+  }
+}

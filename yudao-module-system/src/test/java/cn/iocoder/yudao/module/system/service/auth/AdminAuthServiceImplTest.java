@@ -164,7 +164,7 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
         // mock 缓存登录用户到 Redis
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o -> o.setUserId(1L)
                 .setUserType(UserTypeEnum.ADMIN.getValue()));
-        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull()))
+        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull(), isNull()))
                 .thenReturn(accessTokenDO);
 
         // 调用，并校验
@@ -220,7 +220,7 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
         // mock 缓存登录用户到 Redis
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o -> o.setUserId(1L)
                 .setUserType(UserTypeEnum.ADMIN.getValue()));
-        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull()))
+        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull(), isNull()))
                 .thenReturn(accessTokenDO);
 
         // 调用，并断言
@@ -248,7 +248,7 @@ public class AdminAuthServiceImplTest extends BaseDbUnitTest {
         // mock 缓存登录用户到 Redis
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o -> o.setUserId(1L)
                 .setUserType(UserTypeEnum.ADMIN.getValue()));
-        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull()))
+        when(oauth2TokenService.createAccessToken(eq(1L), eq(UserTypeEnum.ADMIN.getValue()), eq("default"), isNull(), isNull()))
                 .thenReturn(accessTokenDO);
 
         // 调用，并断言

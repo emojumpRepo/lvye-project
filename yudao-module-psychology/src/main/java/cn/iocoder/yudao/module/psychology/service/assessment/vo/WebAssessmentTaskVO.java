@@ -25,9 +25,9 @@ public class WebAssessmentTaskVO {
     private String taskName;
 
     /**
-     * 量表编号
+     * 关联问卷 ID 列表
      */
-    private String scaleCode;
+    private java.util.List<Long> questionnaireIds;
 
     /**
      * 目标对象 1-学生，2-家长

@@ -24,9 +24,14 @@ public class AssessmentTaskSaveReqVO {
     private String taskName;
 
     /**
-     * 量表编号
+     * 量表编号（保留兼容，如果传入将用于兼容旧逻辑）
      */
     private String scaleCode;
+
+    /**
+     * 关联问卷 ID 列表（支持多问卷）
+     */
+    private java.util.List<Long> questionnaireIds;
 
     /**
      * 目标对象 1-学生，2-家长

@@ -4,11 +4,9 @@ import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
-
-import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 测评任务 DO
@@ -35,9 +33,10 @@ public class AssessmentTaskDO extends TenantBaseDO {
     private String taskName;
 
     /**
-     * 量表编号，固定问卷 A/B
+     * 关联问卷 ID 列表（非持久化字段）
      */
-    private String scaleCode;
+    @TableField(exist = false)
+    private List<Long> questionnaireIds;
 
     /**
      *目标对象（字典：target_audience）
@@ -63,6 +62,16 @@ public class AssessmentTaskDO extends TenantBaseDO {
      * 截止时间
      */
     private Date deadline;
+
+    /**
+     * 场景ID
+     */
+    private Long scenarioId;
+
+    /**
+     * 任务描述
+     */
+    private String description;
 
     /**
      * 发布人管理员

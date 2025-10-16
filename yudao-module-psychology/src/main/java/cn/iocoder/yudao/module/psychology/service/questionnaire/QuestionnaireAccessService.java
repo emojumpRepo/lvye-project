@@ -18,13 +18,13 @@ public interface QuestionnaireAccessService {
      * 记录问卷访问
      *
      * @param questionnaireId 问卷ID
-     * @param studentProfileId 学生档案ID
+     * @param userId 用户ID
      * @param accessIp 访问IP
      * @param userAgent 用户代理
      * @param accessSource 访问来源
      * @return 访问记录ID
      */
-    Long recordQuestionnaireAccess(Long questionnaireId, Long studentProfileId, 
+    Long recordQuestionnaireAccess(Long questionnaireId, Long userId, 
                                   String accessIp, String userAgent, Integer accessSource);
 
     /**
@@ -47,19 +47,19 @@ public interface QuestionnaireAccessService {
      * 获取问卷访问记录列表
      *
      * @param questionnaireId 问卷ID
-     * @param studentProfileId 学生档案ID
+     * @param userId 用户ID
      * @return 访问记录列表
      */
-    List<QuestionnaireAccessDO> getQuestionnaireAccessList(Long questionnaireId, Long studentProfileId);
+    List<QuestionnaireAccessDO> getQuestionnaireAccessList(Long questionnaireId, Long userId);
 
     /**
      * 检查问卷访问权限
      *
      * @param questionnaireId 问卷ID
-     * @param studentProfileId 学生档案ID
+     * @param userId 用户ID
      * @return 是否有访问权限
      */
-    boolean checkQuestionnaireAccess(Long questionnaireId, Long studentProfileId);
+    boolean checkQuestionnaireAccess(Long questionnaireId, Long userId);
 
     /**
      * 获取问卷访问统计

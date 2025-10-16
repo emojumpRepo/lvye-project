@@ -30,7 +30,7 @@ public class ConsultationRecordDO extends TenantBaseDO {
     private Long counselorUserId;
 
     /** 咨询类型（字典：consultation_type） */
-    private Integer type;
+    private String type;
 
     /** 咨询方式（字典：consultation_method） */
     private Integer method;

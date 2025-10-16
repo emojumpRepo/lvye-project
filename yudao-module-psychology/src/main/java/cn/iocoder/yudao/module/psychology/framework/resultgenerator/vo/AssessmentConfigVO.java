@@ -35,4 +35,9 @@ public class AssessmentConfigVO {
      */
     private InterventionConfigVO interventionConfig;
 
+    /**
+     * 场景编码
+     */
+    private String scenarioCode;
+
 }

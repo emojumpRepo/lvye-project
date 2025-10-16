@@ -10,6 +10,8 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.Questionn
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireAccessService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireSyncService;
+import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultService;
+import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyQuestionRespVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,6 +45,11 @@ public class QuestionnaireController {
 
     @Resource
     private QuestionnaireSyncService questionnaireSyncService;
+
+    @Resource
+    private QuestionnaireResultService questionnaireResultService;
+
+    // 通过 service 间接调用外部问卷系统
 
     @PostMapping("/create")
     @Operation(summary = "创建问卷")
@@ -80,8 +87,8 @@ public class QuestionnaireController {
     @GetMapping("/page")
     @Operation(summary = "获得问卷分页")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
-    public CommonResult<PageResult<QuestionnaireRespVO>> getQuestionnairePage(@Valid QuestionnairePageReqVO pageReqVO) {
-        PageResult<QuestionnaireRespVO> pageResult = questionnaireService.getQuestionnairePage(pageReqVO);
+    public CommonResult<PageResult<QuestionnaireWithSurveyRespVO>> getQuestionnairePage(@Valid QuestionnairePageReqVO pageReqVO) {
+        PageResult<QuestionnaireWithSurveyRespVO> pageResult = questionnaireService.getQuestionnairePageWithSurvey(pageReqVO);
         return success(pageResult);
     }
 
@@ -98,20 +105,16 @@ public class QuestionnaireController {
 
     @GetMapping("/list-all-simple")
     @Operation(summary = "获取问卷精简信息列表", description = "只包含被开启的问卷，主要用于前端的下拉选项")
-    public CommonResult<List<QuestionnaireSimpleRespVO>> getSimpleQuestionnaireList() {
-        List<QuestionnaireRespVO> list = questionnaireService.getAllQuestionnaireList();
-        // 将QuestionnaireRespVO转换为QuestionnaireSimpleRespVO
-        List<QuestionnaireSimpleRespVO> simpleList = list.stream()
-                .map(item -> {
-                    QuestionnaireSimpleRespVO simple = new QuestionnaireSimpleRespVO();
-                    simple.setId(item.getId());
-                    simple.setTitle(item.getTitle());
-                    simple.setQuestionnaireType(item.getQuestionnaireType());
-                    simple.setStatus(item.getStatus());
-                    return simple;
-                })
-                .collect(java.util.stream.Collectors.toList());
-        return success(simpleList);
+    @Parameter(name = "supportIndependentUse", description = "是否支持独立使用", example = "1")
+    public CommonResult<List<QuestionnaireSimpleRespVO>> getSimpleQuestionnaireList(
+            @RequestParam(value = "supportIndependentUse", required = false) Integer supportIndependentUse) {
+        List<QuestionnaireSimpleRespVO> list;
+        if (supportIndependentUse != null) {
+            list = questionnaireService.getSimpleQuestionnaireList(supportIndependentUse);
+        } else {
+            list = questionnaireService.getSimpleQuestionnaireList();
+        }
+        return success(list);
     }
 
     @GetMapping("/available")
@@ -158,9 +161,8 @@ public class QuestionnaireController {
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire:publish')")
     public CommonResult<QuestionnaireSyncRespVO> pauseQuestionnaire(@Valid @RequestBody QuestionnaireSyncReqVO syncReqVO) {
         try {
-            // TODO: 实现具体的暂停逻辑
-            log.info("暂停外部问卷（简化实现），问卷ID: {}", syncReqVO.getId());
-            
+            questionnaireService.pauseQuestionnaireInExternal(syncReqVO.getId());
+
             QuestionnaireSyncRespVO respVO = new QuestionnaireSyncRespVO();
             respVO.setSuccess(true);
             respVO.setMessage("暂停成功");
@@ -312,6 +314,26 @@ public class QuestionnaireController {
         }
     }
 
+    @GetMapping("/survey-questions")
+    @Operation(summary = "获取外部问卷题目")
+    @Parameter(name = "questionnaireId", description = "问卷ID", required = true)
+    // @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
+    public CommonResult<ExternalSurveyQuestionRespVO> getSurveyQuestions(@RequestParam("questionnaireId") Long questionnaireId) {
+        try {
+            QuestionnaireRespVO questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
+            if (questionnaire == null || questionnaire.getExternalId() == null || questionnaire.getExternalId().trim().isEmpty()) {
+                log.error("获取外部问卷题目失败，问卷不存在或未绑定externalId，questionnaireId: {}", questionnaireId);
+                return success(null);
+            }
+            String surveyId = questionnaire.getExternalId();
+            ExternalSurveyQuestionRespVO resp = questionnaireSyncService.getSurveyQuestions(surveyId);
+            return success(resp);
+        } catch (Exception e) {
+            log.error("获取外部问卷题目失败，questionnaireId: {}", questionnaireId, e);
+            return success(null);
+        }
+    }
+
     @GetMapping("/availability-check")
     @Operation(summary = "检查问卷可用性")
     @Parameter(name = "id", description = "问卷编号", required = true, example = "1024")
@@ -368,6 +390,23 @@ public class QuestionnaireController {
         } catch (Exception e) {
             log.error("批量发布问卷失败", e);
             return success(java.util.Collections.emptyMap());
+        }
+    }
+
+    @GetMapping("/get-result")
+    @Operation(summary = "获取问卷结果")
+    @Parameter(name = "id", description = "问卷结果ID", required = true, example = "1024")
+    // @PreAuthorize("@ss.hasPermission('psychology:questionnaire:query')")
+    public CommonResult<QuestionnaireResultRespVO> getQuestionnaireResult(@RequestParam("id") Long id) {
+        try {
+            QuestionnaireResultRespVO result = questionnaireResultService.getQuestionnaireResult(id);
+            if (result == null) {
+                return success(null);
+            }
+            return success(result);
+        } catch (Exception e) {
+            log.error("获取问卷结果失败，结果ID: {}", id, e);
+            return success(null);
         }
     }
 }

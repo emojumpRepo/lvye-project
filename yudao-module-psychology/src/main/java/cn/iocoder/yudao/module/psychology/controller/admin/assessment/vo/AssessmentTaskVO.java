@@ -31,10 +31,16 @@ public class AssessmentTaskVO {
     private String taskName;
 
     /**
-     * 量表编号，固定问卷 A/B
+     * 关联问卷 ID 列表
      */
-    @Schema(description = "量表编号")
-    private String scaleCode;
+    @Schema(description = "关联问卷 ID 列表")
+    private java.util.List<Long> questionnaireIds;
+
+    /**
+     * 槽位-问卷分配（分页展示用）
+     */
+    @Schema(description = "槽位-问卷分配")
+    private java.util.List<SlotAssignmentVO> assignments;
 
     /**
      *目标对象（字典：target_audience）
@@ -95,6 +101,24 @@ public class AssessmentTaskVO {
      */
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
+
+    /**
+     * 场景ID
+     */
+    @Schema(description = "场景ID")
+    private Long scenarioId;
+
+    /**
+     * 任务描述
+     */
+    @Schema(description = "任务描述")
+    private String description;
+
+    /**
+     * 问卷ID字符串（用于数据库查询）
+     */
+    @Schema(hidden = true)
+    private String questionnaireIdsStr;
 
 }
 

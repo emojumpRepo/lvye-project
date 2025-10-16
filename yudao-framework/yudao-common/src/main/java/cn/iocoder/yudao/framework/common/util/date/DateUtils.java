@@ -153,5 +153,16 @@ public class DateUtils {
         return LocalDateTime.now().format(formatter);
     }
 
+    /**
+     * 判断指定时间是否在时间区间内（包含边界值）
+     * @param checkTime 要检查的时间
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return boolean 是否在区间内
+     */
+    public static boolean isInDateRange(Date checkTime, Date startTime, Date endTime) {
+        return !checkTime.before(startTime) && !checkTime.after(endTime);
+    }
+
 
 }

@@ -25,9 +25,14 @@ public class AssessmentTaskVO {
     private String taskName;
 
     /**
-     * 量表编号
+     * 关联问卷 ID 列表
      */
-    private String scaleCode;
+    private java.util.List<Long> questionnaireIds;
+
+    /**
+     * 槽位-问卷分配（分页展示可选）
+     */
+    private java.util.List<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.SlotAssignmentVO> assignments;
 
     /**
      * 目标对象 1-学生，2-家长

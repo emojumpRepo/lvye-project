@@ -16,9 +16,9 @@ public class AppQuestionnaireAccessReqVO {
     @NotNull(message = "问卷编号不能为空")
     private Long questionnaireId;
 
-    @Schema(description = "学生档案编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "2048")
-    @NotNull(message = "学生档案编号不能为空")
-    private Long studentProfileId;
+    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "2048")
+    @NotNull(message = "用户ID不能为空")
+    private Long userId;
 
     @Schema(description = "访问来源", example = "1")
     private Integer accessSource;

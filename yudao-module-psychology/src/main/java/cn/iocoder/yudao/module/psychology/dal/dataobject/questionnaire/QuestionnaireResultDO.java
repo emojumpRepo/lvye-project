@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * 问卷结果 DO
@@ -31,24 +32,14 @@ public class QuestionnaireResultDO extends TenantBaseDO {
     private Long questionnaireId;
 
     /**
-     * 学生档案ID
+     * 用户ID
      */
-    private Long studentProfileId;
+    private Long userId;
 
     /**
-     * 关联的测评任务ID（如果是测评任务的一部分）
+     * 关联的测评任务编号（如果是测评任务的一部分）
      */
-    private Long assessmentTaskId;
-
-    /**
-     * 关联的测评结果ID
-     */
-    private Long assessmentResultId;
-
-    /**
-     * 参与者类型：1-学生本人，2-家长代答
-     */
-    private Integer participantType;
+    private String assessmentTaskNo;
 
     /**
      * 答题详情
@@ -58,17 +49,7 @@ public class QuestionnaireResultDO extends TenantBaseDO {
     /**
      * 原始得分
      */
-    private BigDecimal rawScore;
-
-    /**
-     * 标准分
-     */
-    private BigDecimal standardScore;
-
-    /**
-     * 百分位排名
-     */
-    private BigDecimal percentileRank;
+    private BigDecimal score;
 
     /**
      * 风险等级：1-正常，2-关注，3-预警，4-高危
@@ -76,9 +57,14 @@ public class QuestionnaireResultDO extends TenantBaseDO {
     private Integer riskLevel;
 
     /**
-     * 等级描述
+     * 评价
      */
-    private String levelDescription;
+    private String evaluate;
+
+    /**
+     * 建议内容
+     */
+    private String suggestions;
 
     /**
      * 各维度得分
@@ -91,19 +77,9 @@ public class QuestionnaireResultDO extends TenantBaseDO {
     private String resultData;
 
     /**
-     * 结果报告内容
-     */
-    private String reportContent;
-
-    /**
-     * 建议内容
-     */
-    private String suggestions;
-
-    /**
      * 完成时间
      */
-    private LocalDateTime completedTime;
+    private Date completedTime;
 
     /**
      * 生成状态：0-待生成，1-生成中，2-已生成，3-生成失败
@@ -113,7 +89,7 @@ public class QuestionnaireResultDO extends TenantBaseDO {
     /**
      * 结果生成时间
      */
-    private LocalDateTime generationTime;
+    private Date generationTime;
 
     /**
      * 生成错误信息

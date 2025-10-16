@@ -37,6 +37,13 @@ public interface DeptService {
     void deleteDept(Long id);
 
     /**
+     * 批量删除部门
+     *
+     * @param ids 部门编号数组
+     */
+    void deleteDeptList(List<Long> ids);
+
+    /**
      * 获得部门信息
      *
      * @param id 部门编号
@@ -114,4 +121,11 @@ public interface DeptService {
      */
     void validateDeptList(Collection<Long> ids);
 
+    /**
+     * 获得部门信息
+     *
+     * @param name 部门名称
+     * @return 部门信息
+     */
+    DeptDO getDeptByName(String name);
 }

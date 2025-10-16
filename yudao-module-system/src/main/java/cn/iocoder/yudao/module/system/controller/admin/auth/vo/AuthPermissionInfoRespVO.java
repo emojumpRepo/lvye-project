@@ -28,6 +28,9 @@ public class AuthPermissionInfoRespVO {
     @Schema(description = "菜单树", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<MenuVO> menus;
 
+    @Schema(description = "是否为家长登录", example = "yudao@iocoder.cn")
+    private Integer isParent;
+
     @Schema(description = "用户信息 VO")
     @Data
     @NoArgsConstructor
@@ -46,6 +49,9 @@ public class AuthPermissionInfoRespVO {
 
         @Schema(description = "部门编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "2048")
         private Long deptId;
+
+        @Schema(description = "部门名称", example = "IT 部")
+        private String deptName;
 
         @Schema(description = "用户账号", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudao")
         private String username;

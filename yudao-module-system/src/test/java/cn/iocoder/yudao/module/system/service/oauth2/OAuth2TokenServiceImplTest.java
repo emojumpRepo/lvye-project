@@ -75,7 +75,7 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
         when(adminUserService.getUser(userId)).thenReturn(user);
 
         // 调用
-        OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.createAccessToken(userId, userType, clientId, scopes);
+        OAuth2AccessTokenDO accessTokenDO = oauth2TokenService.createAccessToken(userId, userType, clientId, scopes, null);
         // 断言访问令牌
         OAuth2AccessTokenDO dbAccessTokenDO = oauth2AccessTokenMapper.selectByAccessToken(accessTokenDO.getAccessToken());
         // TODO @芋艿：expiresTime 被屏蔽，仅 win11 会复现，建议后续修复。
@@ -119,8 +119,8 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
         OAuth2ClientDO clientDO = randomPojo(OAuth2ClientDO.class).setClientId(clientId);
         when(oauth2ClientService.validOAuthClientFromCache(eq(clientId))).thenReturn(clientDO);
         // mock 数据（访问令牌）
-        OAuth2RefreshTokenDO refreshTokenDO = randomPojo(OAuth2RefreshTokenDO.class)
-                .setRefreshToken(refreshToken).setClientId("error");
+        OAuth2RefreshTokenDO refreshTokenDO = randomPojo(OAuth2RefreshTokenDO.class, o ->
+                o.setRefreshToken(refreshToken).setClientId("error").setIsParent(0));
         oauth2RefreshTokenMapper.insert(refreshTokenDO);
 
         // 调用，并断言
@@ -137,9 +137,9 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
         OAuth2ClientDO clientDO = randomPojo(OAuth2ClientDO.class).setClientId(clientId);
         when(oauth2ClientService.validOAuthClientFromCache(eq(clientId))).thenReturn(clientDO);
         // mock 数据（访问令牌）
-        OAuth2RefreshTokenDO refreshTokenDO = randomPojo(OAuth2RefreshTokenDO.class)
-                .setRefreshToken(refreshToken).setClientId(clientId)
-                .setExpiresTime(LocalDateTime.now().minusDays(1));
+        OAuth2RefreshTokenDO refreshTokenDO = randomPojo(OAuth2RefreshTokenDO.class, o ->
+                o.setRefreshToken(refreshToken).setClientId(clientId)
+                        .setExpiresTime(LocalDateTime.now().minusDays(1)).setIsParent(0));
         oauth2RefreshTokenMapper.insert(refreshTokenDO);
 
         // 调用，并断言
@@ -163,11 +163,12 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
                 o.setRefreshToken(refreshToken).setClientId(clientId)
                         .setExpiresTime(LocalDateTime.now().plusDays(1))
                         .setUserType(UserTypeEnum.ADMIN.getValue())
-                        .setTenantId(TenantContextHolder.getTenantId()));
+                        .setIsParent(0).setTenantId(TenantContextHolder.getTenantId()));
         oauth2RefreshTokenMapper.insert(refreshTokenDO);
         // mock 数据（访问令牌）
-        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class).setRefreshToken(refreshToken)
-                .setUserType(refreshTokenDO.getUserType());
+        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o ->
+                o.setRefreshToken(refreshToken)
+                        .setUserType(refreshTokenDO.getUserType()).setIsParent(0));
         oauth2AccessTokenMapper.insert(accessTokenDO);
         oauth2AccessTokenRedisDAO.set(accessTokenDO);
         // mock 数据（用户）
@@ -195,8 +196,8 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
     @Test
     public void testGetAccessToken() {
         // mock 数据（访问令牌）
-        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class)
-                .setExpiresTime(LocalDateTime.now().plusDays(1));
+        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o ->
+                o.setExpiresTime(LocalDateTime.now().plusDays(1)).setIsParent(0));
         oauth2AccessTokenMapper.insert(accessTokenDO);
         // 准备参数
         String accessToken = accessTokenDO.getAccessToken();
@@ -222,8 +223,8 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
     @Test
     public void testCheckAccessToken_expired() {
         // mock 数据（访问令牌）
-        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class)
-                .setExpiresTime(LocalDateTime.now().minusDays(1));
+        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o ->
+                o.setExpiresTime(LocalDateTime.now().minusDays(1)).setIsParent(0));
         oauth2AccessTokenMapper.insert(accessTokenDO);
         // 准备参数
         String accessToken = accessTokenDO.getAccessToken();
@@ -237,6 +238,8 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
     public void testCheckAccessToken_refreshToken() {
         // mock 数据（访问令牌）
         OAuth2RefreshTokenDO refreshTokenDO = randomPojo(OAuth2RefreshTokenDO.class)
+                .setUserId(0L)
+                .setIsParent(0)
                 .setExpiresTime(LocalDateTime.now().plusDays(1));
         oauth2RefreshTokenMapper.insert(refreshTokenDO);
         // 准备参数
@@ -252,8 +255,8 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
     @Test
     public void testCheckAccessToken_success() {
         // mock 数据（访问令牌）
-        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class)
-                .setExpiresTime(LocalDateTime.now().plusDays(1));
+        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o ->
+                o.setExpiresTime(LocalDateTime.now().plusDays(1)).setIsParent(0));
         oauth2AccessTokenMapper.insert(accessTokenDO);
         // 准备参数
         String accessToken = accessTokenDO.getAccessToken();
@@ -275,12 +278,12 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
     @Test
     public void testRemoveAccessToken_success() {
         // mock 数据（访问令牌）
-        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class)
-                .setExpiresTime(LocalDateTime.now().plusDays(1));
+        OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class, o ->
+                o.setExpiresTime(LocalDateTime.now().plusDays(1)).setIsParent(0));
         oauth2AccessTokenMapper.insert(accessTokenDO);
         // mock 数据（刷新令牌）
-        OAuth2RefreshTokenDO refreshTokenDO = randomPojo(OAuth2RefreshTokenDO.class)
-                .setRefreshToken(accessTokenDO.getRefreshToken());
+        OAuth2RefreshTokenDO refreshTokenDO = randomPojo(OAuth2RefreshTokenDO.class, o ->
+                o.setRefreshToken(accessTokenDO.getRefreshToken()).setIsParent(0));
         oauth2RefreshTokenMapper.insert(refreshTokenDO);
         // 调用
         OAuth2AccessTokenDO result = oauth2TokenService.removeAccessToken(accessTokenDO.getAccessToken());
@@ -303,6 +306,7 @@ public class OAuth2TokenServiceImplTest extends BaseDbAndRedisUnitTest {
             o.setUserType(1);
             o.setClientId("test_client");
             o.setExpiresTime(LocalDateTime.now().plusDays(1));
+            o.setIsParent(0);
         });
         oauth2AccessTokenMapper.insert(dbAccessToken);
         // 测试 userId 不匹配

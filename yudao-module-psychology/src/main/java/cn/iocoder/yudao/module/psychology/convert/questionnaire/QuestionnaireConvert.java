@@ -6,7 +6,6 @@ import cn.iocoder.yudao.module.psychology.controller.app.questionnaire.vo.AppQue
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
@@ -18,11 +17,10 @@ import java.util.List;
 @Mapper
 public interface QuestionnaireConvert {
 
-    QuestionnaireConvert INSTANCE = Mappers.getMapper(QuestionnaireConvert.class);
+    QuestionnaireConvert INSTANCE = new QuestionnaireConvertImpl();
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "isOpen", ignore = true)
     @Mapping(target = "accessCount", ignore = true)
     @Mapping(target = "completionCount", ignore = true)
     @Mapping(target = "syncStatus", ignore = true)
@@ -32,12 +30,10 @@ public interface QuestionnaireConvert {
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "updater", ignore = true)
     @Mapping(target = "deleted", ignore = true)
-    @Mapping(target = "tenantId", ignore = true)
     @Mapping(target = "transMap", ignore = true)
     QuestionnaireDO convert(QuestionnaireCreateReqVO bean);
 
     @Mapping(target = "status", ignore = true)
-    @Mapping(target = "isOpen", ignore = true)
     @Mapping(target = "accessCount", ignore = true)
     @Mapping(target = "completionCount", ignore = true)
     @Mapping(target = "syncStatus", ignore = true)
@@ -47,7 +43,6 @@ public interface QuestionnaireConvert {
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "updater", ignore = true)
     @Mapping(target = "deleted", ignore = true)
-    @Mapping(target = "tenantId", ignore = true)
     @Mapping(target = "transMap", ignore = true)
     QuestionnaireDO convert(QuestionnaireUpdateReqVO bean);
 
@@ -57,6 +52,14 @@ public interface QuestionnaireConvert {
 
     PageResult<QuestionnaireRespVO> convertPage(PageResult<QuestionnaireDO> page);
 
+    // === 包含 surveyCode 的分页项转换 ===
+    QuestionnaireWithSurveyRespVO convertWithSurvey(QuestionnaireDO bean);
+
+    List<QuestionnaireWithSurveyRespVO> convertWithSurveyList(List<QuestionnaireDO> list);
+
+    PageResult<QuestionnaireWithSurveyRespVO> convertWithSurveyPage(PageResult<QuestionnaireDO> page);
+
+    @Mapping(target = "assessmentDimensionLabels", ignore = true)
     QuestionnaireSimpleRespVO convertSimple(QuestionnaireDO bean);
 
     List<QuestionnaireSimpleRespVO> convertSimpleList(List<QuestionnaireDO> list);
@@ -72,7 +75,7 @@ public interface QuestionnaireConvert {
     @Mapping(target = "accessible", ignore = true)
     @Mapping(target = "startTime", ignore = true)
     @Mapping(target = "endTime", ignore = true)
-    @Mapping(target = "isOpen", expression = "java(bean.getIsOpen() != null && bean.getIsOpen() == 1)")
+    @Mapping(target = "isOpen", expression = "java(bean.getSupportIndependentUse() != null && bean.getSupportIndependentUse() == 1)")
     AppQuestionnaireSimpleRespVO convertToAppSimpleRespVO(QuestionnaireDO bean);
 
     List<AppQuestionnaireSimpleRespVO> convertToAppSimpleRespVOList(List<QuestionnaireDO> list);

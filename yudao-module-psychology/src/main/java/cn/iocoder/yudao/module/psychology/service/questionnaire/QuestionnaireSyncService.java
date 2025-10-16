@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.psychology.service.questionnaire;
 
+import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyQuestionRespVO;
 import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyRespVO;
 
 import java.util.List;
@@ -17,6 +18,14 @@ public interface QuestionnaireSyncService {
      * @return 同步结果统计
      */
     QuestionnaireSyncResult syncQuestionnaires();
+
+    /**
+     * 获取外部问卷题目
+     *
+     * @param surveyId 外部问卷ID
+     * @return 题目响应
+     */
+    ExternalSurveyQuestionRespVO getSurveyQuestions(String surveyId);
 
     /**
      * 同步结果统计类

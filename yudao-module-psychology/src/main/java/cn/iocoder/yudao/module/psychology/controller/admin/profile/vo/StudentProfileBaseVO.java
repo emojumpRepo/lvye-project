@@ -38,9 +38,37 @@ public class StudentProfileBaseVO {
     @Schema(description = "性别", example = "1")
     private Integer sex;
 
+    @Schema(description = "民族", example = "1")
+    private Integer ethnicity;
+
+    @Schema(description = "身高（厘米）", example = "175.50")
+    private java.math.BigDecimal height;
+
+    @Schema(description = "体重（千克）", example = "65.80")
+    private java.math.BigDecimal weight;
+
+    @Schema(description = "实际年龄（岁）", example = "16")
+    private Integer actualAge;
+
+    @Schema(description = "家中孩子情况（JSON格式）", example = "{\"isOnlyChild\":1,\"childrenCount\":1,\"birthOrder\":1,\"ageGapToSecond\":0}")
+    private String familyChildrenInfo;
+
     @Schema(description = "手机号", example = "13800138000")
     @Length(max = 11, message = "手机号不能超过11")
     private String mobile;
+
+    @Schema(description = "监护人手机号", example = "13900139000")
+    @Length(max = 11, message = "监护人手机号不能超过11")
+    private String guardianMobile;
+
+    @Schema(description = "身份证号", requiredMode = Schema.RequiredMode.REQUIRED, example = "110101200801012345")
+    @NotBlank(message = "身份证号不能为空")
+    @Length(min = 18, max = 18, message = "身份证号必须为18位")
+    private String idCard;
+
+    @Schema(description = "届别（入学年份）", requiredMode = Schema.RequiredMode.REQUIRED, example = "2024")
+    @NotNull(message = "届别不能为空")
+    private Integer enrollmentYear;
 
     @Schema(description = "年级部门编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "年级部门编号不能为空")

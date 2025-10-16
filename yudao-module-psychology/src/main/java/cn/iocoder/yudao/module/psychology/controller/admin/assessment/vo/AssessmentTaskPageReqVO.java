@@ -23,8 +23,8 @@ public class AssessmentTaskPageReqVO extends PageParam {
     @Schema(description = "任务名称", example = "2024年春季心理测评")
     private String name;
 
-    @Schema(description = "量表编号", example = "A")
-    private String scaleCode;
+    @Schema(description = "按问卷过滤（问卷ID）", example = "1")
+    private Long questionnaireId;
 
     @Schema(description = "目标对象", example = "1")
     private Integer targetAudience;

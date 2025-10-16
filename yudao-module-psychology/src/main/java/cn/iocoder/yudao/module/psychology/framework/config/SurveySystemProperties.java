@@ -22,7 +22,7 @@ public class SurveySystemProperties {
     /**
      * 外部问卷系统基础URL
      */
-    private String baseUrl = "http://119.29.105.88:8080/api/survey";
+    private String baseUrl = "http://8.130.43.71:8080/api/survey";
 
     /**
      * 获取问卷列表的API路径
@@ -45,9 +45,14 @@ public class SurveySystemProperties {
     private String pauseSurveyPath = "/pausingSurvey";
 
     /**
+     * 问卷题目的API路径
+     */
+    private String getSurveyQuestionsPath = "/getFormattedQuestions";
+
+    /**
      * 获取问卷系统管理员的永久token
      */
-    private String surveyAdminToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODkwNmJjZTY3MmI2NzNkZjY1NDM5NDQiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU0Mjk4MDg2fQ.AkBtLMg_mT-pztLkaW8UlGxLhYCDdq3j696Sd2LtRZw";
+    private String surveyAdminToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OGE4NTYzNjEzNWQyOGEzOTM1Nzc5ZGIiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU2OTgzMTkzfQ.udZwlCVAsPfNdbFADU3eUVjtsxonO3mrkKZMphT00FU";
 
     /**
      * 连接超时时间（毫秒）
@@ -97,4 +102,10 @@ public class SurveySystemProperties {
         return baseUrl + pauseSurveyPath;
     }
 
+    /**
+     * 获取完整的获取问卷题目URL
+     */
+    public String getGetQuestionUrl() {
+        return baseUrl + getSurveyQuestionsPath;
+    }
 }

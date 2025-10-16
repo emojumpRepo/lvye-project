@@ -59,10 +59,10 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public OAuth2AccessTokenDO createAccessToken(Long userId, Integer userType, String clientId, List<String> scopes) {
+    public OAuth2AccessTokenDO createAccessToken(Long userId, Integer userType, String clientId, List<String> scopes, Integer isParent) {
         OAuth2ClientDO clientDO = oauth2ClientService.validOAuthClientFromCache(clientId);
         // 创建刷新令牌
-        OAuth2RefreshTokenDO refreshTokenDO = createOAuth2RefreshToken(userId, userType, clientDO, scopes);
+        OAuth2RefreshTokenDO refreshTokenDO = createOAuth2RefreshToken(userId, userType, clientDO, scopes, isParent);
         // 创建访问令牌
         return createOAuth2AccessToken(refreshTokenDO, clientDO);
     }
@@ -164,7 +164,8 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
                 .setUserInfo(buildUserInfo(refreshTokenDO.getUserId(), refreshTokenDO.getUserType()))
                 .setClientId(clientDO.getClientId()).setScopes(refreshTokenDO.getScopes())
                 .setRefreshToken(refreshTokenDO.getRefreshToken())
-                .setExpiresTime(LocalDateTime.now().plusSeconds(clientDO.getAccessTokenValiditySeconds()));
+                .setExpiresTime(LocalDateTime.now().plusSeconds(clientDO.getAccessTokenValiditySeconds()))
+                .setIsParent(refreshTokenDO.getIsParent());
         accessTokenDO.setTenantId(TenantContextHolder.getTenantId()); // 手动设置租户编号，避免缓存到 Redis 的时候，无对应的租户编号
         oauth2AccessTokenMapper.insert(accessTokenDO);
         // 记录到 Redis 中
@@ -172,11 +173,12 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
         return accessTokenDO;
     }
 
-    private OAuth2RefreshTokenDO createOAuth2RefreshToken(Long userId, Integer userType, OAuth2ClientDO clientDO, List<String> scopes) {
+    private OAuth2RefreshTokenDO createOAuth2RefreshToken(Long userId, Integer userType, OAuth2ClientDO clientDO, List<String> scopes, Integer isParent) {
         OAuth2RefreshTokenDO refreshToken = new OAuth2RefreshTokenDO().setRefreshToken(generateRefreshToken())
                 .setUserId(userId).setUserType(userType)
                 .setClientId(clientDO.getClientId()).setScopes(scopes)
-                .setExpiresTime(LocalDateTime.now().plusSeconds(clientDO.getRefreshTokenValiditySeconds()));
+                .setExpiresTime(LocalDateTime.now().plusSeconds(clientDO.getRefreshTokenValiditySeconds()))
+                .setIsParent(isParent);
         oauth2RefreshTokenMapper.insert(refreshToken);
         return refreshToken;
     }
@@ -197,6 +199,9 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
      * @return 用户信息
      */
     private Map<String, String> buildUserInfo(Long userId, Integer userType) {
+        if (userId == null || userId <= 0) {
+            return Collections.emptyMap();
+        }
         if (userType.equals(UserTypeEnum.ADMIN.getValue())) {
             AdminUserDO user = adminUserService.getUser(userId);
             return MapUtil.builder(LoginUser.INFO_KEY_NICKNAME, user.getNickname())
@@ -205,7 +210,7 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
             // 注意：目前 Member 暂时不读取，可以按需实现
             return Collections.emptyMap();
         }
-        return null;
+        throw new IllegalArgumentException("未知用户类型：" + userType);
     }
 
     private static String generateAccessToken() {

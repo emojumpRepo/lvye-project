@@ -1,0 +1,35 @@
+{
+  "name": "lvye-project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy:frontend": "node script/windows/deploy-frontend.mjs",
+    "deploy:backend": "node script/windows/deploy-backend.mjs",
+    "deploy:all": "npm run deploy:backend && npm run deploy:frontend",
+    "rollback:frontend": "node script/windows/rollback-frontend.mjs",
+    "build:backend": "mvn clean package -DskipTests",
+    "build:frontend": "cd yudao-ui/lvye-project-frontend && pnpm build:admin && pnpm build:web",
+    "build:all": "npm run build:backend && npm run build:frontend",
+    "setup:cos": "script\\windows\\tools\\install-coscli-official.bat",
+    "config:cos": "script\\windows\\tools\\quick-config-coscli.bat",
+    "release": "node script/windows/release.mjs",
+    "release:deploy": "node script/windows/release-with-deploy.mjs",
+    "release:frontend": "node script/windows/release.mjs frontend",
+    "release:backend": "node script/windows/release.mjs backend",
+    "dev:test-dify": "node script/test-dify.mjs"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "chalk": "^5.6.2",
+    "cos-nodejs-sdk-v5": "^2.15.4",
+    "p-limit": "^6.1.0",
+    "readline-sync": "^1.4.10",
+    "ssh2": "^1.17.0"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.1",
+    "dotenv": "^17.2.3",
+    "js-yaml": "^4.1.0",
+    "node-ssh": "^13.2.1"
+  }
+}

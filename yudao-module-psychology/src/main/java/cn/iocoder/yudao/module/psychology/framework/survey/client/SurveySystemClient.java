@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyUpda
 import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyUpdateRespVO;
 import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyStatusReqVO;
 import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalServiceResult;
+import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyQuestionRespVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -308,6 +309,60 @@ public class SurveySystemClient {
             String errorMsg = String.format("%s问卷失败: 系统内部错误", operationName);
             log.error("[executeStatusOperation] {}问卷时发生异常，URL: {}", operationName, url, e);
             return ExternalServiceResult.error(errorMsg);
+        }
+    }
+
+    /**
+     * 获取问卷题目
+     *
+     * @param surveyId 外部问卷ID
+     * @return 问卷题目
+     */
+    public ExternalSurveyQuestionRespVO getSurveyQuestion(String surveyId) {
+        if (!surveySystemProperties.getEnabled()) {
+            log.info("[getSurveyQuestion] 外部问卷系统同步已禁用");
+            return null;
+        }
+
+        String baseUrl = surveySystemProperties.getGetQuestionUrl();
+        log.info("[getSurveyQuestion] 获取问卷题目URL: {}", baseUrl);
+        String url = baseUrl + (baseUrl.contains("?") ? "&" : "?") + "surveyId=" + surveyId;
+        log.info("[getSurveyQuestion] 开始请求外部问卷题目，URL: {}, surveyId: {}", url, surveyId);
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            if (StringUtils.hasText(surveySystemProperties.getSurveyAdminToken())) {
+                headers.set("Authorization", "Bearer " + surveySystemProperties.getSurveyAdminToken());
+            }
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<ExternalSurveyQuestionRespVO> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    ExternalSurveyQuestionRespVO.class
+            );
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                ExternalSurveyQuestionRespVO body = response.getBody();
+                if (body.isSuccess()) {
+                    log.info("[getSurveyQuestion] 成功获取题目，题目数: {}", body.getData() == null ? 0 : body.getData().size());
+                    return body;
+                }
+                log.error("[getSurveyQuestion] 外部问卷系统返回错误，code: {}, message: {}", body.getCode(), body.getMessage());
+                return body; // 返回以便上层决定处理
+            }
+
+            log.error("[getSurveyQuestion] 外部问卷系统响应异常，状态码: {}", response.getStatusCode());
+            return null;
+        } catch (RestClientException e) {
+            log.error("[getSurveyQuestion] 请求外部问卷系统失败，URL: {}, 错误: {}", url, e.getMessage(), e);
+            return null;
+        } catch (Exception e) {
+            log.error("[getSurveyQuestion] 处理外部问卷系统响应时发生异常", e);
+            return null;
         }
     }
 

@@ -17,6 +17,7 @@ CREATE TABLE `lvye_questionnaire` (
     `target_audience` TINYINT NOT NULL COMMENT '目标对象：1-学生，2-家长',
     `external_id` VARCHAR(100) COMMENT '外部系统问卷ID',
     `external_link` VARCHAR(500) COMMENT '外部问卷链接',
+    `survey_code` VARCHAR(128) COMMENT '问卷编码',
     `question_count` INT COMMENT '题目数量',
     `estimated_duration` INT COMMENT '预计用时（分钟）',
     `content` LONGTEXT COMMENT '问卷内容（题目、选项等）',
@@ -41,13 +42,87 @@ CREATE TABLE `lvye_questionnaire` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='心理问卷表';
 
 -- ----------------------------
+-- Table structure for lvye_assessment_scenario
+-- ----------------------------
+DROP TABLE IF EXISTS `lvye_assessment_scenario`;
+CREATE TABLE `lvye_assessment_scenario` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '场景ID',
+    `code` VARCHAR(64) NOT NULL COMMENT '场景编码，唯一',
+    `name` VARCHAR(128) NOT NULL COMMENT '场景名称',
+    `max_questionnaire_count` INT NULL COMMENT '最大问卷数量限制，NULL 表示不限制',
+    `frontend_route` VARCHAR(128) NOT NULL COMMENT '前端路由标识',
+    `is_active` BIT(1) NOT NULL DEFAULT b'1' COMMENT '是否启用：1-启用，0-停用',
+    `metadata_json` JSON NULL COMMENT '扩展配置',
+    `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updater` VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` BIT(1) DEFAULT b'0' COMMENT '是否删除',
+    `tenant_id` BIGINT DEFAULT 0 COMMENT '租户编号',
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE KEY `uk_tenant_code` (`tenant_id`, `code`) USING BTREE,
+    KEY `idx_is_active` (`is_active`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评场景定义表';
+
+-- ----------------------------
+-- Table structure for lvye_assessment_scenario_slot
+-- ----------------------------
+DROP TABLE IF EXISTS `lvye_assessment_scenario_slot`;
+CREATE TABLE `lvye_assessment_scenario_slot` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '槽位ID',
+    `scenario_id` BIGINT NOT NULL COMMENT '场景ID',
+    `slot_key` VARCHAR(64) NOT NULL COMMENT '槽位编码，在场景内唯一',
+    `slot_name` VARCHAR(128) NOT NULL COMMENT '槽位名称',
+    `slot_order` INT NOT NULL DEFAULT 0 COMMENT '槽位顺序',
+    `questionnaire_id` BIGINT NULL COMMENT '问卷ID',
+    `metadata_json` JSON NULL COMMENT '扩展配置',
+    `allowed_questionnaire_types` VARCHAR(256) NULL COMMENT '允许的问卷类型，逗号分隔',
+    `frontend_component` VARCHAR(128) NULL COMMENT '前端组件标识',
+    `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updater` VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` BIT(1) DEFAULT b'0' COMMENT '是否删除',
+    `tenant_id` BIGINT DEFAULT 0 COMMENT '租户编号',
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE KEY `uk_scenario_slot` (`scenario_id`, `slot_key`) USING BTREE,
+    KEY `idx_scenario_id` (`scenario_id`) USING BTREE,
+    KEY `idx_questionnaire_id` (`questionnaire_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评场景槽位定义表';
+
+-- ----------------------------
+-- Table structure for lvye_assessment_task_questionnaire
+-- ----------------------------
+DROP TABLE IF EXISTS `lvye_assessment_task_questionnaire`;
+CREATE TABLE `lvye_assessment_task_questionnaire` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `task_no` VARCHAR(64) NOT NULL COMMENT '任务编号',
+    `questionnaire_id` BIGINT NOT NULL COMMENT '问卷ID',
+    `slot_key` VARCHAR(64) NULL COMMENT '槽位标识',
+    `slot_order` INT NULL COMMENT '槽位顺序',
+    `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updater` VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` BIT(1) DEFAULT b'0' COMMENT '是否删除',
+    `tenant_id` BIGINT DEFAULT 0 COMMENT '租户编号',
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `idx_task_no` (`task_no`) USING BTREE,
+    KEY `idx_questionnaire_id` (`questionnaire_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评任务-问卷关联表';
+
+-- 若关联表已存在但缺少槽位列，可执行以下增量脚本：
+-- ALTER TABLE lvye_assessment_task_questionnaire ADD COLUMN `slot_key` VARCHAR(64) NULL;
+-- ALTER TABLE lvye_assessment_task_questionnaire ADD COLUMN `slot_order` INT NULL;
+
+-- ----------------------------
 -- Table structure for lvye_questionnaire_result
 -- ----------------------------
 DROP TABLE IF EXISTS `lvye_questionnaire_result`;
 CREATE TABLE `lvye_questionnaire_result` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '结果ID',
     `questionnaire_id` BIGINT NOT NULL COMMENT '问卷ID',
-    `student_profile_id` BIGINT NOT NULL COMMENT '学生档案ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `assessment_task_id` BIGINT COMMENT '关联的测评任务ID（如果是测评任务的一部分）',
     `assessment_result_id` BIGINT COMMENT '关联的测评结果ID',
     `participant_type` TINYINT DEFAULT 1 COMMENT '参与者类型：1-学生本人，2-家长代答',
@@ -74,7 +149,7 @@ CREATE TABLE `lvye_questionnaire_result` (
     
     PRIMARY KEY (`id`) USING BTREE,
     KEY `idx_questionnaire_id` (`questionnaire_id`) USING BTREE,
-    KEY `idx_student_profile_id` (`student_profile_id`) USING BTREE,
+    KEY `idx_user_id` (`user_id`) USING BTREE,
     KEY `idx_assessment_task_id` (`assessment_task_id`) USING BTREE,
     KEY `idx_assessment_result_id` (`assessment_result_id`) USING BTREE,
     KEY `idx_participant_type` (`participant_type`) USING BTREE,
@@ -124,7 +199,7 @@ DROP TABLE IF EXISTS `lvye_questionnaire_access`;
 CREATE TABLE `lvye_questionnaire_access` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '访问记录ID',
     `questionnaire_id` BIGINT NOT NULL COMMENT '问卷ID',
-    `student_profile_id` BIGINT NOT NULL COMMENT '学生档案ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
     `access_time` DATETIME NOT NULL COMMENT '访问时间',
     `access_ip` VARCHAR(50) COMMENT '访问IP',
     `user_agent` TEXT COMMENT '用户代理',
@@ -136,7 +211,7 @@ CREATE TABLE `lvye_questionnaire_access` (
     
     PRIMARY KEY (`id`) USING BTREE,
     KEY `idx_questionnaire_id` (`questionnaire_id`) USING BTREE,
-    KEY `idx_student_profile_id` (`student_profile_id`) USING BTREE,
+    KEY `idx_user_id` (`user_id`) USING BTREE,
     KEY `idx_access_time` (`access_time`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='问卷访问记录表';
 
@@ -144,6 +219,9 @@ CREATE TABLE `lvye_questionnaire_access` (
 -- 扩展现有测评结果表字段（统一为 lvye_ 前缀）
 -- ----------------------------
 ALTER TABLE lvye_assessment_result ADD COLUMN `questionnaire_results` JSON COMMENT '关联的问卷结果汇总';
+-- 任务表新增场景ID列（若已存在可忽略）
+ALTER TABLE lvye_assessment_task ADD COLUMN `scenario_id` BIGINT NULL COMMENT '场景ID';
+
 ALTER TABLE lvye_assessment_result ADD COLUMN `combined_risk_level` TINYINT COMMENT '综合风险等级';
 ALTER TABLE lvye_assessment_result ADD COLUMN `risk_factors` JSON COMMENT '风险因素分析';
 ALTER TABLE lvye_assessment_result ADD COLUMN `intervention_suggestions` TEXT COMMENT '干预建议';

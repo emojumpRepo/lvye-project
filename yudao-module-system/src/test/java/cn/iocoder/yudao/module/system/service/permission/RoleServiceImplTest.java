@@ -12,7 +12,7 @@ import cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum;
 import cn.iocoder.yudao.module.system.enums.permission.RoleTypeEnum;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 
 import jakarta.annotation.Resource;
@@ -44,7 +44,7 @@ public class RoleServiceImplTest extends BaseDbUnitTest {
     @Resource
     private RoleMapper roleMapper;
 
-    @MockBean
+    @MockitoBean
     private PermissionService permissionService;
 
     @Test
@@ -148,7 +148,7 @@ public class RoleServiceImplTest extends BaseDbUnitTest {
 
     @Test
     public void testValidateUpdateRole_success() {
-        RoleDO roleDO = randomPojo(RoleDO.class);
+        RoleDO roleDO = randomPojo(RoleDO.class, o -> o.setType(RoleTypeEnum.CUSTOM.getType()));
         roleMapper.insert(roleDO);
         // 准备参数
         Long id = roleDO.getId();

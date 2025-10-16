@@ -13,8 +13,21 @@ public interface ErrorCodeConstants {
     ErrorCode STUDENT_PROFILE_NOT_EXISTS = new ErrorCode(1_003_001_000, "学生档案不存在");
     ErrorCode STUDENT_PROFILE_ALREADY_EXISTS = new ErrorCode(1_003_001_001, "学生档案已存在");
     ErrorCode STUDENT_NO_DUPLICATE = new ErrorCode(1_003_001_002, "学号已存在");
-    ErrorCode STUDENT_PROFILE_GRADUATED = new ErrorCode(1_003_001_003, "学生已毕业，无法操作");
-    ErrorCode PARENT_INFO_REQUIRED = new ErrorCode(1_003_001_004, "家长信息为必填项");
+    ErrorCode STUDENT_IDCARD_DUPLICATE = new ErrorCode(1_003_001_003, "身份证号已存在");
+    ErrorCode STUDENT_PROFILE_GRADUATED = new ErrorCode(1_003_001_004, "学生已毕业，无法操作");
+    ErrorCode PARENT_INFO_REQUIRED = new ErrorCode(1_003_001_005, "家长信息为必填项");
+    ErrorCode STUDENT_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_001_006, "导入用户数据不能为空！");
+    ErrorCode STUDENT_GRADE_OR_CLASS_IS_EMPTY = new ErrorCode(1_003_001_007, "年级/班级数据不能为空！");
+    ErrorCode STUDENT_GRADE_OR_CLASS_NOT_MATCH = new ErrorCode(1_003_001_008, "年级/班级数据不匹配！");
+    ErrorCode STUDENT_NAME_NOT_MATCH = new ErrorCode(1_003_001_009, "学生姓名与学号不匹配");
+    ErrorCode STUDENT_ROLE_ASSIGN_FAILED = new ErrorCode(1_003_001_010, "学生分配角色失败");
+
+    // ========== 学生档案-单条导入专用码（保持唯一且不与既有冲突） ==========
+    ErrorCode STUDENT_IMPORT_ONE_SUCCESS = new ErrorCode(1_003_001_100, "导入成功");
+    ErrorCode STUDENT_IMPORT_ONE_STUDENT_NO_DUPLICATE = new ErrorCode(1_003_001_101, "学号已存在");
+    ErrorCode STUDENT_IMPORT_ONE_GRADE_OR_CLASS_EMPTY = new ErrorCode(1_003_001_102, "年级/班级数据不能为空！");
+    ErrorCode STUDENT_IMPORT_ONE_GRADE_OR_CLASS_NOT_MATCH = new ErrorCode(1_003_001_103, "年级/班级数据不匹配！");
+    ErrorCode STUDENT_IMPORT_ONE_UNKNOWN_ERROR = new ErrorCode(1_003_001_199, "导入失败");
 
     // ========== 测评任务相关 1-003-002-000 ==========
     ErrorCode ASSESSMENT_TASK_NOT_EXISTS = new ErrorCode(1_003_002_000, "测评任务不存在");
@@ -23,6 +36,7 @@ public interface ErrorCodeConstants {
     ErrorCode ASSESSMENT_TASK_NOT_STARTED = new ErrorCode(1_003_002_003, "测评任务未开始");
     ErrorCode ASSESSMENT_TASK_NAME_DUPLICATE = new ErrorCode(1_003_002_004, "任务名称已存在");
     ErrorCode ASSESSMENT_TASK_PARTICIPANT_EXISTS = new ErrorCode(1_003_002_005, "该学生已参与此测评任务");
+    ErrorCode ASSESSMENT_TASK_PARTICIPANT_CANNOT_START = new ErrorCode(1_003_002_006, "身份不符，无法参与测评任务");
 
     // ========== 测评量表相关 1-003-003-000 ==========
     ErrorCode ASSESSMENT_SCALE_NOT_EXISTS = new ErrorCode(1_003_003_000, "测评量表不存在");
@@ -34,14 +48,23 @@ public interface ErrorCodeConstants {
     ErrorCode ASSESSMENT_RESULT_NOT_EXISTS = new ErrorCode(1_003_004_000, "测评结果不存在");
     ErrorCode ASSESSMENT_RESULT_ALREADY_EXISTS = new ErrorCode(1_003_004_001, "测评结果已存在");
     ErrorCode ASSESSMENT_NOT_COMPLETED = new ErrorCode(1_003_004_002, "测评未完成");
+    ErrorCode ASSESSMENT_ALREADY_COMPLETED = new ErrorCode(1_003_004_003, "测评已完成");
 
     // ========== 心理咨询相关 1-003-005-000 ==========
     ErrorCode CONSULTATION_RECORD_NOT_EXISTS = new ErrorCode(1_003_005_000, "咨询记录不存在");
     ErrorCode CONSULTATION_APPOINTMENT_CONFLICT = new ErrorCode(1_003_005_001, "咨询预约时间冲突");
+    ErrorCode CONSULTATION_APPOINTMENT_NOT_EXISTS = new ErrorCode(1_003_005_002, "咨询预约不存在");
+    ErrorCode CONSULTATION_TIME_CONFLICT = new ErrorCode(1_003_005_003, "咨询时间冲突");
+    ErrorCode CONSULTATION_STATUS_ERROR = new ErrorCode(1_003_005_004, "咨询状态不正确");
+    ErrorCode CONSULTATION_ASSESSMENT_NOT_EXISTS = new ErrorCode(1_003_005_005, "咨询评估不存在");
+    ErrorCode CONSULTATION_ASSESSMENT_ALREADY_EXISTS = new ErrorCode(1_003_005_006, "咨询评估已存在");
+    ErrorCode CONSULTATION_TIME_INVALID = new ErrorCode(1_003_005_007, "预约时间无效，结束时间必须晚于开始时间");
 
     // ========== 危机干预相关 1-003-006-000 ==========
     ErrorCode CRISIS_INTERVENTION_NOT_EXISTS = new ErrorCode(1_003_006_000, "危机干预事件不存在");
     ErrorCode CRISIS_INTERVENTION_ALREADY_HANDLED = new ErrorCode(1_003_006_001, "危机干预事件已处理");
+    ErrorCode INVALID_RISK_LEVEL = new ErrorCode(1_003_006_002, "无效的风险等级，必须在1-5之间");
+    ErrorCode STUDENT_PROFILE_UPDATE_FAILED = new ErrorCode(1_003_006_003, "学生档案更新失败");
 
     // ========== 通知相关 1-003-007-000 ==========
     ErrorCode NOTIFICATION_NOT_EXISTS = new ErrorCode(1_003_007_000, "通知不存在");
@@ -57,8 +80,9 @@ public interface ErrorCodeConstants {
     ErrorCode GRADE_GRADUATION_FAILED = new ErrorCode(1_003_009_001, "年级毕业操作失败");
     ErrorCode CLASS_TEACHER_ASSIGNMENT_FAILED = new ErrorCode(1_003_009_002, "班主任分配失败");
 
-    // ========== 问卷管理相关 1-003-010-000 ==========
-    ErrorCode QUESTIONNAIRE_NOT_EXISTS = new ErrorCode(1_003_010_000, "问卷不存在");
+    // ========== 问卷相关 1-003-004-000 ==========
+    ErrorCode QUESTIONNAIRE_NOT_EXISTS = new ErrorCode(1_003_004_000, "问卷不存在");
+    ErrorCode QUESTIONNAIRE_RESULT_CONFIG_NOT_EXISTS = new ErrorCode(1_003_004_001, "问卷结果配置不存在");
     ErrorCode QUESTIONNAIRE_NOT_PUBLISHED = new ErrorCode(1_003_010_001, "问卷未发布");
     ErrorCode QUESTIONNAIRE_ALREADY_PUBLISHED = new ErrorCode(1_003_010_002, "问卷已发布");
     ErrorCode QUESTIONNAIRE_SYNC_FAILED = new ErrorCode(1_003_010_003, "问卷同步失败");
@@ -83,9 +107,29 @@ public interface ErrorCodeConstants {
     ErrorCode RESULT_GENERATION_TIMEOUT = new ErrorCode(1_003_013_002, "结果生成超时");
     ErrorCode RESULT_GENERATION_CONFIG_NOT_FOUND = new ErrorCode(1_003_013_003, "结果生成配置未找到");
 
-    // ========== 数据迁移相关 1-003-014-000 ==========
-    ErrorCode DATA_MIGRATION_FAILED = new ErrorCode(1_003_014_000, "数据迁移失败");
-    ErrorCode DATA_VALIDATION_FAILED = new ErrorCode(1_003_014_001, "数据验证失败");
-    ErrorCode DATA_INCONSISTENCY_DETECTED = new ErrorCode(1_003_014_002, "检测到数据不一致");
 
+    // ========== 测评场景相关 1-003-015-000 ==========
+    ErrorCode ASSESSMENT_SCENARIO_NOT_EXISTS = new ErrorCode(1_003_015_000, "测评场景不存在");
+    ErrorCode ASSESSMENT_SCENARIO_NOT_ACTIVE = new ErrorCode(1_003_015_001, "测评场景未启用");
+    ErrorCode ASSESSMENT_SCENARIO_CODE_DUPLICATE = new ErrorCode(1_003_015_002, "场景编码已存在");
+    ErrorCode ASSESSMENT_SCENARIO_QUESTIONNAIRE_COUNT_EXCEEDED = new ErrorCode(1_003_015_003, "问卷数量超过场景限制");
+    ErrorCode ASSESSMENT_SCENARIO_SLOT_NOT_EXISTS = new ErrorCode(1_003_015_004, "场景槽位不存在");
+    ErrorCode ASSESSMENT_SCENARIO_SLOT_KEY_DUPLICATE = new ErrorCode(1_003_015_005, "槽位编码在场景内重复");
+
+    // ========== 教师相关 1-003-015-000 ==========
+    ErrorCode TEACHER_NO_DUPLICATE = new ErrorCode(1_003_015_001, "工号已存在");
+    ErrorCode ROLE_NOT_EXISTS = new ErrorCode(1_003_015_002, "角色不存在");
+    ErrorCode TEACHER_IMPORT_LIST_IS_EMPTY = new ErrorCode(1_003_015_003, "导入用户数据不能为空！");
+    ErrorCode MOBILE_NO_DUPLICATE = new ErrorCode(1_003_015_004, "手机号已存在");
+    ErrorCode DEPT_NOT_EXISTS = new ErrorCode(1_003_015_005, "班级/年级不存在");
+
+    // ========== 咨询师分配相关 1-003-016-000 ==========
+    ErrorCode COUNSELOR_ASSIGNMENT_NOT_EXISTS = new ErrorCode(1_003_016_000, "咨询师分配记录不存在");
+    ErrorCode COUNSELOR_ASSIGNMENT_DATE_INVALID = new ErrorCode(1_003_016_001, "分配日期无效，结束日期必须晚于开始日期");
+
+    // ========== 问卷维度相关 1-003-017-000 ==========
+    ErrorCode QUESTIONNAIRE_DIMENSION_NOT_EXISTS = new ErrorCode(1_003_017_000, "问卷维度不存在");
+    ErrorCode QUESTIONNAIRE_DIMENSION_CODE_DUPLICATE = new ErrorCode(1_003_017_001, "维度编码在同一问卷内重复");
+    ErrorCode QUESTIONNAIRE_DIMENSION_OPERATION_TYPE_INVALID = new ErrorCode(1_003_017_002, "维度操作类型无效");
+    ErrorCode QUESTIONNAIRE_DIMENSION_IN_USE = new ErrorCode(1_003_017_003, "维度正在被使用，无法删除");
 }

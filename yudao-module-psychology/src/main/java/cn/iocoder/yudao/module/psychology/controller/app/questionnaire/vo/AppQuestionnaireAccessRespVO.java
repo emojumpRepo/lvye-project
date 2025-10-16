@@ -18,8 +18,8 @@ public class AppQuestionnaireAccessRespVO {
     @Schema(description = "问卷编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "2048")
     private Long questionnaireId;
 
-    @Schema(description = "学生档案编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "3072")
-    private Long studentProfileId;
+    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "3072")
+    private Long userId;
 
     @Schema(description = "访问时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime accessTime;
@@ -58,10 +58,22 @@ public class AppQuestionnaireAccessRespVO {
     @Schema(description = "问卷描述", example = "这是一份用于评估心理健康状况的专业问卷")
     private String description;
 
+    @Schema(description = "问卷类型", example = "1")
+    private Integer questionnaireType;
+
     @Schema(description = "是否已完成", example = "false")
     private Boolean completed;
 
     @Schema(description = "完成进度（百分比）", example = "75")
     private Integer progress;
 
+    // 插槽相关信息（可选）
+    @Schema(description = "插槽标识", example = "library")
+    private String slotKey;
+
+    @Schema(description = "插槽内顺序", example = "1")
+    private Integer slotOrder;
+
 }
+
+

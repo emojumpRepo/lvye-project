@@ -21,12 +21,226 @@
         where a.task_no = #{taskNo} and a.deleted = 0
     </select>
 
+    <select id="selectQuestionnaireUserListByTaskNo"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireUserVO">
+        select
+        s.id as student_profile_id,
+        s.student_no,
+        a.task_no,
+        null as questionnaire_id,
+        null as questionnaire_name,
+        s.name,
+        c.name as grade_name,
+        d.name as class_name,
+        case when completed_count = total_count then 1 else 0 end as status,
+        case when completed_count = total_count then latest_completed_time else null end as finish_time,
+        ar.combined_risk_level as risk_level,
+        ar.score as score,
+        ar.id as id
+        from lvye_assessment_user_task a
+        left join lvye_student_profile s on s.user_id = a.user_id
+        left join system_dept c ON s.grade_dept_id = c.id
+        left join system_dept d ON s.class_dept_id = d.id
+        left join lvye_assessment_result ar on ar.participant_id = s.id and ar.task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci
+        left join (
+            select 
+                a.user_id,
+                count(b.questionnaire_id) as total_count,
+                count(r.id) as completed_count,
+                max(r.completed_time) as latest_completed_time
+            from lvye_assessment_user_task a
+            inner join lvye_assessment_task_questionnaire b on b.task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci and b.deleted = 0
+            left join lvye_questionnaire_result r on r.assessment_task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci
+                and r.questionnaire_id = b.questionnaire_id 
+                and r.user_id = a.user_id
+            where a.task_no = #{pageReqVO.taskNo} and a.deleted = 0
+            group by a.user_id
+        ) stats on stats.user_id = a.user_id
+        <where>
+            a.deleted = 0
+            AND a.task_no = #{pageReqVO.taskNo}
+            <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
+                AND s.student_no LIKE CONCAT('%',#{pageReqVO.studentNo},'%')
+            </if>
+            <if test="pageReqVO.name != null and pageReqVO.name !=''">
+                AND s.name LIKE CONCAT('%',#{pageReqVO.name},'%')
+            </if>
+            <if test="pageReqVO.status != null">
+                AND case when completed_count = total_count then 1 else 0 end = #{pageReqVO.status}
+            </if>
+            <if test="pageReqVO.riskLevel != null">
+                AND ar.combined_risk_level = #{pageReqVO.riskLevel}
+            </if>
+            <if test="pageReqVO.classId != null and pageReqVO.classId.length > 0">
+                <choose>
+                    <when test="pageReqVO.classId.length == 1">
+                        AND s.grade_dept_id = #{pageReqVO.classId[0]}
+                    </when>
+                    <when test="pageReqVO.classId.length == 2">
+                        AND s.grade_dept_id = #{pageReqVO.classId[0]}
+                        AND s.class_dept_id = #{pageReqVO.classId[1]}
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </select>
+
     <select id="selectCountByTaskNo" resultType="java.lang.Long">
         select count(*) from lvye_assessment_user_task where task_no = #{taskNo} and deleted = 0
     </select>
 
     <select id="selectCountByTaskNoAndStatus" resultType="java.lang.Long">
         select count(*) from lvye_assessment_user_task where task_no = #{taskNo} and status = #{status} and deleted = 0
+    </select>
+
+    <select id="selectStudentAssessmentTaskList"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskHisVO">
+        select
+        b.id as task_id,
+        a.task_no,
+        b.task_name,
+        b.target_audience,
+        b.status,
+        a.risk_level,
+        a.evaluate,
+        a.suggestions,
+        b.startline,
+        b.deadline
+        from lvye_assessment_user_task a
+        left join lvye_assessment_task b on a.task_no  = b.task_no and b.deleted = 0
+        left join lvye_student_profile c on c.user_id  = a.user_id
+        where c.id = #{studentProfileId} and a.deleted = 0
+    </select>
+
+    <select id="selectStudentAssessmentTaskDetail"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentTaskDetailVO">
+        select
+        b.id as task_id,
+        a.task_no,
+        b.task_name,
+        b.target_audience,
+        b.status,
+        a.risk_level,
+        a.evaluate,
+        a.suggestions,
+        b.startline,
+        b.deadline
+        from lvye_assessment_user_task a
+        left join lvye_assessment_task b on a.task_no  = b.task_no and b.deleted = 0
+        left join lvye_student_profile c on c.user_id  = a.user_id
+        where c.id = #{studentProfileId} and a.task_no = #{taskNo} and a.deleted = 0
+    </select>
+
+    <!-- 统计：按年级/班级聚合，未知用 -1 表示 -->
+    <select id="selectAggregationByDept"
+            resultType="cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentDeptAggregationRow">
+        select
+            COALESCE(b.grade_dept_id, -1) as grade_dept_id,
+            COALESCE(b.class_dept_id, -1) as class_dept_id,
+            count(*) as total_cnt,
+            sum(case when a.status = 2 then 1 else 0 end) as completed_cnt
+        from lvye_assessment_user_task a
+        left join lvye_student_profile b on a.user_id = b.user_id
+        where a.task_no = #{taskNo} and a.deleted = 0
+        group by COALESCE(b.grade_dept_id, -1), COALESCE(b.class_dept_id, -1)
+    </select>
+
+
+
+    <select id="selectQuestionnaireUserListByTaskNoAndQuestionnaire"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.QuestionnaireUserVO">
+        select
+        s.id as student_profile_id,
+        s.student_no,
+        a.task_no,
+        s.name,
+        q.title as questionnaire_name,
+        c.name as grade_name,
+        d.name as class_name,
+        if(r.id is null ,0,1) as status,
+        r.completed_time as finish_time,
+        r.risk_level as risk_level,
+        r.score as score,
+        case when r.id is not null then r.id else null end as id,
+        r.result_data as result_data,
+        <!-- 计算真实的风险等级用于筛选 -->
+        CASE
+            <!-- 电子游戏使用情况或睡眠质量：从result_data的JSON中提取 -->
+            WHEN (q.title LIKE '%电子游戏使用情况%' OR q.title LIKE '%睡眠质量%') AND r.result_data IS NOT NULL THEN
+                CAST(JSON_UNQUOTE(JSON_EXTRACT(r.result_data, '$[0].riskLevel')) AS UNSIGNED)
+            <!-- 心理健康评估：从assessment_result表中获取 -->
+            WHEN q.title LIKE '%心理健康评估%' THEN
+                ar.risk_level
+            <!-- 其他问卷：使用questionnaire_result表的risk_level -->
+            ELSE r.risk_level
+        END as actual_risk_level
+        from lvye_assessment_user_task a
+        left join lvye_student_profile s on s.user_id  = a.user_id
+        left join system_dept c ON s.grade_dept_id = c.id
+        left join system_dept d ON s.class_dept_id = d.id
+        left join lvye_questionnaire_result r on r.assessment_task_no = a.task_no and r.questionnaire_id = #{pageReqVO.questionnaireId} and r.user_id = a.user_id
+        left join lvye_questionnaire q on q.id = #{pageReqVO.questionnaireId} and q.deleted = 0
+        <!-- 心理健康评估问卷需要关联assessment_result表获取综合风险等级 -->
+        left join lvye_assessment_result ar on ar.participant_id = s.id
+            and ar.task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci
+            and ar.dimension_code = 'total'
+            and q.title LIKE '%心理健康评估%'
+        <where>
+            a.deleted = 0
+            AND a.task_no = #{pageReqVO.taskNo}
+            AND EXISTS (
+                SELECT 1 FROM lvye_assessment_task_questionnaire b
+                WHERE b.task_no = a.task_no
+                AND b.questionnaire_id = #{pageReqVO.questionnaireId}
+                AND b.deleted = 0
+            )
+            <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
+                AND s.student_no LIKE CONCAT('%',#{pageReqVO.studentNo},'%')
+            </if>
+            <if test="pageReqVO.name != null and pageReqVO.name !=''">
+                AND s.name LIKE CONCAT('%',#{pageReqVO.name},'%')
+            </if>
+            <if test="pageReqVO.status != null">
+                AND if(r.id is null ,0,1) = #{pageReqVO.status}
+            </if>
+            <if test="pageReqVO.riskLevel != null">
+                <!-- 使用计算后的真实风险等级进行筛选 -->
+                AND (
+                    CASE
+                        WHEN (q.title LIKE '%电子游戏使用情况%' OR q.title LIKE '%睡眠质量%') AND r.result_data IS NOT NULL THEN
+                            CAST(JSON_UNQUOTE(JSON_EXTRACT(r.result_data, '$[0].riskLevel')) AS UNSIGNED)
+                        WHEN q.title LIKE '%心理健康评估%' THEN
+                            ar.risk_level
+                        ELSE r.risk_level
+                    END
+                ) = #{pageReqVO.riskLevel}
+            </if>
+            <if test="pageReqVO.classId != null and pageReqVO.classId.length > 0">
+                <choose>
+                    <when test="pageReqVO.classId.length == 1">
+                        AND s.grade_dept_id = #{pageReqVO.classId[0]}
+                    </when>
+                    <when test="pageReqVO.classId.length == 2">
+                        AND s.grade_dept_id = #{pageReqVO.classId[0]}
+                        AND s.class_dept_id = #{pageReqVO.classId[1]}
+                    </when>
+                </choose>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectRiskLevelListByTaskNo" resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.RiskLevelDeptStatisticsVO">
+        select
+        DISTINCT
+        b.id as student_profile_id,
+        a.user_id,
+        c.grade_dept_id,
+        c.class_dept_id,
+        a.risk_level
+        from lvye_assessment_user_task a
+        left join lvye_student_profile b on a.user_id = b.user_id
+        left join lvye_student_profile_record c on c.student_no = b.student_no
+        where a.task_no= #{taskNo} and c.study_year = #{schoolYear} and a.deleted = 0
     </select>
 
 </mapper>

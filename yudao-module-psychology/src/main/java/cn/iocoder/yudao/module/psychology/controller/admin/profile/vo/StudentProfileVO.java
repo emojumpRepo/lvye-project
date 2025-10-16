@@ -39,8 +39,20 @@ public class StudentProfileVO {
     @Schema(description = "性别", example = "1")
     private Integer sex;
 
+    @Schema(description = "民族", example = "1")
+    private Integer ethnicity;
+
     @Schema(description = "手机号", example = "13800138000")
     private String mobile;
+
+    @Schema(description = "监护人手机号", example = "13900139000")
+    private String guardianMobile;
+
+    @Schema(description = "身份证号", example = "110101200801012345")
+    private String idCard;
+
+    @Schema(description = "届别（入学年份）", example = "2024")
+    private Integer enrollmentYear;
 
     @Schema(description = "年级部门编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "年级部门编号不能为空")
@@ -79,4 +91,8 @@ public class StudentProfileVO {
 
     @Schema(description = "班级")
     private String className;
+
+    @Schema(description = "更新者")
+    private String updater;
+
 }

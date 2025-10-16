@@ -28,11 +28,17 @@ public class QuestionnaireBaseVO {
     @NotNull(message = "目标对象不能为空")
     private Integer targetAudience;
 
+    @Schema(description = "测评维度（多选，逗号分隔）", example = "emotional_state,stress_level")
+    private String assessmentDimension;
+
     @Schema(description = "外部系统问卷ID", example = "EXT_001")
     private String externalId;
 
     @Schema(description = "外部问卷链接", example = "https://survey.example.com/123")
     private String externalLink;
+
+    @Schema(description = "问卷编码", example = "SURVEY_001")
+    private String surveyCode;
 
     @Schema(description = "题目数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "25")
     @NotNull(message = "题目数量不能为空")
@@ -50,5 +56,8 @@ public class QuestionnaireBaseVO {
 
     @Schema(description = "结果报告模板（JSON格式）")
     private String resultTemplate;
+
+    @Schema(description = "是否支持独立使用", example = "1")
+    private Integer supportIndependentUse;
 
 }

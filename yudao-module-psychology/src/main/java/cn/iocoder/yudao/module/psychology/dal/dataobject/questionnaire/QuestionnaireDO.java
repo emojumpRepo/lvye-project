@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire;
 
-import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
+import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
+import cn.iocoder.yudao.framework.tenant.core.aop.TenantIgnore;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -14,9 +15,10 @@ import java.time.LocalDateTime;
  * @author 芋道源码
  */
 @TableName(value = "lvye_questionnaire", autoResultMap = true)
+@TenantIgnore  // 问卷表为全局配置表，不进行租户隔离
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class QuestionnaireDO extends TenantBaseDO {
+public class QuestionnaireDO extends BaseDO {
 
     /**
      * 问卷ID
@@ -45,6 +47,11 @@ public class QuestionnaireDO extends TenantBaseDO {
     private Integer targetAudience;
 
     /**
+     * 测评维度（多选，逗号分隔字典键值）
+     */
+    private String assessmentDimension;
+
+    /**
      * 外部系统问卷ID
      */
     private String externalId;
@@ -53,6 +60,11 @@ public class QuestionnaireDO extends TenantBaseDO {
      * 外部问卷链接
      */
     private String externalLink;
+
+    /**
+     * 问卷编码（外部系统提供的编码）
+     */
+    private String surveyCode;
 
     /**
      * 题目数量
@@ -85,9 +97,14 @@ public class QuestionnaireDO extends TenantBaseDO {
     private Integer status;
 
     /**
-     * 是否开放：0-否，1-是
+     * 是否启用：0-否，1-是
      */
     private Integer isOpen;
+
+    /**
+     * 是否支持独立使用：0-否，1-是（对应数据库字段 is_open）
+     */
+    private Integer supportIndependentUse;
 
     /**
      * 访问次数

@@ -63,4 +63,11 @@ application-my.yaml
 .claude
 
 # Ignore environment files (e.g., .env, .env.local, .env.production)
-.env*
+.env
+.env.local
+.env.production
+!.env.example
+
+node_modules/
+
+lvye-project-new/

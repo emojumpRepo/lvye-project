@@ -31,12 +31,7 @@ public class AssessmentTaskSaveReqVO{
     @Length(max = 120, message = "测评任务名称不能超过 120")
     private String taskName;
 
-    @Schema(description = "量表编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "A")
-    @NotBlank(message = "量表编号不能为空")
-    @Length(max = 64, message = "量表编号不能超过 64")
-    private String scaleCode;
-
-    @Schema(description = "目标对象 1-学生，2-家长", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "目标对象 0-学生，1-家长", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
     @NotNull(message = "目标对象不能为空")
     private Integer targetAudience;
 
@@ -58,5 +53,18 @@ public class AssessmentTaskSaveReqVO{
 
     @Schema(description = "是否立即发布任务", example = "false")
     private Boolean isPublish = false;
+
+    @Schema(description = "问卷ID列表", example = "[1,2,3]")
+    private List<Long> questionnaireIds;
+
+    @Schema(description = "场景ID，可为空（默认NONE）", example = "1")
+    private Long scenarioId;
+
+    @Schema(description = "场景问卷分配（有槽位时使用）", example = "[{slotKey:'library',questionnaireId:1},{slotKey:'gym',questionnaireId:2}]")
+    private List<SlotAssignmentVO> assignments;
+
+    @Schema(description = "任务描述", example = "这是一个心理健康测评任务")
+    @Length(max = 2000, message = "任务描述不能超过 2000 字符")
+    private String description;
 
 }

@@ -171,4 +171,11 @@ public class AuthController {
         return success(authService.socialLogin(reqVO));
     }
 
+    @PostMapping("/mobile-login")
+    @PermitAll
+    @Operation(summary = "使用手机号密码登录")
+    public CommonResult<AuthLoginRespVO> mobileLogin(@RequestBody @Valid AuthLoginReqVO reqVO) {
+        return success(authService.loginByMobile(reqVO));
+    }
+
 }

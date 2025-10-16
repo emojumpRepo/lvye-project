@@ -16,9 +16,9 @@ import java.util.List;
 import static cn.hutool.core.util.RandomUtil.randomEle;
 import static cn.iocoder.yudao.framework.test.core.util.AssertUtils.assertPojoEquals;
 import static cn.iocoder.yudao.framework.test.core.util.RandomUtils.*;
-import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,7 +48,7 @@ public class OAuth2GrantServiceImplTest extends BaseMockitoUnitTest {
         // mock 方法
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class);
         when(oauth2TokenService.createAccessToken(eq(userId), eq(userType),
-                eq(clientId), eq(scopes))).thenReturn(accessTokenDO);
+                eq(clientId), eq(scopes), isNull())).thenReturn(accessTokenDO);
 
         // 调用，并断言
         assertPojoEquals(accessTokenDO, oauth2GrantService.grantImplicit(
@@ -93,7 +93,7 @@ public class OAuth2GrantServiceImplTest extends BaseMockitoUnitTest {
         // mock 方法（创建令牌）
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class);
         when(oauth2TokenService.createAccessToken(eq(codeDO.getUserId()), eq(codeDO.getUserType()),
-                eq(codeDO.getClientId()), eq(codeDO.getScopes()))).thenReturn(accessTokenDO);
+                eq(codeDO.getClientId()), eq(codeDO.getScopes()), isNull())).thenReturn(accessTokenDO);
 
         // 调用，并断言
         assertPojoEquals(accessTokenDO, oauth2GrantService.grantAuthorizationCodeForAccessToken(
@@ -113,7 +113,7 @@ public class OAuth2GrantServiceImplTest extends BaseMockitoUnitTest {
         // mock 方法（访问令牌）
         OAuth2AccessTokenDO accessTokenDO = randomPojo(OAuth2AccessTokenDO.class);
         when(oauth2TokenService.createAccessToken(eq(user.getId()), eq(UserTypeEnum.ADMIN.getValue()),
-                eq(clientId), eq(scopes))).thenReturn(accessTokenDO);
+                eq(clientId), eq(scopes), isNull())).thenReturn(accessTokenDO);
 
         // 调用，并断言
         assertPojoEquals(accessTokenDO, oauth2GrantService.grantPassword(
@@ -133,13 +133,6 @@ public class OAuth2GrantServiceImplTest extends BaseMockitoUnitTest {
         // 调用，并断言
         assertPojoEquals(accessTokenDO, oauth2GrantService.grantRefreshToken(
                 refreshToken, clientId));
-    }
-
-    @Test
-    public void testGrantClientCredentials() {
-        assertThrows(UnsupportedOperationException.class,
-                () -> oauth2GrantService.grantClientCredentials(randomString(), emptyList()),
-                "暂时不支持 client_credentials 授权模式");
     }
 
     @Test

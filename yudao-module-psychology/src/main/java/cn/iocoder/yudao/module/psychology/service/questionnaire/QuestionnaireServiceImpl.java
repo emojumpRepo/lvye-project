@@ -7,6 +7,9 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.Questionn
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.enums.QuestionnaireStatusEnum;
+import cn.iocoder.yudao.module.psychology.enums.DictTypeConstants;
+import cn.iocoder.yudao.module.system.service.dict.DictDataService;
+import cn.iocoder.yudao.module.system.dal.dataobject.dict.DictDataDO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,8 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 
@@ -30,6 +35,9 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     @Resource
     private QuestionnaireMapper questionnaireMapper;
 
+    @Resource
+    private DictDataService dictDataService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createQuestionnaire(@Valid QuestionnaireCreateReqVO createReqVO) {
@@ -38,10 +46,13 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         
         // 设置默认值
         questionnaire.setStatus(QuestionnaireStatusEnum.DRAFT.getStatus());
-        questionnaire.setIsOpen(0);
         questionnaire.setAccessCount(0);
         questionnaire.setCompletionCount(0);
         questionnaire.setSyncStatus(0);
+        // 设置默认支持独立使用
+        if (questionnaire.getSupportIndependentUse() == null) {
+            questionnaire.setSupportIndependentUse(1);
+        }
         
         // 插入数据库
         questionnaireMapper.insert(questionnaire);
@@ -95,9 +106,92 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     }
 
     @Override
+    public PageResult<cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireWithSurveyRespVO>
+        getQuestionnairePageWithSurvey(QuestionnairePageReqVO pageReqVO) {
+        PageResult<QuestionnaireDO> pageResult = questionnaireMapper.selectPage(pageReqVO);
+        return QuestionnaireConvert.INSTANCE.convertWithSurveyPage(pageResult);
+    }
+
+    @Override
     public List<QuestionnaireRespVO> getAllQuestionnaireList() {
         List<QuestionnaireDO> list = questionnaireMapper.selectList();
         return QuestionnaireConvert.INSTANCE.convertList(list);
+    }
+
+    @Override
+    public List<QuestionnaireSimpleRespVO> getSimpleQuestionnaireList() {
+        List<QuestionnaireDO> list = questionnaireMapper.selectList();
+        return list.stream()
+                .map(this::convertToSimpleRespVO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public List<QuestionnaireSimpleRespVO> getSimpleQuestionnaireList(Integer supportIndependentUse) {
+        List<QuestionnaireDO> list = questionnaireMapper.selectIndependentUseQuestionnaires(supportIndependentUse);
+        return list.stream()
+                .map(this::convertToSimpleRespVO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * 手动转换 QuestionnaireDO 到 QuestionnaireSimpleRespVO
+     */
+    private QuestionnaireSimpleRespVO convertToSimpleRespVO(QuestionnaireDO questionnaire) {
+        if (questionnaire == null) {
+            return null;
+        }
+        
+        QuestionnaireSimpleRespVO simple = new QuestionnaireSimpleRespVO();
+        simple.setId(questionnaire.getId());
+        simple.setTitle(questionnaire.getTitle());
+        simple.setDescription(questionnaire.getDescription());
+        simple.setQuestionnaireType(questionnaire.getQuestionnaireType());
+        simple.setTargetAudience(questionnaire.getTargetAudience());
+        simple.setSurveyCode(questionnaire.getSurveyCode());
+        simple.setQuestionCount(questionnaire.getQuestionCount());
+        simple.setEstimatedDuration(questionnaire.getEstimatedDuration());
+        simple.setStatus(questionnaire.getStatus());
+        simple.setSupportIndependentUse(questionnaire.getSupportIndependentUse());
+
+        // 转换测评维度为标签
+        simple.setAssessmentDimensionLabels(convertAssessmentDimensionToLabels(questionnaire.getAssessmentDimension()));
+        
+        return simple;
+    }
+
+    /**
+     * 将测评维度的字典键值转换为标签列表
+     */
+    private List<String> convertAssessmentDimensionToLabels(String assessmentDimension) {
+        if (assessmentDimension == null || assessmentDimension.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        try {
+            String[] dimensionValues = assessmentDimension.split(",");
+            List<String> labels = new ArrayList<>();
+            
+            for (String value : dimensionValues) {
+                if (value.trim().isEmpty()) {
+                    continue;
+                }
+                
+                DictDataDO dictData = dictDataService.getDictData(DictTypeConstants.QUESTIONNAIRE_ASSESSMENT_DIMENSION, value.trim());
+                if (dictData != null) {
+                    labels.add(dictData.getLabel());
+                } else {
+                    // 如果字典中找不到对应的标签，使用原值
+                    labels.add(value.trim());
+                }
+            }
+            
+            return labels;
+        } catch (Exception e) {
+            log.warn("转换测评维度标签失败: {}", assessmentDimension, e);
+            // 转换失败时返回包含原值的列表
+            return Arrays.asList(assessmentDimension);
+        }
     }
 
     @Override
@@ -110,8 +204,6 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         if (QuestionnaireStatusEnum.PUBLISHED.getStatus().equals(questionnaire.getStatus())) {
             throw exception(ErrorCodeConstants.QUESTIONNAIRE_ALREADY_PUBLISHED);
         }
-        
-        // TODO: 调用外部系统API发布问卷
         
         // 更新问卷状态
         questionnaire.setStatus(QuestionnaireStatusEnum.PUBLISHED.getStatus());
@@ -132,8 +224,6 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         if (!QuestionnaireStatusEnum.PUBLISHED.getStatus().equals(questionnaire.getStatus())) {
             throw exception(ErrorCodeConstants.QUESTIONNAIRE_NOT_PUBLISHED);
         }
-        
-        // TODO: 调用外部系统API暂停问卷
         
         // 更新问卷状态
         questionnaire.setStatus(QuestionnaireStatusEnum.PAUSED.getStatus());

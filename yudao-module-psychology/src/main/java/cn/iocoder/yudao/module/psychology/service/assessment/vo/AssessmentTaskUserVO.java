@@ -35,7 +35,7 @@ public class AssessmentTaskUserVO {
     private Integer status;
 
     /**
-     * 是否为家长标识
+     * 参与人员标识：0 学生；1 家长
      */
     private Integer parentFlag;
 

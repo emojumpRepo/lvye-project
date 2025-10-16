@@ -26,11 +26,14 @@ public class QuestionnairePageReqVO extends PageParam {
     @Schema(description = "目标对象", example = "1")
     private Integer targetAudience;
 
+    @Schema(description = "问卷编码", example = "SURVEY_001")
+    private String surveyCode;
+
     @Schema(description = "状态", example = "1")
     private Integer status;
 
-    @Schema(description = "是否开放", example = "1")
-    private Integer isOpen;
+    @Schema(description = "是否支持独立使用", example = "1")
+    private Integer supportIndependentUse;
 
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)

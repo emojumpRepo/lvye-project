@@ -20,4 +20,9 @@ public class DeptSimpleRespVO {
     @Schema(description = "父部门 ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
     private Long parentId;
 
+    @Schema(description = "数量", example = "张三")
+    private Long count;
+
+    @Schema(description = "排序", example = "1")
+    private Long sort;
 }

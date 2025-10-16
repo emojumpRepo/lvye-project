@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -24,8 +25,9 @@ public interface QuestionnaireMapper extends BaseMapperX<QuestionnaireDO> {
                 .likeIfPresent(QuestionnaireDO::getTitle, reqVO.getTitle())
                 .eqIfPresent(QuestionnaireDO::getQuestionnaireType, reqVO.getQuestionnaireType())
                 .eqIfPresent(QuestionnaireDO::getTargetAudience, reqVO.getTargetAudience())
+                .likeIfPresent(QuestionnaireDO::getSurveyCode, reqVO.getSurveyCode())
                 .eqIfPresent(QuestionnaireDO::getStatus, reqVO.getStatus())
-                .eqIfPresent(QuestionnaireDO::getIsOpen, reqVO.getIsOpen())
+                .eqIfPresent(QuestionnaireDO::getSupportIndependentUse, reqVO.getSupportIndependentUse())
                 .betweenIfPresent(QuestionnaireDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(QuestionnaireDO::getId));
     }
@@ -56,6 +58,16 @@ public interface QuestionnaireMapper extends BaseMapperX<QuestionnaireDO> {
     }
 
     /**
+     * 查询支持独立使用的问卷列表
+     */
+    default List<QuestionnaireDO> selectIndependentUseQuestionnaires(Integer supportIndependentUse) {
+        return selectList(new LambdaQueryWrapperX<QuestionnaireDO>()
+                .eq(QuestionnaireDO::getStatus, 1) // 已发布状态
+                .eqIfPresent(QuestionnaireDO::getSupportIndependentUse, supportIndependentUse)
+                .orderByDesc(QuestionnaireDO::getId));
+    }
+
+    /**
      * 更新访问次数
      */
     default void updateAccessCount(Long id) {
@@ -77,6 +89,19 @@ public interface QuestionnaireMapper extends BaseMapperX<QuestionnaireDO> {
             questionnaire.setCompletionCount(questionnaire.getCompletionCount() + 1);
             updateById(questionnaire);
         }
+    }
+
+    /**
+     * 批量查询问卷
+     * @param ids 问卷ID集合
+     * @return 问卷列表
+     */
+    default List<QuestionnaireDO> selectListByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        return selectList(new LambdaQueryWrapperX<QuestionnaireDO>()
+                .in(QuestionnaireDO::getId, ids));
     }
 
 }

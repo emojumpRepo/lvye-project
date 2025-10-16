@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.system.convert.auth;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
 import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeSendReqDTO;
 import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeUseReqDTO;
 import cn.iocoder.yudao.module.system.api.social.dto.SocialUserBindReqDTO;
@@ -12,6 +13,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.enums.permission.MenuTypeEnum;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import org.slf4j.LoggerFactory;
 
@@ -36,9 +38,27 @@ public interface AuthConvert {
                 .permissions(convertSet(menuList, MenuDO::getPermission))
                 // 菜单树
                 .menus(buildMenuTree(menuList))
+                //是否为家长登录
+                .isParent(WebFrameworkUtils.getIsParent())
                 .build();
     }
 
+    default AuthPermissionInfoRespVO convert(AdminUserDO user, List<RoleDO> roleList, List<MenuDO> menuList, String deptName) {
+        AuthPermissionInfoRespVO.UserVO userVO = BeanUtils.toBean(user, AuthPermissionInfoRespVO.UserVO.class);
+        userVO.setDeptName(deptName);
+        return AuthPermissionInfoRespVO.builder()
+                .user(userVO)
+                .roles(convertSet(roleList, RoleDO::getCode))
+                // 权限标识信息
+                .permissions(convertSet(menuList, MenuDO::getPermission))
+                // 菜单树
+                .menus(buildMenuTree(menuList))
+                //是否为家长登录
+                .isParent(WebFrameworkUtils.getIsParent())
+                .build();
+    }
+
+    @Mapping(target = "children", ignore = true)
     AuthPermissionInfoRespVO.MenuVO convertTreeNode(MenuDO menu);
 
     /**
@@ -79,8 +99,12 @@ public interface AuthConvert {
         return filterList(treeNodeMap.values(), node -> ID_ROOT.equals(node.getParentId()));
     }
 
+    @Mapping(target = "socialType", source = "reqVO.type")
+    @Mapping(target = "code", source = "reqVO.code")
+    @Mapping(target = "state", source = "reqVO.state")
     SocialUserBindReqDTO convert(Long userId, Integer userType, AuthSocialLoginReqVO reqVO);
 
+    @Mapping(target = "createIp", ignore = true)
     SmsCodeSendReqDTO convert(AuthSmsSendReqVO reqVO);
 
     SmsCodeUseReqDTO convert(AuthSmsLoginReqVO reqVO, Integer scene, String usedIp);

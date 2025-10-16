@@ -85,4 +85,12 @@ public interface AdminAuthService {
      */
     void resetPassword(AuthResetPasswordReqVO reqVO);
 
+    /**
+     * 手机号登录
+     *
+     * @param reqVO 登录信息
+     * @return 登录结果
+     */
+    AuthLoginRespVO loginByMobile(@Valid AuthLoginReqVO reqVO);
+
 }

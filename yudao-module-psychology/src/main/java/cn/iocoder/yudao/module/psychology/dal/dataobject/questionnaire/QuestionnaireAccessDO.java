@@ -30,9 +30,9 @@ public class QuestionnaireAccessDO extends TenantBaseDO {
     private Long questionnaireId;
 
     /**
-     * 学生档案ID
+     * 用户ID
      */
-    private Long studentProfileId;
+    private Long userId;
 
     /**
      * 访问时间

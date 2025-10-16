@@ -21,7 +21,6 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
         return selectPage(reqVO, new LambdaQueryWrapperX<AssessmentTaskDO>()
                 .likeIfPresent(AssessmentTaskDO::getTaskNo, reqVO.getTaskNo())
                 .likeIfPresent(AssessmentTaskDO::getTaskName, reqVO.getName())
-                .eqIfPresent(AssessmentTaskDO::getScaleCode, reqVO.getScaleCode())
                 .eqIfPresent(AssessmentTaskDO::getTargetAudience, reqVO.getTargetAudience())
                 .eqIfPresent(AssessmentTaskDO::getStatus, reqVO.getStatus())
                 .orderByDesc(AssessmentTaskDO::getId));
@@ -41,9 +40,9 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
     }
 
     IPage<AssessmentTaskVO> selectPageList(IPage<AssessmentTaskVO> page, @Param("pageReqVO") AssessmentTaskPageReqVO pageReqVO
-            , @Param("taskNos") List<Long> taskNos);
+            , @Param("taskNos") List<String> taskNos);
 
-    List<WebAssessmentTaskVO> selectListByUserId(@Param("userId") Long userId);
+    List<WebAssessmentTaskVO> selectListByUserId(@Param("userId") Long userId, @Param("isParent")Integer isParent);
 
 }
 

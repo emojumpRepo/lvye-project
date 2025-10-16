@@ -1,6 +1,9 @@
 package cn.iocoder.yudao.module.psychology.service.questionnaire;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireResultRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
 /**
  * 问卷结果服务实现（简化版本）
@@ -28,181 +32,79 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
     private QuestionnaireResultMapper questionnaireResultMapper;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long createQuestionnaireResult(@Valid Object createReqVO) {
-        log.info("创建问卷结果（简化实现）");
-        // TODO: 实现具体的创建逻辑
-        return 1L;
+    public boolean hasUserCompletedTaskQuestionnaire(String taskNo, Long questionnaireId, Long userId) {
+        log.debug("检查用户是否已完成问卷，任务编号: {}, 问卷ID: {}, 用户ID: {}", taskNo, questionnaireId, userId);
+        
+        // 使用Mapper的selectByUnique方法查询对应任务编号、userId和questionnaireId的记录
+        QuestionnaireResultDO result = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
+        
+        // 如果存在记录且score不为null，说明用户已经完成问卷
+        return result != null;
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void updateQuestionnaireResult(@Valid Object updateReqVO) {
-        log.info("更新问卷结果（简化实现）");
-        // TODO: 实现具体的更新逻辑
+    public boolean hasUserCompletedQuestionnaire(Long questionnaireId, Long userId) {
+        log.debug("检查用户是否已完成问卷，问卷ID: {}, 用户ID: {}", questionnaireId, userId);
+        Long count = questionnaireResultMapper.selectCount(
+                new LambdaQueryWrapper<QuestionnaireResultDO>()
+                        .eq(QuestionnaireResultDO::getQuestionnaireId, questionnaireId)
+                        .eq(QuestionnaireResultDO::getUserId, userId)
+        );
+        return count != null && count > 0;
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void deleteQuestionnaireResult(Long id) {
-        log.info("删除问卷结果，ID: {}", id);
-        questionnaireResultMapper.deleteById(id);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void deleteQuestionnaireResults(List<Long> ids) {
-        log.info("批量删除问卷结果，数量: {}", ids.size());
-        if (ids != null && !ids.isEmpty()) {
-            questionnaireResultMapper.delete(new LambdaQueryWrapperX<QuestionnaireResultDO>()
-                    .in(QuestionnaireResultDO::getId, ids));
+    public List<StudentAssessmentQuestionnaireDetailVO> selectQuestionnaireResultByTaskNoAndUserId(String taskNo, Long userId){
+        List<QuestionnaireResultDO> questionnaireResultList = questionnaireResultMapper.selectListByTaskNoAndUserId(taskNo, userId);
+        List<StudentAssessmentQuestionnaireDetailVO> questionnaireDetailList = new ArrayList<>();
+        if (!questionnaireResultList.isEmpty()) {
+            for (QuestionnaireResultDO questionnaireResultDO : questionnaireResultList) {
+                StudentAssessmentQuestionnaireDetailVO questionnaireDetailVO = BeanUtils.toBean(questionnaireResultDO, StudentAssessmentQuestionnaireDetailVO.class);
+                questionnaireDetailList.add(questionnaireDetailVO);
+            }
         }
+        return questionnaireDetailList;
     }
 
     @Override
-    public QuestionnaireResultDO getQuestionnaireResult(Long id) {
-        log.debug("获取问卷结果，ID: {}", id);
-        return questionnaireResultMapper.selectById(id);
+    public StudentAssessmentQuestionnaireDetailVO selectQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId){
+        QuestionnaireResultDO questionnaireResult = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
+        StudentAssessmentQuestionnaireDetailVO questionnaireDetailVO = BeanUtils.toBean(questionnaireResult, StudentAssessmentQuestionnaireDetailVO.class);
+        return questionnaireDetailVO;
     }
 
     @Override
-    public PageResult<QuestionnaireResultDO> getQuestionnaireResultPage(Object pageReqVO) {
-        log.debug("分页查询问卷结果（简化实现）");
-        // TODO: 实现具体的分页查询逻辑
-        return questionnaireResultMapper.selectPage(pageReqVO);
+    public QuestionnaireResultDO getQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId) {
+        return questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
     }
 
     @Override
-    public List<QuestionnaireResultDO> getUserQuestionnaireResults(Long studentProfileId, Long questionnaireId) {
-        log.debug("获取用户问卷结果列表（简化实现），学生档案ID: {}, 问卷ID: {}", studentProfileId, questionnaireId);
-        // TODO: 实现具体的查询逻辑
-        return new ArrayList<>();
-    }
-
-    @Override
-    public List<QuestionnaireResultDO> getQuestionnaireResults(Long questionnaireId) {
-        log.debug("获取问卷的所有结果（简化实现），问卷ID: {}", questionnaireId);
-        // TODO: 实现具体的查询逻辑
-        return new ArrayList<>();
-    }
-
-    @Override
-    public boolean hasUserCompletedQuestionnaire(Long questionnaireId, Long studentProfileId) {
-        log.debug("检查用户是否已完成问卷（简化实现），问卷ID: {}, 学生档案ID: {}", questionnaireId, studentProfileId);
-        // TODO: 实现具体的检查逻辑
-        return false;
-    }
-
-    @Override
-    public QuestionnaireCompletionStats getQuestionnaireCompletionStats(Long questionnaireId) {
-        log.debug("获取问卷完成统计（简化实现），问卷ID: {}", questionnaireId);
-        QuestionnaireCompletionStats stats = new QuestionnaireCompletionStats();
-        stats.setTotalResults(0L);
-        stats.setCompletedResults(0L);
-        stats.setPendingResults(0L);
-        stats.setCompletionRate(0.0);
-        stats.setAverageScore(0.0);
-        stats.setTodayCompleted(0L);
-        stats.setWeekCompleted(0L);
-        stats.setMonthCompleted(0L);
-        return stats;
-    }
-
-    @Override
-    public QuestionnaireResultDO getLatestUserQuestionnaireResult(Long questionnaireId, Long studentProfileId) {
-        log.debug("获取用户最新的问卷结果（简化实现），问卷ID: {}, 学生档案ID: {}", questionnaireId, studentProfileId);
-        // TODO: 实现具体的查询逻辑
-        return null;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long submitQuestionnaireAnswers(Object submitReqVO) {
-        log.info("提交问卷答案并生成结果（简化实现）");
-        // TODO: 实现具体的提交逻辑
-        return 1L;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean generateResultAsync(Long resultId) {
-        log.info("异步生成问卷结果（简化实现），结果ID: {}", resultId);
-        // TODO: 实现具体的异步生成逻辑
-        return true;
-    }
-
-    @Override
-    public ResultGenerationStatus getResultGenerationStatus(Long resultId) {
-        log.debug("获取结果生成状态（简化实现），结果ID: {}", resultId);
-        ResultGenerationStatus status = new ResultGenerationStatus();
-        status.setStatus(1);
-        status.setMessage("待处理");
-        status.setProgress(0);
-        status.setStartTime(LocalDateTime.now());
-        status.setEndTime(null);
-        // 字段名与接口保持一致：使用 setErrorMessage
-        status.setErrorMessage(null);
-        return status;
-    }
-
-    @Override
-    public boolean regenerateResult(Long resultId) {
-        log.info("重新生成问卷结果（简化实现），结果ID: {}", resultId);
-        // TODO: 实现具体的重新生成逻辑
-        return true;
-    }
-
-    @Override
-    public BatchGenerationResult batchGenerateResults(List<Long> resultIds) {
-        log.info("批量生成问卷结果（简化实现），数量: {}", resultIds == null ? 0 : resultIds.size());
-        BatchGenerationResult result = new BatchGenerationResult();
-        int total = resultIds == null ? 0 : resultIds.size();
-        result.setTotalCount(total);
-        result.setSuccessCount(total);
-        result.setFailureCount(0);
-        result.setEndTime(LocalDateTime.now());
-        return result;
-    }
-
-    @Override
-    public PageResult<QuestionnaireResultDO> queryQuestionnaireResults(Object queryReqVO) {
-        log.debug("多维度查询问卷结果（简化实现）");
-        // TODO: 实现具体的查询逻辑
-        return questionnaireResultMapper.selectPage(queryReqVO);
-    }
-
-    @Override
-    public byte[] exportQuestionnaireResultsToExcel(Object exportReqVO) {
-        log.debug("导出问卷结果到Excel（简化实现）");
-        // TODO: 实现具体的导出逻辑
-        return new byte[0];
-    }
-
-    @Override
-    public QuestionnaireResultAnalysis getQuestionnaireResultAnalysis(Object analysisReqVO) {
-        log.debug("获取问卷结果统计分析（简化实现）");
-        return new QuestionnaireResultAnalysis();
-    }
-
-    @Override
-    public QuestionnaireSupportabilityResult checkQuestionnaireSupportability(Long questionnaireId) {
-        log.debug("检查问卷支持性（简化实现），问卷ID: {}", questionnaireId);
-        QuestionnaireSupportabilityResult result = new QuestionnaireSupportabilityResult();
-        result.setSupportable(true);
-        result.setReason("简化实现");
-        result.setSupportabilityScore(100);
-        result.setIssues(new ArrayList<>());
-        result.setRecommendations(new ArrayList<>());
-        return result;
-    }
-
-    @Override
-    public List<QuestionnaireResultDO> getOptimizedQuestionnaireResults(List<Long> resultIds) {
-        log.debug("优化结果数据关联查询（简化实现），数量: {}", resultIds == null ? 0 : resultIds.size());
-        if (resultIds == null || resultIds.isEmpty()) {
-            return new ArrayList<>();
+    public QuestionnaireResultRespVO getQuestionnaireResult(Long id) {
+        log.debug("根据ID获取问卷结果，结果ID: {}", id);
+        
+        // 根据ID查询问卷结果
+        QuestionnaireResultDO result = questionnaireResultMapper.selectById(id);
+        if (result == null) {
+            log.warn("未找到ID为{}的问卷结果", id);
+            return null;
         }
-        return questionnaireResultMapper.selectList(new LambdaQueryWrapperX<QuestionnaireResultDO>()
-                .in(QuestionnaireResultDO::getId, resultIds));
+        
+        // 转换为响应VO
+        QuestionnaireResultRespVO respVO = BeanUtils.toBean(result, QuestionnaireResultRespVO.class);
+        
+        // 处理时间字段转换（从Date转换为LocalDateTime）
+        if (result.getCompletedTime() != null) {
+            respVO.setCompletedTime(result.getCompletedTime().toInstant()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDateTime());
+        }
+        if (result.getGenerationTime() != null) {
+            respVO.setGenerationTime(result.getGenerationTime().toInstant()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDateTime());
+        }
+        
+        return respVO;
     }
+
 }

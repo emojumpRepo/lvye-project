@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.psychology.framework.config.SurveySystemPropertie
 import cn.iocoder.yudao.module.psychology.framework.survey.client.SurveySystemClient;
 import cn.iocoder.yudao.module.psychology.framework.survey.util.SurveyDataConverter;
 import cn.iocoder.yudao.module.psychology.framework.survey.util.SurveyStatusComparator;
+import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyQuestionRespVO;
 import cn.iocoder.yudao.module.psychology.framework.survey.vo.ExternalSurveyRespVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -131,6 +132,16 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
         return result;
     }
 
+    @Override
+    public ExternalSurveyQuestionRespVO getSurveyQuestions(String surveyId) {
+        try {
+            return surveySystemClient.getSurveyQuestion(surveyId);
+        } catch (Exception e) {
+            log.error("[getSurveyQuestions] 获取外部问卷题目失败，surveyId: {}", surveyId, e);
+            return null;
+        }
+    }
+
     /**
      * 创建新问卷
      * 
@@ -145,17 +156,19 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             questionnaire.setTitle(StringUtils.hasText(externalSurvey.getTitle()) ?
                     externalSurvey.getTitle() : "未命名问卷");
             questionnaire.setDescription(SurveyDataConverter.generateDescription(externalSurvey));
-            questionnaire.setExternalLink(SurveyDataConverter.generateSurveyLink(externalSurvey, surveySystemProperties.getBaseUrl()));
+            questionnaire.setExternalLink(externalSurvey.getSurveyPath());
             questionnaire.setExternalId(externalSurvey.getSurveyMetaId());
+            questionnaire.setSurveyCode(externalSurvey.getSurveyCode());
 
             // 设置其他字段，使用转换工具类
             questionnaire.setQuestionnaireType(SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType()));
+            questionnaire.setQuestionCount(externalSurvey.getQuestionCount());
             questionnaire.setStatus(SurveyDataConverter.convertStatus(externalSurvey));
             questionnaire.setTargetAudience(SurveyDataConverter.generateTargetAudience(externalSurvey));
             questionnaire.setEstimatedDuration(SurveyDataConverter.estimateDuration(externalSurvey.getSurveyType()));
             questionnaire.setAccessCount(0);
             questionnaire.setCompletionCount(externalSurvey.getSubmitCount() != null ? externalSurvey.getSubmitCount() : 0);
-            questionnaire.setIsOpen(SurveyDataConverter.isOpen(externalSurvey));
+            questionnaire.setSupportIndependentUse(1);
             questionnaire.setCreateTime(LocalDateTime.now());
             questionnaire.setUpdateTime(LocalDateTime.now());
             questionnaire.setSyncStatus(1); // 设置为已同步
@@ -184,7 +197,7 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
                 failedQuestionnaire.setQuestionnaireType(1); // 默认类型
                 failedQuestionnaire.setTargetAudience(1); // 默认学生
                 failedQuestionnaire.setStatus(0); // 草稿状态
-                failedQuestionnaire.setIsOpen(0); // 不开放
+                failedQuestionnaire.setSupportIndependentUse(1); // 不开放
                 failedQuestionnaire.setAccessCount(0);
                 failedQuestionnaire.setCompletionCount(0);
                 failedQuestionnaire.setCreateTime(LocalDateTime.now());
@@ -218,13 +231,15 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             // 生成新的字段值
             String newTitle = StringUtils.hasText(externalSurvey.getTitle()) ? externalSurvey.getTitle() : "未命名问卷";
             String newDescription = SurveyDataConverter.generateDescription(externalSurvey);
-            String newExternalLink = SurveyDataConverter.generateSurveyLink(externalSurvey, surveySystemProperties.getBaseUrl());
+            String newExternalLink = externalSurvey.getSurveyPath();
+            String newSurveyCode = externalSurvey.getSurveyCode();
             Integer newQuestionnaireType = SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType());
             Integer newStatus = SurveyDataConverter.convertStatus(externalSurvey);
             Integer newTargetAudience = SurveyDataConverter.generateTargetAudience(externalSurvey);
             Integer newEstimatedDuration = SurveyDataConverter.estimateDuration(externalSurvey.getSurveyType());
             Integer newCompletionCount = externalSurvey.getSubmitCount() != null ? externalSurvey.getSubmitCount() : 0;
             Integer newIsOpen = SurveyDataConverter.isOpen(externalSurvey);
+            Integer newQuestionCount = externalSurvey.getQuestionCount() != null ? externalSurvey.getQuestionCount() : 0;
 
             // 使用状态比较工具检查状态变化
             SurveyStatusComparator.StatusChangeResult statusChangeResult =
@@ -234,12 +249,14 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             if (!Objects.equals(localQuestionnaire.getTitle(), newTitle) ||
                 !Objects.equals(localQuestionnaire.getDescription(), newDescription) ||
                 !Objects.equals(localQuestionnaire.getExternalLink(), newExternalLink) ||
+                !Objects.equals(localQuestionnaire.getSurveyCode(), newSurveyCode) ||
                 !Objects.equals(localQuestionnaire.getQuestionnaireType(), newQuestionnaireType) ||
                 !Objects.equals(localQuestionnaire.getStatus(), newStatus) ||
                 !Objects.equals(localQuestionnaire.getTargetAudience(), newTargetAudience) ||
                 !Objects.equals(localQuestionnaire.getEstimatedDuration(), newEstimatedDuration) ||
                 !Objects.equals(localQuestionnaire.getCompletionCount(), newCompletionCount) ||
-                !Objects.equals(localQuestionnaire.getIsOpen(), newIsOpen)) {
+                !Objects.equals(localQuestionnaire.getQuestionCount(), newQuestionCount)
+            ) {
 
                 needUpdate = true;
             }
@@ -254,10 +271,11 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
                 localQuestionnaire.setTargetAudience(newTargetAudience);
                 localQuestionnaire.setEstimatedDuration(newEstimatedDuration);
                 localQuestionnaire.setCompletionCount(newCompletionCount);
-                localQuestionnaire.setIsOpen(newIsOpen);
                 localQuestionnaire.setUpdateTime(LocalDateTime.now());
                 localQuestionnaire.setSyncStatus(1); // 更新同步状态
                 localQuestionnaire.setLastSyncTime(LocalDateTime.now());
+                localQuestionnaire.setQuestionCount(newQuestionCount);
+                localQuestionnaire.setSurveyCode(newSurveyCode);
 
                 questionnaireMapper.updateById(localQuestionnaire);
 

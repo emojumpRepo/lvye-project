@@ -53,11 +53,32 @@ public interface QuestionnaireService {
     PageResult<QuestionnaireRespVO> getQuestionnairePage(QuestionnairePageReqVO pageReqVO);
 
     /**
+     * 获得问卷分页列表（包含 surveyCode 字段）
+     */
+    PageResult<cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireWithSurveyRespVO>
+        getQuestionnairePageWithSurvey(QuestionnairePageReqVO pageReqVO);
+
+    /**
      * 获得所有问卷列表
      *
      * @return 问卷列表
      */
     List<QuestionnaireRespVO> getAllQuestionnaireList();
+
+    /**
+     * 获得问卷精简信息列表
+     *
+     * @return 问卷精简列表
+     */
+    List<QuestionnaireSimpleRespVO> getSimpleQuestionnaireList();
+
+    /**
+     * 获得支持独立使用的问卷精简信息列表
+     *
+     * @param supportIndependentUse 是否支持独立使用
+     * @return 问卷精简列表
+     */
+    List<QuestionnaireSimpleRespVO> getSimpleQuestionnaireList(Integer supportIndependentUse);
 
     /**
      * 发布问卷到外部系统

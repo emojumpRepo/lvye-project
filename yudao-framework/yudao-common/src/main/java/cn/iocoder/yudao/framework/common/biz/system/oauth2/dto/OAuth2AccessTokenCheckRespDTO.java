@@ -39,5 +39,9 @@ public class OAuth2AccessTokenCheckRespDTO implements Serializable {
      * 过期时间
      */
     private LocalDateTime expiresTime;
+    /**
+     * 是否家长登录
+     */
+    private Integer isParent;
 
 }

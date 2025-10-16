@@ -23,6 +23,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.UserPostDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.dept.UserPostMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
 import cn.iocoder.yudao.module.system.service.dept.PostService;
@@ -81,6 +82,9 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Resource
     private ConfigApi configApi;
+
+    @Resource
+    private RoleMapper roleMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -518,6 +522,30 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     public boolean isPasswordMatch(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
+    }
+
+    @Override
+    public AdminUserDO getUserByMobileAndNickName(String mobile, String nickName) {
+        return userMapper.selectByMobileAndNickName(mobile, nickName);
+    }
+
+    @Override
+    public List<AdminUserDO> getUserListByRoleCode(String roleCode) {
+        if (StrUtil.isBlank(roleCode)) {
+            return Collections.emptyList();
+        }
+        Long roleId = Optional.ofNullable(roleMapper.selectByCode(roleCode))
+                .map(r -> r.getId()).orElse(null);
+        if (roleId == null) {
+            return Collections.emptyList();
+        }
+        // 通过角色ID获取用户ID集合
+        Set<Long> userIds = convertSet(permissionService.getUserRoleIdListByRoleId(singleton(roleId)), v -> v);
+        if (CollUtil.isEmpty(userIds)) {
+            return Collections.emptyList();
+        }
+        // AdminUserMapper 的 selectByIds 默认已过滤逻辑删除
+        return userMapper.selectByIds(userIds);
     }
 
     /**

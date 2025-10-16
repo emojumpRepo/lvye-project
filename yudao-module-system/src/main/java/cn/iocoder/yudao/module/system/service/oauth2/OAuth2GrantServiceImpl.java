@@ -34,7 +34,7 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
     @Override
     public OAuth2AccessTokenDO grantImplicit(Long userId, Integer userType,
                                              String clientId, List<String> scopes) {
-        return oauth2TokenService.createAccessToken(userId, userType, clientId, scopes);
+        return oauth2TokenService.createAccessToken(userId, userType, clientId, scopes, null);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
 
         // 创建访问令牌
         return oauth2TokenService.createAccessToken(codeDO.getUserId(), codeDO.getUserType(),
-                codeDO.getClientId(), codeDO.getScopes());
+                codeDO.getClientId(), codeDO.getScopes(), null);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
         Assert.notNull(user, "用户不能为空！"); // 防御性编程
 
         // 创建访问令牌
-        return oauth2TokenService.createAccessToken(user.getId(), UserTypeEnum.ADMIN.getValue(), clientId, scopes);
+        return oauth2TokenService.createAccessToken(user.getId(), UserTypeEnum.ADMIN.getValue(), clientId, scopes, null);
     }
 
     @Override
@@ -86,8 +86,8 @@ public class OAuth2GrantServiceImpl implements OAuth2GrantService {
 
     @Override
     public OAuth2AccessTokenDO grantClientCredentials(String clientId, List<String> scopes) {
-        // TODO 芋艿：项目中使用 OAuth2 解决的是三方应用的授权，内部的 SSO 等问题，所以暂时不考虑 client_credentials 这个场景
-        throw new UnsupportedOperationException("暂时不支持 client_credentials 授权模式");
+        // 特殊：https://yuanbao.tencent.com/bot/app/share/chat/wFj642xSZHHx
+        return oauth2TokenService.createAccessToken(0L, UserTypeEnum.ADMIN.getValue(), clientId, scopes, null);
     }
 
     @Override

@@ -49,6 +49,8 @@ public class DictDataServiceImpl implements DictDataService {
     public List<DictDataDO> getDictDataList(Integer status, String dictType) {
         List<DictDataDO> list = dictDataMapper.selectListByStatusAndDictType(status, dictType);
         list.sort(COMPARATOR_TYPE_AND_SORT);
+
+
         return list;
     }
 
