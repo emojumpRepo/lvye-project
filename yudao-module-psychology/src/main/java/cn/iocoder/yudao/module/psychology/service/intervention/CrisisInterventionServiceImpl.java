@@ -309,7 +309,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     public List<InterventionDashboardLevelVO> getDashboardLevels(Long classId, Long counselorUserId, Integer pageSize) {
         // 设置默认值
         if (pageSize == null || pageSize <= 0) {
-            pageSize = 10;
+            pageSize = 5;
         }
         
         // 转换为新的查询对象，用于获取首屏全部数据
@@ -881,13 +881,6 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         event.setClosureSummary(closeReqVO.getSummary());
         event.setProgress(100);
         event.setProcessStatus(closeReqVO.getFollowUpSuggestion()); // 更新处理状态为最终评估
-        // 设置完成状态：3-持续关注 -> completedStatus=2, 4-直接解决 -> completedStatus=1
-        Integer followUpSuggestion = closeReqVO.getFollowUpSuggestion();
-        if (followUpSuggestion == 3) {
-                event.setCompletedStatus(2); // 持续关注
-        } else if (followUpSuggestion == 4) {
-                event.setCompletedStatus(1); // 已解决
-        }
         crisisInterventionMapper.updateById(event);
 
         // 保存最终评估

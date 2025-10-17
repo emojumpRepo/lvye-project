@@ -42,7 +42,7 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "LEFT JOIN ( " +
             "  SELECT student_profile_id, handler_user_id " +
             "  FROM lvye_crisis_intervention " +
-            "  WHERE deleted = 0 AND status IN (2, 3, 4) " +
+            "  WHERE deleted = 0 AND status IN (2, 3, 4, 5) " +
             "  AND id IN ( " +
             "    SELECT MAX(id) FROM lvye_crisis_intervention " +
             "    WHERE deleted = 0 GROUP BY student_profile_id " +
@@ -58,6 +58,7 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='reqVO.studentName != null and reqVO.studentName != \"\"'> AND sp.name LIKE CONCAT('%', #{reqVO.studentName}, '%') </if>" +
             "<if test='reqVO.studentNumber != null and reqVO.studentNumber != \"\"'> AND sp.student_no LIKE CONCAT('%', #{reqVO.studentNumber}, '%') </if>" +
             "<if test='reqVO.studyStatus != null'> AND sp.graduation_status = #{reqVO.studyStatus} </if>" +
+            "AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status5 WHERE ci_status5.student_profile_id = sp.id AND ci_status5.status = 5 AND ci_status5.deleted = 0) " +
             "GROUP BY sp.id, sp.name, sp.student_no, sp.sex, sp.risk_level, sp.graduation_status, sp.update_time, d1.name, latest_ci.handler_user_id, su.nickname " +
             "<if test='reqVO.sortField != null and reqVO.sortField == \"riskLevel\"'>" +
             "  ORDER BY sp.risk_level " +
@@ -87,6 +88,7 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='reqVO.studentName != null and reqVO.studentName != \"\"'> AND sp.name LIKE CONCAT('%', #{reqVO.studentName}, '%') </if>" +
             "<if test='reqVO.studentNumber != null and reqVO.studentNumber != \"\"'> AND sp.student_no LIKE CONCAT('%', #{reqVO.studentNumber}, '%') </if>" +
             "<if test='reqVO.studyStatus != null'> AND sp.graduation_status = #{reqVO.studyStatus} </if>" +
+            "AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status5 WHERE ci_status5.student_profile_id = sp.id AND ci_status5.status = 5 AND ci_status5.deleted = 0) " +
             "</script>")
     Long countInterventionStudent(@Param("reqVO") InterventionDashboardReqVO reqVO);
 
@@ -100,7 +102,7 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='classId != null'> AND sp.class_dept_id = #{classId} </if>" +
             "<if test='gradeId != null'> AND sp.grade_dept_id = #{gradeId} </if>" +
             "<if test='counselorUserId != null'> " +
-            "  AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci WHERE ci.student_profile_id = sp.id AND ci.handler_user_id = #{counselorUserId} AND ci.deleted = 0 AND ci.status IN (2, 3, 4)) " +
+            "  AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci WHERE ci.student_profile_id = sp.id AND ci.handler_user_id = #{counselorUserId} AND ci.deleted = 0 AND ci.status IN (2, 3, 4, 5)) " +
             "</if>" +
             "</script>")
     Long countByRiskLevelWithFilter(
@@ -119,7 +121,7 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='classId != null'> AND sp.class_dept_id = #{classId} </if>" +
             "<if test='gradeId != null'> AND sp.grade_dept_id = #{gradeId} </if>" +
             "<if test='counselorUserId != null'> " +
-            "  AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci WHERE ci.student_profile_id = sp.id AND ci.handler_user_id = #{counselorUserId} AND ci.deleted = 0 AND ci.status IN (2, 3, 4)) " +
+            "  AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci WHERE ci.student_profile_id = sp.id AND ci.handler_user_id = #{counselorUserId} AND ci.deleted = 0 AND ci.status IN (2, 3, 4, 5)) " +
             "</if>" +
             "</script>")
     Long countPendingAssessmentWithFilter(
