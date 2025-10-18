@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Schema(description = "管理后台 - 问卷结果 Response VO")
 @Data
@@ -43,6 +44,9 @@ public class QuestionnaireResultRespVO {
     @Schema(description = "详细结果数据", example = "{\"analysis\": \"详细分析内容\"}")
     private String resultData;
 
+    @Schema(description = "维度数据", example = "{\"analysis\": \"详细分析内容\"}")
+    private  List<DimensionVO> dimensions;
+
     @Schema(description = "完成时间")
     private LocalDateTime completedTime;
 
@@ -60,4 +64,37 @@ public class QuestionnaireResultRespVO {
 
     @Schema(description = "更新时间")
     private LocalDateTime updateTime;
+
+    @Data
+    public static class DimensionVO {
+    @Schema(description = "维度Id", example = "1024")
+    private Long dimensionId;
+
+    @Schema(description = "维度编号", example = "behavior_self_evaluation")
+    private String dimensionCode;
+
+    @Schema(description = "维度名称", example = "学习行为")
+    private String name;
+
+    @Schema(description = "分数", example = "15.00")
+    private BigDecimal score;
+
+    @Schema(description = "是否异常", example = "1")
+    private Integer isAbnormal;
+
+    @Schema(description = "风险等级", example = "1")
+    private Integer riskLevel;
+
+    @Schema(description = "等级描述", example = "描述")
+    private String level;
+
+    @Schema(description = "教师评价", example = "教师评价")
+    private String teacherComment;
+
+    @Schema(description = "学生评价", example = "学生评价")
+    private String studentComment;
+
+    @Schema(description = "维度描述", example = "描述")
+    private String description;
+    }
 }
