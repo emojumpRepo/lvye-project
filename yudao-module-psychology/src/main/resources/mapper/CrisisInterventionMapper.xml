@@ -36,7 +36,7 @@
                 AND b.class_dept_id = #{reqVO.classId}
             </if>
         </where>
-        ORDER BY a.priority DESC, a.reported_at DESC
+        ORDER BY a.create_time DESC
         LIMIT #{offset}, #{limit}
     </select>
 

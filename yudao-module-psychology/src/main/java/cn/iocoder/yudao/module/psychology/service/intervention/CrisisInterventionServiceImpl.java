@@ -419,6 +419,21 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     }
 
     @Override
+    public PageResult<InterventionStudentRespVO> getStudentsByRiskLevel(
+            Integer riskLevel, Long classId, Long counselorUserId, Integer pageNo, Integer pageSize) {
+        // 构建查询对象
+        InterventionDashboardReqVO reqVO = new InterventionDashboardReqVO();
+        reqVO.setRiskLevel(riskLevel);
+        reqVO.setClassId(classId);
+        reqVO.setCounselorUserId(counselorUserId);
+        reqVO.setPageNo(pageNo);
+        reqVO.setPageSize(pageSize);
+        
+        // 复用现有的分页查询方法
+        return getStudentPageByFilter(reqVO);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void adjustStudentLevel(Long studentProfileId, StudentLevelAdjustReqVO adjustReqVO) {
         // 验证学生是否存在
@@ -510,17 +525,13 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         event.setReportedAt(LocalDateTime.now());
         event.setProgress(0);
         event.setAutoAssigned(false);
-        
-        // 不要手动设置creator和updater，让框架自动填充
-        // event.setCreator(null);
-        // event.setUpdater(null);
-
         crisisInterventionMapper.insert(event);
 
         // 记录上报动作
+        List<String> attachmentUrls = createReqVO.getAttachmentUrls();
         recordEventProcessWithUsers(event.getId(), "REPORT", createReqVO.getDescription(),
             "风险等级：" + getRiskLevelName(createReqVO.getRiskLevel()),
-            null, null);
+            null, null, CollUtil.isNotEmpty(attachmentUrls) ? attachmentUrls : null);
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -753,7 +764,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         recordEventProcessWithUsers(id, "ASSIGN_HANDLER", autoAssignReason,
             null,
             assignReqVO.getHandlerUserId(),
-            null); // 初次分配，没有原负责人
+            null, // 初次分配，没有原负责人
+            null); // 无附件
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -800,7 +812,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         recordEventProcessWithUsers(id, "REASSIGN_HANDLER", reassignReason, 
             reassignReqVO.getReason(), 
             reassignReqVO.getNewHandlerUserId(), 
-            oldHandlerId);
+            oldHandlerId,
+            null); // 无附件
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -848,7 +861,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         String methodName = getProcessMethodName(processMethod);
         recordEventProcessWithUsers(id, "CHOOSE_PROCESS", methodName,
             processReqVO.getProcessReason(),
-            null, null);
+            null, null, null); // 无附件
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -893,6 +906,17 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         assessment.setFollowUpSuggestion(closeReqVO.getFollowUpSuggestion());
         assessment.setContent(closeReqVO.getSummary());
         eventAssessmentMapper.insert(assessment);
+
+        // 更新学生档案的风险等级和问题标签
+        if (closeReqVO.getRiskLevel() != null) {
+            studentProfileService.updateStudentRiskLevel(event.getStudentProfileId(), closeReqVO.getRiskLevel());
+        }
+        
+        // 更新学生档案的问题类型到特殊标记字段
+        if (closeReqVO.getProblemTypes() != null && !closeReqVO.getProblemTypes().isEmpty()) {
+            String specialMarks = String.join(",", closeReqVO.getProblemTypes());
+            studentProfileService.updateStudentSpecialMarks(event.getStudentProfileId(), specialMarks);
+        }
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -936,7 +960,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 使用结构化方式记录结案动作
         recordEventProcessWithUsers(id, "CLOSE", closeReqVO.getSummary(),
             closeAssessmentInfo,
-            null, null);
+            null, null, null); // 无附件
     }
 
     @Override
@@ -978,7 +1002,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 记录评估动作
         recordEventProcessWithUsers(id, "STAGE_ASSESSMENT", assessmentReqVO.getContent(),
             assessmentInfo,
-            null, null);
+            null, null, null); // 无附件
 
         // 根据后续建议决定下一步
         if (assessmentReqVO.getFollowUpSuggestion() == 5) { // 转介
@@ -1129,7 +1153,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     }
 
     private void recordEventProcessWithUsers(Long eventId, String action, String content, 
-                                            String reason, Long relatedUserId, Long originalUserId) {
+                                            String reason, Long relatedUserId, Long originalUserId,
+                                            List<String> attachments) {
         CrisisEventProcessDO process = new CrisisEventProcessDO();
         process.setEventId(eventId);
         process.setOperatorUserId(SecurityFrameworkUtils.getLoginUserId());
@@ -1138,6 +1163,10 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         process.setReason(reason);
         process.setRelatedUserId(relatedUserId);
         process.setOriginalUserId(originalUserId);
+        // 只有附件列表非空时才设置
+        if (CollUtil.isNotEmpty(attachments)) {
+            process.setAttachments(attachments);
+        }
         eventProcessMapper.insert(process);
     }
 
@@ -1163,7 +1192,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             
     //         // 记录分配动作
     //         recordEventProcessWithUsers(event.getId(), "AUTO_ASSIGN", assignReason,
-    //                 assignReason, handlerUserId, null);
+    //                 assignReason, handlerUserId, null, null);
             
     //         // 添加时间线记录
     //         AdminUserRespDTO handler = adminUserApi.getUser(handlerUserId);

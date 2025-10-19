@@ -52,8 +52,7 @@ public interface CrisisInterventionMapper extends BaseMapperX<CrisisIntervention
                 .eqIfPresent(CrisisInterventionDO::getPriority, reqVO.getPriority())
                 .eqIfPresent(CrisisInterventionDO::getProcessStatus, reqVO.getProcessStatus())
                 .eqIfPresent(CrisisInterventionDO::getHandlerUserId, reqVO.getCounselorUserId())
-                .orderByDesc(CrisisInterventionDO::getPriority)
-                .orderByDesc(CrisisInterventionDO::getReportedAt));
+                .orderByDesc(CrisisInterventionDO::getCreateTime));
     }
 
     default List<CrisisInterventionDO> selectListByStudentId(Long studentProfileId) {

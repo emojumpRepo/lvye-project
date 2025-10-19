@@ -149,6 +149,13 @@ public interface StudentProfileService {
     void updateStudentRiskLevel(Long studentProfileId, Integer riskLevel);
 
     /**
+     * 更新学生特殊标记
+     * @param studentProfileId 学生档案ID
+     * @param specialMarks 特殊标记（多选，逗号分隔数字键值）
+     */
+    void updateStudentSpecialMarks(Long studentProfileId, String specialMarks);
+
+    /**
      * 根据学号和姓名模糊查询学生档案简化列表
      *
      * @param studentNo 学号（支持模糊查询）

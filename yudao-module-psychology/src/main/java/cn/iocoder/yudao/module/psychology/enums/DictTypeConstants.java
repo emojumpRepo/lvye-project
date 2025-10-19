@@ -6,7 +6,7 @@ package cn.iocoder.yudao.module.psychology.enums;
 public interface DictTypeConstants {
 
     String PSYCHOLOGICAL_STATUS = "psychological_status"; // 心理状态
-    String RISK_LEVEL = "questionnaire_result_risk_level"; // 风险等级
+    String RISK_LEVEL = "crisis_level"; // 风险等级
     String STUDENT_SPECIAL_MARK = "student_special_mark"; // 学生特殊标记
     String ASSESSMENT_SCALE_TYPE = "assessment_scale_type"; // 测评量表类型
     String TARGET_AUDIENCE = "target_audience"; // 目标对象

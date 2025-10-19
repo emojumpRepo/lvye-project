@@ -51,6 +51,19 @@ public interface CrisisInterventionService {
     PageResult<InterventionStudentRespVO> getStudentsByLevel(String level, InterventionStudentPageReqVO pageReqVO);
 
     /**
+     * 根据风险等级获取学生列表
+     *
+     * @param riskLevel 风险等级（字典值）
+     * @param classId 班级ID（可选）
+     * @param counselorUserId 咨询师ID（可选）
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 学生分页列表
+     */
+    PageResult<InterventionStudentRespVO> getStudentsByRiskLevel(
+        Integer riskLevel, Long classId, Long counselorUserId, Integer pageNo, Integer pageSize);
+
+    /**
      * 调整学生的心理健康风险等级
      *
      * @param studentProfileId 学生档案ID

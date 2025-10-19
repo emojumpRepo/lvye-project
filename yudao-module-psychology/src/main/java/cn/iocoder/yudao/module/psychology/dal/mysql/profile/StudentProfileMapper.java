@@ -49,6 +49,12 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
                 .set(StudentProfileDO::getRiskLevel, riskLevel));
     }
 
+    default int updateSpecialMarks(Long id, String specialMarks) {
+        return update(new LambdaUpdateWrapper<StudentProfileDO>()
+                .eq(StudentProfileDO::getId, id)
+                .set(StudentProfileDO::getSpecialMarks, specialMarks));
+    }
+
     IPage<StudentProfileVO> selectPageList(IPage<StudentProfileVO> page,
                                            @Param("pageReqVO") StudentProfilePageReqVO pageReqVO,
                                            @Param("deptIds") Collection<Long> deptIds,

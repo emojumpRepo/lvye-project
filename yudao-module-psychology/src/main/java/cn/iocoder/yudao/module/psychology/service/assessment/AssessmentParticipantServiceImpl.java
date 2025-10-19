@@ -212,10 +212,10 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
                                     if (updated != null && (updated.getRiskLevel() != null
                                             || !StringUtils.isAnyBlank(updated.getEvaluate(), updated.getSuggestions()))) {
                                         userTaskMapper.updateTaskRiskLevel(taskNo, userId, updated.getRiskLevel(), updated.getEvaluate(), updated.getSuggestions());
-                                        StudentProfileDO studentProfile2 = studentProfileService.getStudentProfileByUserId(userId);
-                                        if (studentProfile2 != null && updated.getRiskLevel() != null) {
-                                            studentProfileService.updateStudentRiskLevel(studentProfile2.getId(), updated.getRiskLevel());
-                                        }
+                                        // StudentProfileDO studentProfile2 = studentProfileService.getStudentProfileByUserId(userId);
+                                        // if (studentProfile2 != null && updated.getRiskLevel() != null) {
+                                        //     studentProfileService.updateStudentRiskLevel(studentProfile2.getId(), updated.getRiskLevel());
+                                        // }
                                     }
                                 } catch (Exception ignore) {}
 

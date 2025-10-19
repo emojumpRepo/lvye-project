@@ -466,6 +466,11 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     }
 
     @Override
+    public void updateStudentSpecialMarks(Long studentProfileId, String specialMarks) {
+        studentProfileMapper.updateSpecialMarks(studentProfileId, specialMarks);
+    }
+
+    @Override
     public List<StudentProfileSimpleVO> searchSimpleStudentProfilesByStudentNoAndName(String studentNo, String name) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
