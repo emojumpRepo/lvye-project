@@ -109,6 +109,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     @Resource
     private ConfigApi configApi;
 
+    @Resource
+    private cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper studentProfileMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public String createAssessmentTask(@Valid AssessmentTaskSaveReqVO createReqVO) {
@@ -1027,6 +1030,48 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
             resultList.add(vo);
         }
         return resultList;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer removeGraduatedStudents(String taskNo) {
+        // 校验任务存在
+        validateAssessmentTaskExists(taskNo);
+
+        // 查询所有已毕业的学生
+        List<StudentProfileDO> graduatedStudents = studentProfileMapper.selectGraduatedStudents();
+
+        if (CollUtil.isEmpty(graduatedStudents)) {
+            log.info("未找到已毕业学生，任务编号：{}", taskNo);
+            return 0;
+        }
+
+        // 提取已毕业学生的userId列表
+        List<Long> graduatedUserIds = graduatedStudents.stream()
+                .map(StudentProfileDO::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (CollUtil.isEmpty(graduatedUserIds)) {
+            log.info("已毕业学生无有效userId，任务编号：{}", taskNo);
+            return 0;
+        }
+
+        // 统计删除数量
+        int removedCount = 0;
+
+        // 遍历删除关联记录
+        for (Long userId : graduatedUserIds) {
+            AssessmentUserTaskDO userTask = userTaskMapper.selectByTaskNoAndUserId(taskNo, userId);
+            if (userTask != null) {
+                userTaskMapper.deleteByTaskNoAndUserId(taskNo, userId);
+                removedCount++;
+                log.debug("移除已毕业学生，任务编号：{}，用户ID：{}", taskNo, userId);
+            }
+        }
+
+        log.info("移除已毕业学生完成，任务编号：{}，移除数量：{}", taskNo, removedCount);
+        return removedCount;
     }
 
 }
