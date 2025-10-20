@@ -2,10 +2,13 @@ package cn.iocoder.yudao.module.psychology.service.questionnaire;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.QuestionnaireResultRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDimensionDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireDimensionMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,8 @@ import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -30,6 +35,9 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Resource
     private QuestionnaireResultMapper questionnaireResultMapper;
+    
+    @Resource
+    private QuestionnaireDimensionMapper questionnaireDimensionMapper;
 
     @Override
     public boolean hasUserCompletedTaskQuestionnaire(String taskNo, Long questionnaireId, Long userId) {
@@ -102,6 +110,38 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
             respVO.setGenerationTime(result.getGenerationTime().toInstant()
                     .atZone(java.time.ZoneId.systemDefault())
                     .toLocalDateTime());
+        }
+        
+        // 解析 resultData 为 dimensions 列表并填充 description
+        if (result.getResultData() != null && !result.getResultData().isEmpty()) {
+            try {
+                List<QuestionnaireResultRespVO.DimensionVO> dimensions = 
+                    JsonUtils.parseArray(result.getResultData(), 
+                        QuestionnaireResultRespVO.DimensionVO.class);
+                
+                if (dimensions != null && !dimensions.isEmpty()) {
+                    // 根据问卷ID查询所有维度信息
+                    List<QuestionnaireDimensionDO> dimensionDOList = 
+                        questionnaireDimensionMapper.selectByQuestionnaireId(result.getQuestionnaireId());
+                    
+                    // 构建维度ID到维度DO的映射
+                    Map<Long, QuestionnaireDimensionDO> dimensionMap = dimensionDOList.stream()
+                        .collect(Collectors.toMap(QuestionnaireDimensionDO::getId, d -> d));
+                    
+                    // 遍历每个dimension，填充description
+                    for (QuestionnaireResultRespVO.DimensionVO dimension : dimensions) {
+                        QuestionnaireDimensionDO dimensionDO = dimensionMap.get(dimension.getDimensionId());
+                        if (dimensionDO != null) {
+                            dimension.setName(dimensionDO.getDimensionName());
+                            dimension.setDescription(dimensionDO.getDescription());
+                        }
+                    }
+                    
+                    respVO.setDimensions(dimensions);
+                }
+            } catch (Exception e) {
+                log.warn("解析问卷结果维度数据失败，结果ID: {}, 错误: {}", id, e.getMessage());
+            }
         }
         
         return respVO;
