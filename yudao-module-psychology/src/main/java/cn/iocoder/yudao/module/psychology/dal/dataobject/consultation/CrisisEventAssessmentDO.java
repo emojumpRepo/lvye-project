@@ -67,4 +67,9 @@ public class CrisisEventAssessmentDO extends TenantBaseDO {
      * 评估详细内容
      */
     private String content;
+
+    /**
+     * 文件ID
+     */
+    private Long fileId;
 }

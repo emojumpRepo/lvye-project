@@ -106,6 +106,9 @@ public class CrisisEventRespVO {
     @Schema(description = "评估记录列表（按创建时间倒序）")
     private List<AssessmentRecordVO> latestAssessments;
 
+    @Schema(description = "所有评估记录列表（按创建时间倒序）")
+    private List<AssessmentRecordVO> allAssessmentRecords;
+
     @Schema(description = "正在进行的测评任务（未完成状态，包含未开始和进行中）")
     private PendingAssessmentTaskVO pendingAssessmentTask;
 
@@ -135,8 +138,11 @@ public class CrisisEventRespVO {
         @Schema(description = "操作原因")
         private String reason;
 
-        @Schema(description = "附件列表")
-        private List<String> attachments;
+        @Schema(description = "附件ID列表")
+        private List<Long> attachments;
+
+        @Schema(description = "评估记录ID")
+        private Long assessmentId;
 
         @Schema(description = "测评结果ID")
         private Long taskResultId;
@@ -188,6 +194,9 @@ public class CrisisEventRespVO {
 
         @Schema(description = "评估详细内容")
         private String content;
+
+        @Schema(description = "附件ID列表")
+        private List<Long> attachments;
 
         @Schema(description = "创建时间")
         private LocalDateTime createTime;

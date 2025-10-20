@@ -49,8 +49,8 @@ public class CrisisEventProcessHistoryVO {
     @Schema(description = "原用户姓名（如原负责人姓名）", example = "王老师")
     private String originalUserName;
 
-    @Schema(description = "附件列表")
-    private List<String> attachments;
+    @Schema(description = "附件ID列表")
+    private List<Long> attachments;
 
     @Schema(description = "操作时间")
     private LocalDateTime createTime;

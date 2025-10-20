@@ -43,11 +43,33 @@ public class FileController {
 
     @PostMapping("/upload")
     @Operation(summary = "上传文件", description = "模式一：后端上传文件")
-    public CommonResult<String> uploadFile(FileUploadReqVO uploadReqVO) throws Exception {
+    public CommonResult<FileUploadRespVO> uploadFile(FileUploadReqVO uploadReqVO) throws Exception {
         MultipartFile file = uploadReqVO.getFile();
         byte[] content = IoUtil.readBytes(file.getInputStream());
-        return success(fileService.createFile(content, file.getOriginalFilename(),
-                uploadReqVO.getDirectory(), file.getContentType()));
+        FileDO fileDO = fileService.createFileAndReturnDO(content, file.getOriginalFilename(),
+                uploadReqVO.getDirectory(), file.getContentType());
+        
+        // 构建返回结果，只返回 id 和 url
+        FileUploadRespVO respVO = FileUploadRespVO.builder()
+                .id(fileDO.getId())
+                .url(fileDO.getUrl())
+                .build();
+        return success(respVO);
+    }
+
+    @GetMapping("/get")
+    @Operation(summary = "通过id获取文件信息")
+    @Parameter(name = "id", description = "文件编号", required = true)
+    public CommonResult<FileUploadRespVO> getFileById(@RequestParam("id") Long id) {
+        FileDO fileDO = fileService.getFileById(id);
+        // 构建返回结果
+        FileUploadRespVO respVO = FileUploadRespVO.builder()
+                .id(fileDO.getId())
+                .name(fileDO.getName())
+                .url(fileDO.getUrl())
+                .type(fileDO.getType())
+                .build();
+        return success(respVO);
     }
 
     @GetMapping("/presigned-url")

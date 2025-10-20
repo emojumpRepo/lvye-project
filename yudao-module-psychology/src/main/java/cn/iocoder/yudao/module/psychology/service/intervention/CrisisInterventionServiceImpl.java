@@ -528,10 +528,10 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         crisisInterventionMapper.insert(event);
 
         // 记录上报动作
-        List<String> attachmentUrls = createReqVO.getAttachmentUrls();
+        List<Long> attachments = createReqVO.getAttachments();
         recordEventProcessWithUsers(event.getId(), "REPORT", createReqVO.getDescription(),
             "风险等级：" + getRiskLevelName(createReqVO.getRiskLevel()),
-            null, null, CollUtil.isNotEmpty(attachmentUrls) ? attachmentUrls : null);
+            null, null, CollUtil.isNotEmpty(attachments) ? attachments : null, null);
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -693,21 +693,16 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         List<CrisisEventProcessDO> processList = eventProcessMapper.selectListByEventId(id);
         vo.setProcessHistory(convertProcessHistory(processList, vo.getStudentProfileId()));
 
-        // 加载最新评估
-        // CrisisEventAssessmentDO latestAssessment = eventAssessmentMapper.selectLatestByEventId(id);
-        // if (latestAssessment != null) {
-        //     CrisisEventRespVO.LatestAssessmentVO assessmentVO = new CrisisEventRespVO.LatestAssessmentVO();
-        //     assessmentVO.setAssessTime(latestAssessment.getCreateTime());
-        //     assessmentVO.setRiskLevel(latestAssessment.getRiskLevel());
-        //     assessmentVO.setProblemTypes(latestAssessment.getProblemTypes());
-        //     assessmentVO.setFollowUpSuggestion(latestAssessment.getFollowUpSuggestion());
-        //     vo.setLatestAssessment(assessmentVO);
-        // }
-
-        // 加载最新两条评估记录
+        // 加载所有评估记录（按创建时间倒序）
         List<CrisisEventAssessmentDO> assessmentList = eventAssessmentMapper.selectListByEventIdOrder(id);
-        List<CrisisEventAssessmentDO> latestTwoAssessments = assessmentList.stream().limit(2).sorted(Comparator.comparing(CrisisEventAssessmentDO::getCreateTime)).collect(Collectors.toList());
-        vo.setLatestAssessments(convertAssessmentRecords(latestTwoAssessments));
+        List<CrisisEventRespVO.AssessmentRecordVO> allAssessmentRecords = convertAssessmentRecords(assessmentList);
+
+        // 从所有记录中筛选最新两条，并按创建时间正序排序
+        List<CrisisEventRespVO.AssessmentRecordVO> latestTwoAssessments = allAssessmentRecords.stream()
+            .limit(2)
+            .sorted(Comparator.comparing(CrisisEventRespVO.AssessmentRecordVO::getCreateTime))
+            .collect(Collectors.toList());
+        vo.setLatestAssessments(latestTwoAssessments);
 
         // 添加正在进行的测评任务（未完成状态，包含未开始和进行中）
         if (vo.getStudentUserId() != null) {
@@ -729,10 +724,13 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
         // 加载测评任务列表
         // if (vo.getStudentUserId() != null) {
-        //     List<CrisisEventRespVO.AssessmentTaskVO> assessmentTasks = 
+        //     List<CrisisEventRespVO.AssessmentTaskVO> assessmentTasks =
         //         assessmentUserTaskMapper.selectAllTasksByEventIdAndUserId(id, vo.getStudentUserId());
         //     vo.setAssessmentTasks(assessmentTasks);
         // }
+
+        // 设置所有评估记录
+        vo.setAllAssessmentRecords(allAssessmentRecords);
 
         return vo;
     }
@@ -765,7 +763,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             null,
             assignReqVO.getHandlerUserId(),
             null, // 初次分配，没有原负责人
-            null); // 无附件
+            null, // 无附件
+            null); // 无评估ID
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -813,7 +812,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             reassignReqVO.getReason(), 
             reassignReqVO.getNewHandlerUserId(), 
             oldHandlerId,
-            null); // 无附件
+            null, // 无附件
+            null); // 无评估ID
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -861,7 +861,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         String methodName = getProcessMethodName(processMethod);
         recordEventProcessWithUsers(id, "CHOOSE_PROCESS", methodName,
             processReqVO.getProcessReason(),
-            null, null, null); // 无附件
+            null, null, null, null); // 无附件，无评估ID
         
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
@@ -905,7 +905,15 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         assessment.setProblemTypes(closeReqVO.getProblemTypes());
         assessment.setFollowUpSuggestion(closeReqVO.getFollowUpSuggestion());
         assessment.setContent(closeReqVO.getSummary());
+        // 如果 attachments 不为空且第一项不为 null，则设置 fileId
+        List<Long> attachments = closeReqVO.getAttachments();
+        if (CollUtil.isNotEmpty(attachments) && attachments.get(0) != null) {
+            assessment.setFileId(attachments.get(0));
+        }
         eventAssessmentMapper.insert(assessment);
+        
+        // 获取评估记录ID
+        Long assessmentId = assessment.getId();
 
         // 更新学生档案的风险等级和问题标签
         if (closeReqVO.getRiskLevel() != null) {
@@ -960,7 +968,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 使用结构化方式记录结案动作
         recordEventProcessWithUsers(id, "CLOSE", closeReqVO.getSummary(),
             closeAssessmentInfo,
-            null, null, null); // 无附件
+            null, null, attachments, assessmentId); // 传递 attachments 和评估ID
     }
 
     @Override
@@ -974,7 +982,15 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         assessment.setEventId(id);
         assessment.setAssessorUserId(SecurityFrameworkUtils.getLoginUserId());
         assessment.setAssessmentType(1); // 阶段性评估
+        // 如果 attachments 不为空且第一项不为 null，则设置 fileId
+        List<Long> attachments = assessmentReqVO.getAttachments();
+        if (CollUtil.isNotEmpty(attachments) && attachments.get(0) != null) {
+            assessment.setFileId(attachments.get(0));
+        }
         eventAssessmentMapper.insert(assessment);
+        
+        // 获取评估记录ID
+        Long assessmentId = assessment.getId();
 
         // 更新进度和状态
         event.setStatus(3); // 状态为3
@@ -1002,7 +1018,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 记录评估动作
         recordEventProcessWithUsers(id, "STAGE_ASSESSMENT", assessmentReqVO.getContent(),
             assessmentInfo,
-            null, null, null); // 无附件
+            null, null, attachments, assessmentId); // 传递 attachments 和评估ID
 
         // 根据后续建议决定下一步
         if (assessmentReqVO.getFollowUpSuggestion() == 5) { // 转介
@@ -1154,7 +1170,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     private void recordEventProcessWithUsers(Long eventId, String action, String content, 
                                             String reason, Long relatedUserId, Long originalUserId,
-                                            List<String> attachments) {
+                                            List<Long> attachments, Long assessmentId) {
         CrisisEventProcessDO process = new CrisisEventProcessDO();
         process.setEventId(eventId);
         process.setOperatorUserId(SecurityFrameworkUtils.getLoginUserId());
@@ -1163,6 +1179,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         process.setReason(reason);
         process.setRelatedUserId(relatedUserId);
         process.setOriginalUserId(originalUserId);
+        process.setAssessmentId(assessmentId);
         // 只有附件列表非空时才设置
         if (CollUtil.isNotEmpty(attachments)) {
             process.setAttachments(attachments);
@@ -1318,6 +1335,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             vo.setContent(process.getContent());
             vo.setReason(process.getReason());
             vo.setAttachments(process.getAttachments());
+            vo.setAssessmentId(process.getAssessmentId());
 
             AdminUserRespDTO operator = userMap.get(process.getOperatorUserId());
             if (operator != null) {
@@ -1529,6 +1547,11 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             vo.setFollowUpSuggestionName(getFollowUpSuggestionName(assessment.getFollowUpSuggestion()));
             vo.setContent(assessment.getContent());
             vo.setCreateTime(assessment.getCreateTime());
+
+            // 将 fileId 转换为 attachments 列表
+            if (assessment.getFileId() != null) {
+                vo.setAttachments(Collections.singletonList(assessment.getFileId()));
+            }
 
             // 设置评估人姓名
             AdminUserRespDTO assessor = userMap.get(assessment.getAssessorUserId());
