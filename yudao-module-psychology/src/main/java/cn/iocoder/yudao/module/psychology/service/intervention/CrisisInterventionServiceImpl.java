@@ -494,7 +494,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createCrisisEvent(CrisisEventCreateReqVO createReqVO) {
+    public CrisisEventCreateRespVO createCrisisEvent(CrisisEventCreateReqVO createReqVO) {
         // 验证学生是否存在
         StudentProfileVO student = studentProfileService.getStudentProfile(createReqVO.getStudentProfileId());
         if (student == null) {
@@ -513,12 +513,12 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
         // 创建危机事件
         CrisisInterventionDO event = BeanUtils.toBean(createReqVO, CrisisInterventionDO.class);
-        
+
         // 生成事件编号：RPT_年份_随机数
         String currentYear = String.valueOf(LocalDateTime.now().getYear());
         String eventId = "RPT_" + currentYear + "_" + RandomUtil.randomNumbers(6);
         event.setEventId(eventId);
-        
+
         event.setStatus(1); // 已上报
         event.setProcessStatus(0); // 处理状态设置为0
         event.setReporterUserId(currentUserId);
@@ -532,7 +532,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         recordEventProcessWithUsers(event.getId(), "REPORT", createReqVO.getDescription(),
             "风险等级：" + getRiskLevelName(createReqVO.getRiskLevel()),
             null, null, CollUtil.isNotEmpty(attachments) ? attachments : null, null);
-        
+
         // 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
         meta.put("eventId", event.getId());
@@ -541,7 +541,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         meta.put("reporterUserId", currentUserId);
         meta.put("description", createReqVO.getDescription());
         meta.put("status", "已上报");
-        
+
         String content = String.format("上报了危机事件，风险等级：%s", getRiskLevelName(createReqVO.getRiskLevel()));
         studentTimelineService.saveTimelineWithMeta(
             createReqVO.getStudentProfileId(),
@@ -557,7 +557,12 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         //     autoAssignHandler(event);
         // }
 
-        return event.getId();
+        // 返回创建结果
+        return CrisisEventCreateRespVO.builder()
+                .id(event.getId())
+                .eventId(eventId)
+                .title(event.getTitle())
+                .build();
     }
 
     @Override
@@ -579,8 +584,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     public List<CrisisEventProcessStatisticsVO.StatisticsItem> getCrisisEventStatistics() {
         List<CrisisEventProcessStatisticsVO.StatisticsItem> result = new ArrayList<>();
 
-        // 统计 process_status 0-5 的所有类型
-        for (int i = 0; i <= 5; i++) {
+        // 统计 process_status 0-6 的所有类型
+        for (int i = 0; i <= 6; i++) {
             Long count = crisisInterventionMapper.countByProcessStatus(i);
             result.add(CrisisEventProcessStatisticsVO.StatisticsItem.builder()
                     .type(i)
@@ -893,7 +898,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         event.setStatus(5); // 已结案
         event.setClosureSummary(closeReqVO.getSummary());
         event.setProgress(100);
-        event.setProcessStatus(closeReqVO.getFollowUpSuggestion()); // 更新处理状态为最终评估
+        event.setProcessStatus(6); // 更新处理状态为最终评估
         crisisInterventionMapper.updateById(event);
 
         // 保存最终评估

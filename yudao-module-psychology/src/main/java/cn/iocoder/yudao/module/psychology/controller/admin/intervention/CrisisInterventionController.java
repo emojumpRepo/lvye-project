@@ -96,7 +96,7 @@ public class CrisisInterventionController {
     @Operation(summary = "上报危机事件")
     @PreAuthorize("@ss.hasPermission('psychology:intervention:create')")
     @DataPermission(enable = false)
-    public CommonResult<Long> createCrisisEvent(@Valid @RequestBody CrisisEventCreateReqVO createReqVO) {
+    public CommonResult<CrisisEventCreateRespVO> createCrisisEvent(@Valid @RequestBody CrisisEventCreateReqVO createReqVO) {
         return success(interventionService.createCrisisEvent(createReqVO));
     }
 

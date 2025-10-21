@@ -75,9 +75,9 @@ public interface CrisisInterventionService {
      * 创建危机事件
      *
      * @param createReqVO 创建信息
-     * @return 事件ID
+     * @return 创建结果（包含id、事件编号、标题）
      */
-    Long createCrisisEvent(@Valid CrisisEventCreateReqVO createReqVO);
+    CrisisEventCreateRespVO createCrisisEvent(@Valid CrisisEventCreateReqVO createReqVO);
 
     /**
      * 获取危机事件分页
