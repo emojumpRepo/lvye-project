@@ -20,6 +20,7 @@ CREATE TABLE `lvye_consultation_appointment` (
   `notify_student` BOOLEAN DEFAULT TRUE COMMENT '是否通知学生',
   `remind_self` BOOLEAN DEFAULT TRUE COMMENT '是否提醒自己',
   `remind_time` INT DEFAULT 30 COMMENT '提前提醒时间（分钟）',
+  `current_step` INT COMMENT '当前进度',
   `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
   `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

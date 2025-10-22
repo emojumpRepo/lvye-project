@@ -103,4 +103,9 @@ public class ConsultationAppointmentDO extends TenantBaseDO {
      * 提前提醒时间（分钟）
      */
     private Integer remindTime;
+
+    /**
+     * 当前进度
+     */
+    private Integer currentStep;
 }

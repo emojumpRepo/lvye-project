@@ -69,6 +69,9 @@ public class ConsultationAppointmentRespVO {
     @Schema(description = "提前提醒时间（分钟）", example = "30")
     private Integer remindTime;
 
+    @Schema(description = "当前进度", example = "3")
+    private Integer currentStep;
+
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
 

@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -77,6 +79,7 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         ConsultationAppointmentDO appointment = BeanUtils.toBean(createReqVO, ConsultationAppointmentDO.class);
         appointment.setCounselorUserId(counselorUserId);
         appointment.setStatus(1); // 已预约
+        appointment.setCurrentStep(1);
         appointment.setOverdue(false);
         
         // 如果没有传递durationMinutes，则根据开始时间和结束时间计算
@@ -176,22 +179,23 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
     }
 
     @Override
-    public TodayConsultationRespVO getTodayConsultations() {
-        // 获取当前用户的今日咨询列表
-        Long counselorUserId = SecurityFrameworkUtils.getLoginUserId();
-        List<ConsultationAppointmentDO> todayList = appointmentMapper.selectTodayList(counselorUserId);
-        
-        // 统计数据
-        TodayConsultationRespVO result = new TodayConsultationRespVO();
-        result.setTotalCount(todayList.size());
-        result.setCompletedCount((int) todayList.stream().filter(a -> a.getStatus() == 2 || a.getStatus() == 3).count());
-        result.setPendingCount((int) todayList.stream().filter(a -> a.getStatus() == 1).count());
-        result.setCancelledCount((int) todayList.stream().filter(a -> a.getStatus() == 4).count());
-        result.setOverdueCount((int) todayList.stream().filter(ConsultationAppointmentDO::getOverdue).count());
-        
-        // 转换列表
-        result.setAppointments(convertToRespVOList(todayList));
-        
+    public ConsultationStatisticsRespVO getStatistics() {
+        LocalDateTime now = LocalDateTime.now();
+
+        ConsultationStatisticsRespVO result = new ConsultationStatisticsRespVO();
+
+        // 统计今天的咨询数(基于开始时间)
+        result.setTodayCount((int) appointmentMapper.countTodayConsultations());
+
+        // 统计已完成数(状态为3-已闭环)
+        result.setCompletedCount((int) appointmentMapper.countCompletedConsultations());
+
+        // 统计待完成数(状态为1或2且未逾期)
+        result.setPendingCount((int) appointmentMapper.countPendingConsultations(now));
+
+        // 统计逾期数(结束时间小于当前时间且未完成)
+        result.setOverdueCount((int) appointmentMapper.countOverdueConsultations(now));
+
         return result;
     }
 
@@ -208,6 +212,7 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         
         // 更新状态为已完成
         appointment.setStatus(2);
+        appointment.setCurrentStep(2);
         appointment.setActualTime(LocalDateTime.now());
         appointmentMapper.updateById(appointment);
         
@@ -297,8 +302,9 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         
         // 更新为已完成并记录实际时间
         appointment.setStatus(2);
+        appointment.setCurrentStep(2);
         appointment.setActualTime(supplementReqVO.getActualTime());
-        if (supplementReqVO.getNotes() != null) {
+        if (supplementReqVO.getNotes() != null && !supplementReqVO.getNotes().trim().isEmpty()) {
             String notes = appointment.getNotes() != null ? appointment.getNotes() + "\n" : "";
             appointment.setNotes(notes + "补录说明：" + supplementReqVO.getNotes());
         }
@@ -309,9 +315,39 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
     public void sendReminder(Long id) {
         // 校验存在
         ConsultationAppointmentDO appointment = validateAppointmentExists(id);
-        
+
         // TODO: 发送催办提醒
         log.info("发送催办提醒，预约ID：{}", id);
+    }
+
+    @Override
+    public ConsultationAppointmentCheckTimeConflictRespVO checkTimeConflict(ConsultationAppointmentCheckTimeConflictReqVO reqVO) {
+        // 验证时间逻辑：结束时间必须晚于开始时间
+        if (reqVO.getAppointmentEndTime() <= reqVO.getAppointmentStartTime()) {
+            return new ConsultationAppointmentCheckTimeConflictRespVO(true, "预约结束时间必须晚于开始时间");
+        }
+
+        // 将时间戳转换为LocalDateTime
+        LocalDateTime startTime = Instant.ofEpochMilli(reqVO.getAppointmentStartTime())
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        LocalDateTime endTime = Instant.ofEpochMilli(reqVO.getAppointmentEndTime())
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+
+        // 检查时间冲突
+        boolean hasConflict = appointmentMapper.hasTimeConflict(
+                reqVO.getCounselorUserId(),
+                startTime,
+                endTime,
+                reqVO.getExcludeId()
+        );
+
+        if (hasConflict) {
+            return new ConsultationAppointmentCheckTimeConflictRespVO(true, "该时间段与已有预约冲突");
+        } else {
+            return new ConsultationAppointmentCheckTimeConflictRespVO(false, "该时间段可以预约");
+        }
     }
 
     private ConsultationAppointmentDO validateAppointmentExists(Long id) {
