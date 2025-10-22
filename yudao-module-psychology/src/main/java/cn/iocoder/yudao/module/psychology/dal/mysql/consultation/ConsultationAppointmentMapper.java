@@ -96,7 +96,7 @@ public interface ConsultationAppointmentMapper extends BaseMapperX<ConsultationA
      */
     default long countOverdueConsultations(LocalDateTime now) {
         return selectCount(new LambdaQueryWrapperX<ConsultationAppointmentDO>()
-                .notIn(ConsultationAppointmentDO::getStatus, 3, 4)
+                .eq(ConsultationAppointmentDO::getStatus, 1)
                 .lt(ConsultationAppointmentDO::getAppointmentEndTime, now.minusMinutes(30)));
     }
 }
