@@ -177,6 +177,14 @@ public class UserController {
         return success(UserConvert.INSTANCE.convertSimpleList(users, deptMap));
     }
 
+    @GetMapping("/list-user-role")
+    @Operation(summary = "获取非学生角色的用户及其角色信息")
+    @PreAuthorize("@ss.hasPermission('system:user:query')")
+    public CommonResult<List<UserWithRoleInfoRespVO>> getNonStudentUsersWithRoles() {
+        List<UserWithRoleInfoRespVO> list = userService.getNonStudentUsersWithRoles();
+        return success(list);
+    }
+
     @GetMapping("/export-excel")
     @Operation(summary = "导出用户")
     @PreAuthorize("@ss.hasPermission('system:user:export')")

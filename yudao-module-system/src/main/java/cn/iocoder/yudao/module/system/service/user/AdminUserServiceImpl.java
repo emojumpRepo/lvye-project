@@ -86,6 +86,9 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Resource
     private RoleMapper roleMapper;
 
+    @Resource
+    private cn.iocoder.yudao.module.system.dal.mysql.permission.UserRoleMapper userRoleMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     @LogRecord(type = SYSTEM_USER_TYPE, subType = SYSTEM_USER_CREATE_SUB_TYPE, bizNo = "{{#user.id}}",
@@ -546,6 +549,11 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
         // AdminUserMapper 的 selectByIds 默认已过滤逻辑删除
         return userMapper.selectByIds(userIds);
+    }
+
+    @Override
+    public List<cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserWithRoleInfoRespVO> getNonStudentUsersWithRoles() {
+        return userRoleMapper.selectNonStudentUsersWithRoles();
     }
 
     /**

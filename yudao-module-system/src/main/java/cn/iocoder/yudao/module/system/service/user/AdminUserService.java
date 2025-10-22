@@ -230,4 +230,11 @@ public interface AdminUserService {
      */
     List<AdminUserDO> getUserListByRoleCode(String roleCode);
 
+    /**
+     * 获取非学生角色的用户及其角色信息
+     *
+     * @return 用户及角色信息列表
+     */
+    List<cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserWithRoleInfoRespVO> getNonStudentUsersWithRoles();
+
 }
