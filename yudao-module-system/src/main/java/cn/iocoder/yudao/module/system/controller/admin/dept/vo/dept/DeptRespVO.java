@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Schema(description = "管理后台 - 部门信息 Response VO")
 @Data
@@ -23,6 +24,9 @@ public class DeptRespVO {
 
     @Schema(description = "负责人的用户编号", example = "2048")
     private Long leaderUserId;
+
+    @Schema(description = "负责人用户编号列表", example = "[1,2,3]")
+    private List<Long> leaderUserIds;
 
     @Schema(description = "联系电话", example = "15601691000")
     private String phone;

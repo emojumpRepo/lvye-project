@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 @Schema(description = "管理后台 - 部门创建/修改 Request VO")
 @Data
@@ -31,6 +32,9 @@ public class DeptSaveReqVO {
 
     @Schema(description = "负责人的用户编号", example = "2048")
     private Long leaderUserId;
+
+    @Schema(description = "负责人用户编号列表", example = "[1,2,3]")
+    private List<Long> leaderUserIds;
 
     @Schema(description = "联系电话", example = "15601691000")
     @Size(max = 11, message = "联系电话长度不能超过11个字符")

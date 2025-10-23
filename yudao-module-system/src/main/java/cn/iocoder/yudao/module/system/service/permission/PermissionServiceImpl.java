@@ -9,11 +9,14 @@ import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.framework.common.biz.system.permission.dto.DeptDataPermissionRespDTO;
 import cn.iocoder.yudao.module.system.dal.dataobject.permission.*;
+import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMenuMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.UserDeptMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.UserRoleMapper;
 import cn.iocoder.yudao.module.system.dal.redis.RedisKeyConstants;
 import cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum;
+import cn.iocoder.yudao.module.system.enums.permission.RoleCodeEnum;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import com.baomidou.dynamic.datasource.annotation.DSTransactional;
@@ -47,6 +50,8 @@ public class PermissionServiceImpl implements PermissionService {
     private RoleMenuMapper roleMenuMapper;
     @Resource
     private UserRoleMapper userRoleMapper;
+    @Resource
+    private RoleMapper roleMapper;
 
     @Resource
     private RoleService roleService;
@@ -214,6 +219,10 @@ public class PermissionServiceImpl implements PermissionService {
         Set<Long> roleIdList = CollUtil.emptyIfNull(roleIds);
         Collection<Long> createRoleIds = CollUtil.subtract(roleIdList, dbRoleIds);
         Collection<Long> deleteMenuIds = CollUtil.subtract(dbRoleIds, roleIdList);
+        
+        // 特殊处理：处理默认心理咨询师和心理老师角色
+        createRoleIds = handleSpecialRoles(userId, createRoleIds);
+        
         // 执行新增和删除。对于已经授权的角色，不用做任何处理
         if (!CollectionUtil.isEmpty(createRoleIds)) {
             userRoleMapper.insertBatch(CollectionUtils.convertList(createRoleIds, roleId -> {
@@ -225,6 +234,92 @@ public class PermissionServiceImpl implements PermissionService {
         }
         if (!CollectionUtil.isEmpty(deleteMenuIds)) {
             userRoleMapper.deleteListByUserIdAndRoleIdIds(userId, deleteMenuIds);
+        }
+    }
+
+    /**
+     * 处理特殊角色分配逻辑
+     * 1. 默认心理老师角色：互斥，只能有一个用户拥有
+     * 2. 心理老师角色：第一个添加该角色的用户自动获得默认心理老师角色
+     * 3. 年级管理员角色：如果没有心理老师角色的用户，则自动获得默认心理老师角色
+     * 4. 系统管理员角色：如果没有用户拥有默认心理老师角色，则自动获得默认心理老师角色
+     *
+     * @param userId 用户ID
+     * @param createRoleIds 待添加的角色ID集合
+     * @return 处理后的角色ID集合
+     */
+    private Collection<Long> handleSpecialRoles(Long userId, Collection<Long> createRoleIds) {
+        if (CollectionUtil.isEmpty(createRoleIds)) {
+            return createRoleIds;
+        }
+        
+        // 转换为可变集合
+        Set<Long> roleIdSet = new HashSet<>(createRoleIds);
+        
+        // 获取相关角色对象
+        RoleDO defaultPsychologyTeacherRole = roleMapper.selectByCode(RoleCodeEnum.DEFAULT_PSYCHOLOGY_TEACHER.getCode());
+        RoleDO psychologyTeacherRole = roleMapper.selectByCode(RoleCodeEnum.PSYCHOLOGY_TEACHER.getCode());
+        RoleDO gradeTeacherRole = roleMapper.selectByCode(RoleCodeEnum.GRADE_TEACHER.getCode());
+        RoleDO sysAdminRole = roleMapper.selectByCode(RoleCodeEnum.SYS_ADMIN.getCode());
+        
+        // 1. 处理默认心理老师角色：移除其他用户的该角色（互斥逻辑）
+        if (defaultPsychologyTeacherRole != null && roleIdSet.contains(defaultPsychologyTeacherRole.getId())) {
+            removeRoleFromOtherUsers(userId, defaultPsychologyTeacherRole.getId(), "直接分配");
+        }
+        
+        // 2. 处理心理老师角色：第一个添加的用户同时获得默认心理老师角色
+        if (psychologyTeacherRole != null && roleIdSet.contains(psychologyTeacherRole.getId())) {
+            List<UserRoleDO> existingPsychologyTeachers = userRoleMapper.selectListByRoleId(psychologyTeacherRole.getId());
+            if (CollectionUtil.isEmpty(existingPsychologyTeachers) && defaultPsychologyTeacherRole != null) {
+                roleIdSet.add(defaultPsychologyTeacherRole.getId());
+                log.info("[handleSpecialRoles][用户({})是第一个心理老师，自动添加默认心理老师角色]", userId);
+                removeRoleFromOtherUsers(userId, defaultPsychologyTeacherRole.getId(), "心理老师自动获得");
+            }
+        }
+        
+        // 3. 处理年级管理员角色：如果没有心理老师用户，则自动获得默认心理老师角色
+        if (gradeTeacherRole != null && roleIdSet.contains(gradeTeacherRole.getId())) {
+            List<UserRoleDO> existingPsychologyTeachers = psychologyTeacherRole != null 
+                    ? userRoleMapper.selectListByRoleId(psychologyTeacherRole.getId()) 
+                    : Collections.emptyList();
+            if (CollectionUtil.isEmpty(existingPsychologyTeachers) && defaultPsychologyTeacherRole != null) {
+                roleIdSet.add(defaultPsychologyTeacherRole.getId());
+                log.info("[handleSpecialRoles][用户({})是年级管理员且没有心理老师用户，自动添加默认心理老师角色]", userId);
+                removeRoleFromOtherUsers(userId, defaultPsychologyTeacherRole.getId(), "年级管理员自动获得");
+            }
+        }
+        
+        // 4. 处理系统管理员角色：如果没有用户拥有默认心理老师角色，则自动获得默认心理老师角色
+        if (sysAdminRole != null && roleIdSet.contains(sysAdminRole.getId())) {
+            List<UserRoleDO> existingDefaultPsychologyTeachers = defaultPsychologyTeacherRole != null 
+                    ? userRoleMapper.selectListByRoleId(defaultPsychologyTeacherRole.getId()) 
+                    : Collections.emptyList();
+            if (CollectionUtil.isEmpty(existingDefaultPsychologyTeachers) && defaultPsychologyTeacherRole != null) {
+                roleIdSet.add(defaultPsychologyTeacherRole.getId());
+                log.info("[handleSpecialRoles][用户({})是系统管理员且没有用户拥有默认心理老师角色，自动添加默认心理老师角色]", userId);
+                removeRoleFromOtherUsers(userId, defaultPsychologyTeacherRole.getId(), "系统管理员自动获得");
+            }
+        }
+        
+        return roleIdSet;
+    }
+
+    /**
+     * 移除其他用户的指定角色（确保角色互斥）
+     *
+     * @param currentUserId 当前用户ID（排除该用户）
+     * @param roleId 要移除的角色ID
+     * @param reason 移除原因（用于日志）
+     */
+    private void removeRoleFromOtherUsers(Long currentUserId, Long roleId, String reason) {
+        List<UserRoleDO> existingUserRoles = userRoleMapper.selectListByRoleId(roleId);
+        for (UserRoleDO userRole : existingUserRoles) {
+            if (!userRole.getUserId().equals(currentUserId)) {
+                userRoleMapper.deleteListByUserIdAndRoleIdIds(userRole.getUserId(), 
+                        Collections.singleton(roleId));
+                log.info("[handleSpecialRoles][移除用户({})的默认心理老师角色（原因：{}）]", 
+                        userRole.getUserId(), reason);
+            }
         }
     }
 
@@ -286,8 +381,22 @@ public class PermissionServiceImpl implements PermissionService {
             return result;
         }
 
-        // 获得用户的部门编号的缓存，通过 Guava 的 Suppliers 惰性求值，即有且仅有第一次发起 DB 的查询
-        Supplier<Long> userDeptId = Suppliers.memoize(() -> userService.getUser(userId).getDeptId());
+        // 【改进】获得用户的所有部门编号（主部门 + 多部门），通过 Guava 的 Suppliers 惰性求值
+        Supplier<Set<Long>> userDeptIds = Suppliers.memoize(() -> {
+            Set<Long> deptIds = new HashSet<>();
+            // 1. 添加主部门（需要防止用户不存在的情况）
+            AdminUserDO user = userService.getUser(userId);
+            if (user != null) {
+                CollectionUtils.addIfNotNull(deptIds, user.getDeptId());
+            }
+            // 2. 添加用户关联的多部门（来自 system_user_dept 表）
+            Set<Long> userMultiDeptIds = getUserDeptIdListByUserId(userId);
+            if (CollUtil.isNotEmpty(userMultiDeptIds)) {
+                deptIds.addAll(userMultiDeptIds);
+            }
+            return deptIds;
+        });
+        
         // 遍历每个角色，计算
         for (RoleDO role : roles) {
             // 为空时，跳过
@@ -302,22 +411,27 @@ public class PermissionServiceImpl implements PermissionService {
             // 情况二，DEPT_CUSTOM
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_CUSTOM.getScope())) {
                 CollUtil.addAll(result.getDeptIds(), role.getDataScopeDeptIds());
-                // 自定义可见部门时，保证可以看到自己所在的部门。否则，一些场景下可能会有问题。
+                // 【改进】自定义可见部门时，保证可以看到自己所在的所有部门（主部门+多部门）
                 // 例如说，登录时，基于 t_user 的 username 查询会可能被 dept_id 过滤掉
-                CollUtil.addAll(result.getDeptIds(), userDeptId.get());
+                CollUtil.addAll(result.getDeptIds(), userDeptIds.get());
                 continue;
             }
             // 情况三，DEPT_ONLY
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_ONLY.getScope())) {
-                CollectionUtils.addIfNotNull(result.getDeptIds(), userDeptId.get());
+                // 【改进】添加用户的所有部门（主部门+多部门）
+                CollUtil.addAll(result.getDeptIds(), userDeptIds.get());
                 continue;
             }
             // 情况四，DEPT_DEPT_AND_CHILD
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_AND_CHILD.getScope())) {
-                // 添加本部门的所有子部门
-                CollUtil.addAll(result.getDeptIds(), deptService.getChildDeptIdListFromCache(userDeptId.get()));
-                // 添加本身部门编号
-                CollectionUtils.addIfNotNull(result.getDeptIds(), userDeptId.get());
+                // 【改进】遍历用户的所有部门，添加每个部门及其子部门
+                Set<Long> allUserDeptIds = userDeptIds.get();
+                for (Long deptId : allUserDeptIds) {
+                    // 添加该部门的所有子部门
+                    CollUtil.addAll(result.getDeptIds(), deptService.getChildDeptIdListFromCache(deptId));
+                    // 添加该部门本身
+                    CollectionUtils.addIfNotNull(result.getDeptIds(), deptId);
+                }
                 continue;
             }
             // 情况五，SELF
@@ -344,6 +458,13 @@ public class PermissionServiceImpl implements PermissionService {
     @DSTransactional // 多数据源，使用 @DSTransactional 保证本地事务，以及数据源的切换
     @CacheEvict(value = RedisKeyConstants.USER_ROLE_DEPT_ID_LIST, key = "#userId")
     public void assignUserRoleAndDept(Long userId, Set<Long> deptIds, Set<Long> roleIds) {
+        // 校验用户是否存在
+        userService.validateUserList(Collections.singleton(userId));
+        // 校验部门的有效性
+        deptService.validateDeptList(deptIds);
+        // 校验角色的有效性
+        roleService.validateRoleList(roleIds);
+
         // 获得角色拥有部门编号
         Set<Long> dbDeptIds = convertSet(userDeptMapper.selectListByUserId(userId),
                 UserDeptDO::getDeptId);
