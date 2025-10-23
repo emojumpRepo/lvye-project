@@ -112,6 +112,8 @@ public class TenantServiceImpl implements TenantService {
         TenantUtils.execute(tenant.getId(), () -> {
             // 创建角色
             Long roleId = createRole(tenantPackage);
+            // 创建业务角色
+            createBusinessRoles();
             // 创建用户，并分配角色
             Long userId = createUser(roleId, createReqVO);
             // 修改租户的管理员
@@ -137,6 +139,28 @@ public class TenantServiceImpl implements TenantService {
         // 分配权限
         permissionService.assignRoleMenu(roleId, tenantPackage.getMenuIds());
         return roleId;
+    }
+
+    private void createBusinessRoles() {
+        // 创建年级管理员角色
+        createBusinessRole(RoleCodeEnum.GRADE_TEACHER, 1, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.DEPT_AND_CHILD.getScope());
+        // 创建心理老师角色
+        createBusinessRole(RoleCodeEnum.PSYCHOLOGY_TEACHER, 2, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.SELF.getScope());
+        // 创建普通老师角色
+        createBusinessRole(RoleCodeEnum.TEACHER, 3, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.SELF.getScope());
+        // 创建学生角色
+        createBusinessRole(RoleCodeEnum.STUDENT, 4, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.SELF.getScope());
+    }
+
+    private void createBusinessRole(RoleCodeEnum roleCodeEnum, Integer sort, Integer dataScope) {
+        // 创建角色
+        RoleSaveReqVO reqVO = new RoleSaveReqVO();
+        reqVO.setName(roleCodeEnum.getName()).setCode(roleCodeEnum.getCode())
+                .setSort(sort).setRemark("系统自动生成");
+        Long roleId = roleService.createRole(reqVO, RoleTypeEnum.SYSTEM.getType());
+        
+        // 更新数据权限
+        roleService.updateRoleDataScope(roleId, dataScope, null);
     }
 
     @Override
