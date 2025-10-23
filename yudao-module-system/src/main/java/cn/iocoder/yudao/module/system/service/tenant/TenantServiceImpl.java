@@ -146,10 +146,11 @@ public class TenantServiceImpl implements TenantService {
         createBusinessRole(RoleCodeEnum.GRADE_TEACHER, 1, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.DEPT_AND_CHILD.getScope());
         // 创建心理老师角色
         createBusinessRole(RoleCodeEnum.PSYCHOLOGY_TEACHER, 2, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.SELF.getScope());
-        // 创建普通老师角色
-        createBusinessRole(RoleCodeEnum.TEACHER, 3, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.SELF.getScope());
+        // 创建班主任角色
+        createBusinessRole(RoleCodeEnum.HEAD_TEACHER, 3, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.SELF.getScope());
         // 创建学生角色
         createBusinessRole(RoleCodeEnum.STUDENT, 4, cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum.SELF.getScope());
+        // TODO 分配菜单权限
     }
 
     private void createBusinessRole(RoleCodeEnum roleCodeEnum, Integer sort, Integer dataScope) {

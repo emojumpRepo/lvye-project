@@ -16,7 +16,7 @@ public enum RoleCodeEnum {
     CRM_ADMIN("crm_admin", "CRM 管理员"), // CRM 系统专用
     GRADE_TEACHER("grade_teacher", "年级管理员"),
     PSYCHOLOGY_TEACHER("psychology_teacher", "心理老师"),
-    TEACHER("teacher", "普通老师"),
+    HEAD_TEACHER("head_teacher", "班主任"),
     STUDENT("student", "学生");
     ;
 
