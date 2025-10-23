@@ -104,4 +104,28 @@ public interface ConsultationAppointmentService {
      * @return 冲突校验结果
      */
     ConsultationAppointmentCheckTimeConflictRespVO checkTimeConflict(ConsultationAppointmentCheckTimeConflictReqVO reqVO);
+
+    /**
+     * 获取周预约数据
+     *
+     * @param reqVO 周查询请求
+     * @return 周预约数据
+     */
+    ConsultationAppointmentWeeklyRespVO getWeeklyAppointments(ConsultationAppointmentWeeklyReqVO reqVO);
+
+    /**
+     * 获取时间范围内的咨询数据
+     *
+     * @param reqVO 时间范围查询请求
+     * @return 时间范围内的咨询数据
+     */
+    ConsultationAppointmentTimeRangeRespVO getTimeRangeData(ConsultationAppointmentTimeRangeReqVO reqVO);
+
+    /**
+     * 根据日期查询咨询预约数据
+     *
+     * @param reqVO 日期查询请求
+     * @return 咨询预约数据
+     */
+    ConsultationAppointmentDateQueryRespVO getAppointmentsByDate(ConsultationAppointmentDateQueryReqVO reqVO);
 }

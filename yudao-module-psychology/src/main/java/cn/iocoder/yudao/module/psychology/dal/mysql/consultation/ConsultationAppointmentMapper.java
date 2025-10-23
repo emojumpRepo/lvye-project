@@ -99,4 +99,42 @@ public interface ConsultationAppointmentMapper extends BaseMapperX<ConsultationA
                 .eq(ConsultationAppointmentDO::getStatus, 1)
                 .lt(ConsultationAppointmentDO::getAppointmentEndTime, now.minusMinutes(30)));
     }
+
+    /**
+     * 根据日期范围查询预约数据（排除已取消的）
+     *
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 预约列表
+     */
+    default List<ConsultationAppointmentDO> selectByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return selectList(new LambdaQueryWrapperX<ConsultationAppointmentDO>()
+                .between(ConsultationAppointmentDO::getAppointmentStartTime, startDate, endDate)
+                .ne(ConsultationAppointmentDO::getStatus, 4) // 排除已取消的
+                .orderByAsc(ConsultationAppointmentDO::getAppointmentStartTime));
+    }
+
+    /**
+     * 根据日期和咨询师查询预约数据（排除已取消的）
+     *
+     * @param date 查询日期
+     * @param counselorUserId 咨询师用户ID（可为null，表示查询所有咨询师）
+     * @return 预约列表
+     */
+    default List<ConsultationAppointmentDO> selectByDateAndCounselor(LocalDate date, Long counselorUserId) {
+        LocalDateTime startDateTime = date.atStartOfDay();
+        LocalDateTime endDateTime = date.atTime(23, 59, 59);
+
+        LambdaQueryWrapperX<ConsultationAppointmentDO> wrapper = new LambdaQueryWrapperX<>();
+        wrapper.between(ConsultationAppointmentDO::getAppointmentStartTime, startDateTime, endDateTime);
+        wrapper.ne(ConsultationAppointmentDO::getStatus, 4); // 排除已取消的
+
+        if (counselorUserId != null) {
+            wrapper.eq(ConsultationAppointmentDO::getCounselorUserId, counselorUserId);
+        }
+
+        wrapper.orderByAsc(ConsultationAppointmentDO::getAppointmentStartTime);
+
+        return selectList(wrapper);
+    }
 }
