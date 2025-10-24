@@ -53,13 +53,6 @@ public class DeptDO extends TenantBaseDO {
      */
     private Long leaderUserId;
     /**
-     * 负责人用户编号列表
-     *
-     * 关联 {@link AdminUserDO#getId()}
-     */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<Long> leaderUserIds;
-    /**
      * 联系电话
      */
     private String phone;
@@ -76,5 +69,13 @@ public class DeptDO extends TenantBaseDO {
 
     @TableField(exist = false)
     private Long count;
+
+    /**
+     * 负责人用户编号列表（从 system_user_dept 表查询填充）
+     *
+     * 关联 {@link AdminUserDO#getId()}
+     */
+    @TableField(exist = false)
+    private List<Long> leaderUserIds;
 
 }

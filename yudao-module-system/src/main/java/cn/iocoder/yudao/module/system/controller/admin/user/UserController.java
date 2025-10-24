@@ -11,8 +11,11 @@ import cn.iocoder.yudao.module.system.controller.admin.user.vo.user.*;
 import cn.iocoder.yudao.module.system.convert.user.UserConvert;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
 import cn.iocoder.yudao.module.system.enums.common.SexEnum;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
+import cn.iocoder.yudao.module.system.service.permission.PermissionService;
+import cn.iocoder.yudao.module.system.service.permission.RoleService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,9 +30,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -45,6 +47,10 @@ public class UserController {
     private AdminUserService userService;
     @Resource
     private DeptService deptService;
+    @Resource
+    private PermissionService permissionService;
+    @Resource
+    private RoleService roleService;
 
     @PostMapping("/create")
     @Operation(summary = "新增用户")
@@ -100,15 +106,29 @@ public class UserController {
     @Operation(summary = "获得用户分页列表")
     @PreAuthorize("@ss.hasPermission('system:user:query')")
     public CommonResult<PageResult<UserRespVO>> getUserPage(@Valid UserPageReqVO pageReqVO) {
-        // 获得用户分页列表
+        // 获得用户分页列表（已在 Service 层排除学生角色用户）
         PageResult<AdminUserDO> pageResult = userService.getUserPage(pageReqVO);
         if (CollUtil.isEmpty(pageResult.getList())) {
             return success(new PageResult<>(pageResult.getTotal()));
         }
-        // 拼接数据
+        
+        // 拼接部门数据
         Map<Long, DeptDO> deptMap = deptService.getDeptMap(
                 convertList(pageResult.getList(), AdminUserDO::getDeptId));
-        return success(new PageResult<>(UserConvert.INSTANCE.convertList(pageResult.getList(), deptMap),
+        
+        // 获取用户的角色信息
+        Map<Long, List<RoleDO>> userRolesMap = new HashMap<>();
+        for (AdminUserDO user : pageResult.getList()) {
+            // 获取用户的角色ID列表
+            Set<Long> roleIds = permissionService.getUserRoleIdListByUserId(user.getId());
+            if (CollUtil.isNotEmpty(roleIds)) {
+                // 获取角色详细信息
+                List<RoleDO> roles = roleService.getRoleList(roleIds);
+                userRolesMap.put(user.getId(), roles);
+            }
+        }
+        
+        return success(new PageResult<>(UserConvert.INSTANCE.convertList(pageResult.getList(), deptMap, userRolesMap),
                 pageResult.getTotal()));
     }
 
@@ -156,8 +176,14 @@ public class UserController {
         List<AdminUserDO> users;
 
         if ("psychology_teacher".equals(role)) {
-            // 仅查询心理健康老师
-            users = userService.getUserListByRoleCode("psychology_teacher");
+            // 查询心理健康老师（包括 psychology_teacher 和 default_psychology_teacher）
+            List<AdminUserDO> list1 = userService.getUserListByRoleCode("psychology_teacher");
+            List<AdminUserDO> list2 = userService.getUserListByRoleCode("default_psychology_teacher");
+            // 使用用户ID去重
+            Map<Long, AdminUserDO> userMap = new java.util.LinkedHashMap<>();
+            list1.forEach(u -> userMap.put(u.getId(), u));
+            list2.forEach(u -> userMap.put(u.getId(), u));
+            users = new java.util.ArrayList<>(userMap.values());
         } else if ("teacher".equals(role)) {
             // 仅查询普通老师
             users = userService.getUserListByRoleCode("teacher");

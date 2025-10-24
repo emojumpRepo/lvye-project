@@ -33,9 +33,20 @@ import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import cn.iocoder.yudao.module.psychology.service.counselor.StudentCounselorAssignmentService;
 import cn.iocoder.yudao.module.infra.service.config.ConfigService;
+import cn.iocoder.yudao.module.infra.dal.dataobject.config.ConfigDO;
 import cn.iocoder.yudao.module.psychology.enums.InterventionAssignmentModeEnum;
 import cn.iocoder.yudao.module.psychology.enums.DictTypeConstants;
 import cn.iocoder.yudao.framework.dict.core.DictFrameworkUtils;
+import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
+import cn.iocoder.yudao.module.system.dal.mysql.dept.DeptMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.UserRoleMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.UserDeptMapper;
+import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.UserRoleDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.UserDeptDO;
+import cn.iocoder.yudao.module.system.enums.permission.RoleCodeEnum;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -97,9 +108,20 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     @Resource
     private AssessmentResultMapper assessmentResultMapper;
 
+    @Resource
+    private RoleMapper roleMapper;
+
+    @Resource
+    private UserRoleMapper userRoleMapper;
+
+    @Resource
+    private DeptMapper deptMapper;
+
+    @Resource
+    private UserDeptMapper userDeptMapper;
+
     // 配置键常量
     private static final String CONFIG_KEY_ASSIGNMENT_MODE = "intervention.assignment.mode";
-    private static final String CONFIG_KEY_DEFAULT_PSYCHOLOGY = "intervention.assignment.defaultPsychology";
 
     @Override
     public InterventionDashboardSummaryVO getDashboardSummaryWithPage(InterventionDashboardReqVO reqVO) {
@@ -553,9 +575,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         );
 
         // 自动分配处理人（如果是自动模式）
-        // if ("auto".equals(assignmentMode)) {
-        //     autoAssignHandler(event);
-        // }
+        autoAssignHandler(event, student.getClassDeptId());
 
         // 返回创建结果
         return CrisisEventCreateRespVO.builder()
@@ -1048,28 +1068,34 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Override
     public InterventionAssignmentSettingVO getAssignmentSettings() {
-        // 确保配置已初始化
-        initializeConfigs();
-
         InterventionAssignmentSettingVO settingVO = new InterventionAssignmentSettingVO();
 
-        // 从数据库配置中读取分配模式
+        // 从数据库配置中读取分配模式，如果不存在则初始化
         var modeConfig = configService.getConfigByKey(CONFIG_KEY_ASSIGNMENT_MODE);
-        String mode = modeConfig != null ? modeConfig.getValue() : InterventionAssignmentModeEnum.MANUAL.getMode();
-        settingVO.setMode(mode);
+        if (modeConfig == null) {
+            // 配置不存在，初始化配置，默认值为 auto-psychology
+            var createModeReqVO = new cn.iocoder.yudao.module.infra.controller.admin.config.vo.ConfigSaveReqVO();
+            createModeReqVO.setCategory("intervention");
+            createModeReqVO.setName("干预系统分配模式");
+            createModeReqVO.setKey(CONFIG_KEY_ASSIGNMENT_MODE);
+            createModeReqVO.setValue(InterventionAssignmentModeEnum.AUTO_PSYCHOLOGY.getMode());
+            createModeReqVO.setVisible(true);
+            createModeReqVO.setRemark("危机事件分配模式：manual-手动分配, auto-psychology-自动分配给心理老师, auto-head-teacher-自动分配给班主任");
+            configService.createConfig(createModeReqVO);
+            settingVO.setMode(InterventionAssignmentModeEnum.AUTO_PSYCHOLOGY.getMode());
+            log.info("初始化配置: key={}, value={}", CONFIG_KEY_ASSIGNMENT_MODE, InterventionAssignmentModeEnum.AUTO_PSYCHOLOGY.getMode());
+        } else {
+            settingVO.setMode(modeConfig.getValue());
+        }
 
-        // 从数据库配置中读取默认心理老师ID
+        // 从角色中获取默认心理老师ID
         Long defaultPsychologyId = null;
-        var psychologyConfig = configService.getConfigByKey(CONFIG_KEY_DEFAULT_PSYCHOLOGY);
-        if (psychologyConfig != null && StrUtil.isNotBlank(psychologyConfig.getValue())) {
-            try {
-                Long configValue = Long.parseLong(psychologyConfig.getValue());
-                // 0表示未设置，不使用默认值
-                if (configValue > 0) {
-                    defaultPsychologyId = configValue;
-                }
-            } catch (NumberFormatException e) {
-                log.error("默认心理老师ID配置值无效: {}", psychologyConfig.getValue());
+        RoleDO role = roleMapper.selectByCode(RoleCodeEnum.DEFAULT_PSYCHOLOGY_TEACHER.getCode());
+        if (role != null) {
+            List<UserRoleDO> userRoles = userRoleMapper.selectListByRoleId(role.getId());
+            if (CollUtil.isNotEmpty(userRoles)) {
+                // 理论上只有一个用户拥有该角色，取第一个
+                defaultPsychologyId = userRoles.get(0).getUserId();
             }
         }
         settingVO.setDefaultPsychologyId(defaultPsychologyId);
@@ -1085,15 +1111,11 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             throw ServiceExceptionUtil.exception(CRISIS_EVENT_INVALID_ASSIGNMENT_MODE);
         }
 
-        // 确保配置已初始化
-        initializeConfigs();
-
-        // 更新配置值
-        // 更新分配模式
+        // 更新分配模式配置
         var modeConfig = configService.getConfigByKey(CONFIG_KEY_ASSIGNMENT_MODE);
         if (modeConfig != null) {
             var updateModeReqVO = new cn.iocoder.yudao.module.infra.controller.admin.config.vo.ConfigSaveReqVO();
-            updateModeReqVO.setId(modeConfig.getId()); // 设置ID用于更新
+            updateModeReqVO.setId(modeConfig.getId());
             updateModeReqVO.setCategory(modeConfig.getCategory());
             updateModeReqVO.setName(modeConfig.getName());
             updateModeReqVO.setKey(modeConfig.getConfigKey());
@@ -1103,57 +1125,35 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             configService.updateConfig(updateModeReqVO);
         }
 
-        // 更新默认心理老师ID
-        var psychologyConfig = configService.getConfigByKey(CONFIG_KEY_DEFAULT_PSYCHOLOGY);
-        if (psychologyConfig != null) {
-            var updatePsychologyReqVO = new cn.iocoder.yudao.module.infra.controller.admin.config.vo.ConfigSaveReqVO();
-            updatePsychologyReqVO.setId(psychologyConfig.getId()); // 设置ID用于更新
-            updatePsychologyReqVO.setCategory(psychologyConfig.getCategory());
-            updatePsychologyReqVO.setName(psychologyConfig.getName());
-            updatePsychologyReqVO.setKey(psychologyConfig.getConfigKey());
-            // 如果defaultPsychologyId为null或0，存储为"0"
-            String valueToStore = (settingVO.getDefaultPsychologyId() == null || settingVO.getDefaultPsychologyId() == 0) ?
-                                  "0" : settingVO.getDefaultPsychologyId().toString();
-            updatePsychologyReqVO.setValue(valueToStore);
-            updatePsychologyReqVO.setVisible(psychologyConfig.getVisible());
-            updatePsychologyReqVO.setRemark(psychologyConfig.getRemark());
-            configService.updateConfig(updatePsychologyReqVO);
+        // 处理默认心理老师角色
+        if (settingVO.getDefaultPsychologyId() != null && settingVO.getDefaultPsychologyId() > 0) {
+            RoleDO role = roleMapper.selectByCode(RoleCodeEnum.DEFAULT_PSYCHOLOGY_TEACHER.getCode());
+            if (role != null) {
+                // 检查传入的用户是否已经拥有默认心理老师角色
+                UserRoleDO existingUserRole = userRoleMapper.selectByUserIdAndRoleId(
+                    settingVO.getDefaultPsychologyId(), role.getId());
+                
+                // 如果传入的用户已经拥有该角色，则不处理
+                if (existingUserRole != null) {
+                    log.info("默认心理老师角色已经分配给用户：{}，无需重复设置", settingVO.getDefaultPsychologyId());
+                } else {
+                    // 1. 删除所有用户的默认心理老师角色记录
+                    userRoleMapper.deleteListByRoleId(role.getId());
+                    
+                    // 2. 为新用户添加默认心理老师角色记录
+                    UserRoleDO userRole = new UserRoleDO();
+                    userRole.setUserId(settingVO.getDefaultPsychologyId());
+                    userRole.setRoleId(role.getId());
+                    userRoleMapper.insert(userRole);
+                    
+                    log.info("默认心理老师角色已设置给用户：{}", settingVO.getDefaultPsychologyId());
+                }
+            } else {
+                log.warn("未找到默认心理老师角色，角色代码：{}", RoleCodeEnum.DEFAULT_PSYCHOLOGY_TEACHER.getCode());
+            }
         }
 
-        System.out.println("危机事件分配模式已设置为：{}，默认心理老师ID：{}"+settingVO.getMode()+", "+settingVO.getDefaultPsychologyId());
-    }
-
-    /**
-     * 初始化干预系统模式配置（如果不存在）
-     */
-    private void initializeConfigs() {
-        // 检查并初始化分配模式配置
-        var modeConfig = configService.getConfigByKey(CONFIG_KEY_ASSIGNMENT_MODE);
-        if (modeConfig == null) {
-            var createModeReqVO = new cn.iocoder.yudao.module.infra.controller.admin.config.vo.ConfigSaveReqVO();
-            createModeReqVO.setCategory("intervention");
-            createModeReqVO.setName("干预系统分配模式");
-            createModeReqVO.setKey(CONFIG_KEY_ASSIGNMENT_MODE);
-            createModeReqVO.setValue(InterventionAssignmentModeEnum.MANUAL.getMode());
-            createModeReqVO.setVisible(true);
-            createModeReqVO.setRemark("危机事件分配模式：manual-手动分配, auto-psychology-自动分配给心理老师, auto-head-teacher-自动分配给班主任");
-            configService.createConfig(createModeReqVO);
-            log.info("初始化配置: key={}, name={}, defaultValue={}", CONFIG_KEY_ASSIGNMENT_MODE, "干预系统模式", InterventionAssignmentModeEnum.MANUAL.getMode());
-        }
-
-        // 检查并初始化默认心理老师配置
-        var psychologyConfig = configService.getConfigByKey(CONFIG_KEY_DEFAULT_PSYCHOLOGY);
-        if (psychologyConfig == null) {
-            var createPsychologyReqVO = new cn.iocoder.yudao.module.infra.controller.admin.config.vo.ConfigSaveReqVO();
-            createPsychologyReqVO.setCategory("intervention");
-            createPsychologyReqVO.setName("干预默认心理老师");
-            createPsychologyReqVO.setKey(CONFIG_KEY_DEFAULT_PSYCHOLOGY);
-            createPsychologyReqVO.setValue("0"); // 使用"0"表示未设置，而不是空字符串
-            createPsychologyReqVO.setVisible(true);
-            createPsychologyReqVO.setRemark("当学生档案未绑定责任心理老师时使用的默认心理老师ID");
-            configService.createConfig(createPsychologyReqVO);
-            log.info("初始化配置: key={}, name={}, defaultValue={}", CONFIG_KEY_DEFAULT_PSYCHOLOGY, "干预默认心理老师", "0");
-        }
+        log.info("危机事件分配模式已设置为：{}，默认心理老师ID：{}", settingVO.getMode(), settingVO.getDefaultPsychologyId());
     }
 
     private CrisisInterventionDO validateEventExists(Long id) {
@@ -1191,58 +1191,6 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         }
         eventProcessMapper.insert(process);
     }
-
-    // private void autoAssignHandler(CrisisInterventionDO event) {
-    //     // 获取学生的主责咨询师，如果没有则使用默认处理人
-    //     Long handlerUserId = studentCounselorAssignmentService.getCounselorUserIdOrDefault(
-    //             event.getStudentProfileId(), defaultHandlerUserId);
-        
-    //     String assignReason = "自动分配";
-    //     if (studentCounselorAssignmentService.hasPrimaryCounselor(event.getStudentProfileId())) {
-    //         assignReason = "自动分配给学生的责任心理老师";
-    //     } else if (handlerUserId != null) {
-    //         assignReason = "自动分配给默认心理老师";
-    //     }
-        
-    //     // 如果找到了合适的处理人，进行分配
-    //     if (handlerUserId != null) {
-    //         // 更新事件处理人和状态
-    //         event.setHandlerUserId(handlerUserId);
-    //         event.setStatus(2); // 已分配
-    //         event.setAutoAssigned(true);
-    //         crisisInterventionMapper.updateById(event);
-            
-    //         // 记录分配动作
-    //         recordEventProcessWithUsers(event.getId(), "AUTO_ASSIGN", assignReason,
-    //                 assignReason, handlerUserId, null, null);
-            
-    //         // 添加时间线记录
-    //         AdminUserRespDTO handler = adminUserApi.getUser(handlerUserId);
-    //         Map<String, Object> meta = new HashMap<>();
-    //         meta.put("eventId", event.getId());
-    //         meta.put("handlerUserId", handlerUserId);
-    //         meta.put("handlerName", handler != null ? handler.getNickname() : "未知");
-    //         meta.put("assignReason", assignReason);
-    //         meta.put("status", "已分配");
-    //         meta.put("autoAssigned", true);
-            
-    //         String content = String.format("危机事件已自动分配给 %s 处理", 
-    //             handler != null ? handler.getNickname() : "未知");
-    //         studentTimelineService.saveTimelineWithMeta(
-    //             event.getStudentProfileId(),
-    //             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
-    //             "危机事件自动分配",
-    //             "crisis_event_" + event.getId(),
-    //             content,
-    //             meta
-    //         );
-            
-    //         log.info("自动分配处理人成功，事件ID：{}，处理人ID：{}，分配原因：{}", 
-    //                 event.getId(), handlerUserId, assignReason);
-    //     } else {
-    //         log.warn("自动分配处理人失败，事件ID：{}，未找到合适的处理人", event.getId());
-    //     }
-    // }
 
     private List<CrisisEventRespVO> convertToRespVOList(List<CrisisInterventionDO> events) {
         if (CollUtil.isEmpty(events)) {
@@ -1616,5 +1564,206 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
         String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.RISK_LEVEL, level);
         return label != null ? label : "未知";
+    }
+
+    /**
+     * 构建从当前部门到根部门的完整路径
+     * 
+     * @param deptId 起始部门ID
+     * @return 部门路径列表（从子到父的顺序）
+     */
+    private List<Long> buildDeptPath(Long deptId) {
+        List<Long> path = new ArrayList<>();
+        if (deptId == null) {
+            return path;
+        }
+
+        Long currentDeptId = deptId;
+        // 防止死循环，最多查询100层
+        int maxDepth = 100;
+        int depth = 0;
+
+        while (currentDeptId != null && !currentDeptId.equals(0L) && depth < maxDepth) {
+            path.add(currentDeptId);
+            
+            // 查询当前部门信息
+            DeptDO dept = deptMapper.selectById(currentDeptId);
+            if (dept == null) {
+                break;
+            }
+            
+            currentDeptId = dept.getParentId();
+            depth++;
+        }
+
+        return path;
+    }
+
+    /**
+     * 自动分配处理人
+     * 
+     * @param event 危机事件
+     * @param studentClassDeptId 学生班级部门ID
+     */
+    private void autoAssignHandler(CrisisInterventionDO event, Long studentClassDeptId) {
+        try {
+            // 1. 读取分配模式配置
+            ConfigDO config = configService.getConfigByKey(CONFIG_KEY_ASSIGNMENT_MODE);
+            if (config == null || StrUtil.isBlank(config.getValue())) {
+                log.info("未配置自动分配模式，跳过自动分配");
+                return;
+            }
+
+            String assignmentMode = config.getValue().trim();
+            log.info("危机事件 {} 自动分配模式: {}", event.getEventId(), assignmentMode);
+
+            // 2. 根据模式确定要查询的角色code
+            String targetRoleCode;
+            String defaultRoleCode = null;
+            
+            if ("auto-psychology".equals(assignmentMode)) {
+                targetRoleCode = "psychology_teacher";
+                defaultRoleCode = "default_psychology_teacher";
+            } else if ("auto-head-teacher".equals(assignmentMode)) {
+                targetRoleCode = "head_teacher";
+            } else {
+                log.info("未知的分配模式: {}，跳过自动分配", assignmentMode);
+                return;
+            }
+
+            // 3. 查询目标角色ID
+            RoleDO targetRole = roleMapper.selectByCode(targetRoleCode);
+            if (targetRole == null) {
+                log.warn("未找到角色 {}，无法自动分配", targetRoleCode);
+                return;
+            }
+            Long targetRoleId = targetRole.getId();
+
+            // 4. 构建部门路径链（从班级到根部门）
+            List<Long> deptPath = buildDeptPath(studentClassDeptId);
+            if (CollUtil.isEmpty(deptPath)) {
+                log.warn("无法构建部门路径，学生班级部门ID: {}", studentClassDeptId);
+                return;
+            }
+
+            log.info("部门路径: {}", deptPath);
+
+            // 5. 批量查询这些部门下的用户
+            List<UserDeptDO> userDepts = userDeptMapper.selectListByDeptIds(deptPath);
+            
+            if (CollUtil.isEmpty(userDepts)) {
+                log.info("部门路径上没有找到用户");
+            } else {
+                // 6. 按部门分组
+                Map<Long, List<Long>> deptUserMap = userDepts.stream()
+                    .collect(Collectors.groupingBy(
+                        UserDeptDO::getDeptId,
+                        Collectors.mapping(UserDeptDO::getUserId, Collectors.toList())
+                    ));
+
+                // 7. 批量查询用户信息（过滤启用状态）
+                Set<Long> allUserIds = userDepts.stream()
+                    .map(UserDeptDO::getUserId)
+                    .collect(Collectors.toSet());
+                
+                Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(allUserIds);
+                if (userMap != null) {
+                    userMap = userMap.entrySet().stream()
+                        .filter(e -> e.getValue() != null && 
+                            CommonStatusEnum.ENABLE.getStatus().equals(e.getValue().getStatus()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                }
+
+                // 8. 查询用户角色
+                if (CollUtil.isNotEmpty(userMap)) {
+                    List<UserRoleDO> userRoles = userRoleMapper.selectList(
+                        new LambdaQueryWrapperX<UserRoleDO>()
+                            .in(UserRoleDO::getUserId, userMap.keySet())
+                    );
+                    
+                    Map<Long, List<Long>> userRoleMap = userRoles.stream()
+                        .collect(Collectors.groupingBy(
+                            UserRoleDO::getUserId,
+                            Collectors.mapping(UserRoleDO::getRoleId, Collectors.toList())
+                        ));
+
+                    // 9. 按部门顺序查找第一个符合条件的用户
+                    for (Long deptId : deptPath) {
+                        List<Long> userIds = deptUserMap.get(deptId);
+                        if (CollUtil.isEmpty(userIds)) {
+                            continue;
+                        }
+                        
+                        for (Long userId : userIds) {
+                            // 检查用户是否启用
+                            if (!userMap.containsKey(userId)) {
+                                continue;
+                            }
+                            
+                            // 检查用户是否拥有目标角色
+                            List<Long> roleIds = userRoleMap.get(userId);
+                            if (CollUtil.isNotEmpty(roleIds) && roleIds.contains(targetRoleId)) {
+                                // 找到第一个符合条件的用户
+                                assignHandlerToEvent(event, userId);
+                                log.info("危机事件 {} 自动分配给用户 {} (部门ID: {})", 
+                                    event.getEventId(), userId, deptId);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 10. 如果未找到且是心理老师模式，查询默认心理老师
+            if ("auto-psychology".equals(assignmentMode) && StrUtil.isNotBlank(defaultRoleCode)) {
+                log.info("在部门路径上未找到心理老师，尝试查询默认心理老师");
+                
+                RoleDO defaultRole = roleMapper.selectByCode(defaultRoleCode);
+                if (defaultRole != null) {
+                    List<UserRoleDO> defaultUserRoles = userRoleMapper.selectListByRoleId(defaultRole.getId());
+                    
+                    if (CollUtil.isNotEmpty(defaultUserRoles)) {
+                        // 查询用户状态，过滤启用的用户
+                        Set<Long> defaultUserIds = defaultUserRoles.stream()
+                            .map(UserRoleDO::getUserId)
+                            .collect(Collectors.toSet());
+                        
+                        Map<Long, AdminUserRespDTO> defaultUserMap = adminUserApi.getUserMap(defaultUserIds);
+                        if (defaultUserMap != null) {
+                            for (Map.Entry<Long, AdminUserRespDTO> entry : defaultUserMap.entrySet()) {
+                                AdminUserRespDTO user = entry.getValue();
+                                if (user != null && 
+                                    CommonStatusEnum.ENABLE.getStatus().equals(user.getStatus())) {
+                                    // 找到第一个启用的默认心理老师
+                                    assignHandlerToEvent(event, entry.getKey());
+                                    log.info("危机事件 {} 自动分配给默认心理老师 {}", 
+                                        event.getEventId(), entry.getKey());
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                log.warn("未找到默认心理老师，危机事件 {} 无法自动分配", event.getEventId());
+            } else {
+                log.warn("在部门路径上未找到符合条件的用户，危机事件 {} 无法自动分配", event.getEventId());
+            }
+        } catch (Exception e) {
+            log.error("自动分配处理人失败，危机事件: {}", event.getEventId(), e);
+        }
+    }
+
+    /**
+     * 分配处理人到危机事件
+     * 
+     * @param event 危机事件
+     * @param handlerUserId 处理人用户ID
+     */
+    private void assignHandlerToEvent(CrisisInterventionDO event, Long handlerUserId) {
+        event.setHandlerUserId(handlerUserId);
+        event.setStatus(2); // 已分配
+        event.setAutoAssigned(true);
+        crisisInterventionMapper.updateById(event);
     }
 }
