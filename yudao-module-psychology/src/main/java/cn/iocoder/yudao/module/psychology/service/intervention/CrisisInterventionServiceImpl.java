@@ -551,8 +551,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
         // 记录上报动作
         List<Long> attachments = createReqVO.getAttachments();
+        String content = String.format("事件标题：%s，发生时间：%s，发生地点：%s，紧急程度：%s", createReqVO.getTitle(), createReqVO.getEventTime(), createReqVO.getLocation(), getPriorityLevelName(createReqVO.getPriority()));
         recordEventProcessWithUsers(event.getId(), "REPORT", createReqVO.getDescription(),
-            "风险等级：" + getRiskLevelName(createReqVO.getRiskLevel()),
+            content,
             null, null, CollUtil.isNotEmpty(attachments) ? attachments : null, null);
 
         // 添加时间线记录
@@ -560,11 +561,11 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         meta.put("eventId", event.getId());
         meta.put("riskLevel", createReqVO.getRiskLevel());
         meta.put("riskLevelName", getRiskLevelName(createReqVO.getRiskLevel()));
+        meta.put("priorityLevel", createReqVO.getPriority());
+        meta.put("priorityLevelName", getPriorityLevelName(createReqVO.getPriority()));
         meta.put("reporterUserId", currentUserId);
         meta.put("description", createReqVO.getDescription());
         meta.put("status", "已上报");
-
-        String content = String.format("上报了危机事件，风险等级：%s", getRiskLevelName(createReqVO.getRiskLevel()));
         studentTimelineService.saveTimelineWithMeta(
             createReqVO.getStudentProfileId(),
             TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
@@ -774,7 +775,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 更新处理人和状态
         event.setHandlerUserId(assignReqVO.getHandlerUserId());
         event.setStatus(2); // 已分配
-        event.setProgress(25);
+        event.setProgress(50);
         event.setHandleAt(LocalDateTime.now());
         crisisInterventionMapper.updateById(event);
 
@@ -1410,8 +1411,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             event.setReportedAt(LocalDateTime.now());
             event.setProgress(0);
             event.setProcessStatus(0); // 处理状态设置为0
-            event.setAutoAssigned(true);
-            event.setSourceType(1); // 系统自动
+            event.setAutoAssigned(true);  // 自动分配
+            event.setSourceType(2); // 来源类型：AI预警
 
             crisisInterventionMapper.insert(event);
 
@@ -1567,6 +1568,28 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     }
 
     /**
+     * 获取来源类型名称
+     */
+    private String getSourceTypeName(Integer sourceType) {
+        if (sourceType == null) {
+            return "未知";
+        }
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.CRISIS_SOURCE_TYPE, sourceType);
+        return label != null ? label : "未知";
+    }
+
+    /**
+     * 获取上报紧急程度名称
+     */
+    private String getPriorityLevelName(Integer urgencyLevel) {
+        if (urgencyLevel == null) {
+            return "未知";
+        }
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.CRISIS_EVENT_REPORT_SOURCE, urgencyLevel);
+        return label != null ? label : "未知";
+    }
+
+    /**
      * 构建从当前部门到根部门的完整路径
      * 
      * @param deptId 起始部门ID
@@ -1627,7 +1650,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             } else if ("auto-head-teacher".equals(assignmentMode)) {
                 targetRoleCode = "head_teacher";
             } else {
-                log.info("未知的分配模式: {}，跳过自动分配", assignmentMode);
+                log.info("手动分配模式，不进行自动分配");
                 return;
             }
 
@@ -1756,13 +1779,14 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     /**
      * 分配处理人到危机事件
-     * 
      * @param event 危机事件
      * @param handlerUserId 处理人用户ID
      */
     private void assignHandlerToEvent(CrisisInterventionDO event, Long handlerUserId) {
         event.setHandlerUserId(handlerUserId);
         event.setStatus(2); // 已分配
+        event.setHandleAt(LocalDateTime.now());
+        event.setProgress(50);
         event.setAutoAssigned(true);
         crisisInterventionMapper.updateById(event);
     }

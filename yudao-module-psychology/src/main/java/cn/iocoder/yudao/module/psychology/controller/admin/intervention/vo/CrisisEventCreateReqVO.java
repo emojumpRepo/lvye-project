@@ -30,8 +30,7 @@ public class CrisisEventCreateReqVO {
     @Schema(description = "事发地点")
     private String location;
 
-    @Schema(description = "风险等级", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "风险等级不能为空")
+    @Schema(description = "风险等级")
     private Integer riskLevel;
 
     @Schema(description = "优先级", example = "1")

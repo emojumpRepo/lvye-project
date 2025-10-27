@@ -6,7 +6,7 @@ package cn.iocoder.yudao.module.psychology.enums;
 public interface DictTypeConstants {
 
     String PSYCHOLOGICAL_STATUS = "psychological_status"; // 心理状态
-    String RISK_LEVEL = "crisis_level"; // 风险等级
+    String RISK_LEVEL = "risk_level"; // 风险等级
     String STUDENT_SPECIAL_MARK = "student_special_mark"; // 学生特殊标记
     String ASSESSMENT_SCALE_TYPE = "assessment_scale_type"; // 测评量表类型
     String TARGET_AUDIENCE = "target_audience"; // 目标对象
@@ -18,12 +18,12 @@ public interface DictTypeConstants {
     String USER_ROLE_TYPE = "user_role_type"; // 用户角色类型
     String GRADUATION_STATUS = "graduation_status"; // 毕业状态
     String TIMELINE_EVENT_TYPE = "timeline_event_type"; // 时间线事件类型
-    String CRISIS_SOURCE_TYPE = "crisis_source_type"; // 危机来源类型
+    String CRISIS_SOURCE_TYPE = "crisis_event_report_source"; // 危机来源类型
     String URGENCY_LEVEL = "urgency_level"; // 紧急程度
     String QUESTIONNAIRE_ASSESSMENT_DIMENSION = "questionnaire_assessment_dimension"; // 问卷测评维度
     String INTERVENTION_PROCESS_METHOD = "intervention_process_method"; // 危机事件处理方式
     String FOLLOW_UP_SUGGESTION = "follow_up_suggestion"; // 评估后续建议
     String CRISIS_LEVEL = "crisis_level"; // 危机等级
     String CRISIS_EVENT_ACTION = "crisis_event_action"; // 危机事件处理动作
-
+    String CRISIS_EVENT_REPORT_SOURCE = "crisis_event_report_source"; // 危机上报紧急程度
 }
