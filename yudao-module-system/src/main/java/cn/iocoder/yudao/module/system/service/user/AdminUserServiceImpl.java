@@ -24,7 +24,9 @@ import cn.iocoder.yudao.module.system.dal.dataobject.dept.UserPostDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.dept.UserPostMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.UserRoleMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
+import cn.iocoder.yudao.module.system.enums.permission.RoleCodeEnum;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
 import cn.iocoder.yudao.module.system.service.dept.PostService;
 import cn.iocoder.yudao.module.system.service.permission.PermissionService;
@@ -85,6 +87,9 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Resource
     private RoleMapper roleMapper;
+
+    @Resource
+    private cn.iocoder.yudao.module.system.dal.mysql.permission.UserRoleMapper userRoleMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -281,8 +286,16 @@ public class AdminUserServiceImpl implements AdminUserService {
         Set<Long> userIds = reqVO.getRoleId() != null ?
                 permissionService.getUserRoleIdListByRoleId(singleton(reqVO.getRoleId())) : null;
 
-        // 分页查询
-        return userMapper.selectPage(reqVO, getDeptCondition(reqVO.getDeptId()), userIds);
+        // 获取学生角色ID，排除学生用户
+        Set<Long> excludeUserIds = null;
+        Long studentRoleId = Optional.ofNullable(roleMapper.selectByCode(RoleCodeEnum.STUDENT.getCode()))
+                .map(r -> r.getId()).orElse(null);
+        if (studentRoleId != null) {
+            excludeUserIds = permissionService.getUserRoleIdListByRoleId(singleton(studentRoleId));
+        }
+
+        // 分页查询（在数据库层面排除学生角色用户）
+        return userMapper.selectPage(reqVO, getDeptCondition(reqVO.getDeptId()), userIds, excludeUserIds);
     }
 
     @Override
@@ -546,6 +559,11 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
         // AdminUserMapper 的 selectByIds 默认已过滤逻辑删除
         return userMapper.selectByIds(userIds);
+    }
+
+    @Override
+    public List<cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserWithRoleInfoRespVO> getNonStudentUsersWithRoles() {
+        return userRoleMapper.selectNonStudentUsersWithRoles();
     }
 
     /**

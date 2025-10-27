@@ -8,6 +8,7 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.infra.api.config.ConfigApi;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.*;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileSimpleVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.ParentContactDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileRecordDO;
@@ -462,6 +463,24 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     @Override
     public void updateStudentRiskLevel(Long studentProfileId, Integer riskLevel){
         studentProfileMapper.updateRiskLevel(studentProfileId, riskLevel);
+    }
+
+    @Override
+    public void updateStudentSpecialMarks(Long studentProfileId, String specialMarks) {
+        studentProfileMapper.updateSpecialMarks(studentProfileId, specialMarks);
+    }
+
+    @Override
+    public List<StudentProfileSimpleVO> searchSimpleStudentProfilesByStudentNoAndName(String studentNo, String name) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
+        
+        // 计算可见部门ID集合
+        java.util.Collection<Long> deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
+                ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
+        Long selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
+        
+        return studentProfileMapper.searchSimpleByStudentNoAndName(studentNo, name, deptIds, selfUserId);
     }
 
     /**

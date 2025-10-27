@@ -15,6 +15,9 @@ public class CrisisEventProcessHistoryVO {
 
     @Schema(description = "事件ID", example = "1")
     private Long eventId;
+    
+    @Schema(description = "测评任务编号", example = "1")
+    private String taskNo;
 
     @Schema(description = "操作人ID", example = "1")
     private Long operatorUserId;
@@ -46,8 +49,8 @@ public class CrisisEventProcessHistoryVO {
     @Schema(description = "原用户姓名（如原负责人姓名）", example = "王老师")
     private String originalUserName;
 
-    @Schema(description = "附件列表")
-    private List<String> attachments;
+    @Schema(description = "附件ID列表")
+    private List<Long> attachments;
 
     @Schema(description = "操作时间")
     private LocalDateTime createTime;

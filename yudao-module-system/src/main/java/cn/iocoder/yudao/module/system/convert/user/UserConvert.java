@@ -8,6 +8,7 @@ import cn.iocoder.yudao.module.system.controller.admin.dept.vo.post.PostSimpleRe
 import cn.iocoder.yudao.module.system.controller.admin.permission.vo.role.RoleSimpleRespVO;
 import cn.iocoder.yudao.module.system.controller.admin.user.vo.profile.UserProfileRespVO;
 import cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserRespVO;
+import cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserRoleInfoVO;
 import cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserSimpleRespVO;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.PostDO;
@@ -28,10 +29,26 @@ public interface UserConvert {
         return CollectionUtils.convertList(list, user -> convert(user, deptMap.get(user.getDeptId())));
     }
 
+    default List<UserRespVO> convertList(List<AdminUserDO> list, Map<Long, DeptDO> deptMap, Map<Long, List<RoleDO>> userRolesMap) {
+        return CollectionUtils.convertList(list, user -> convert(user, deptMap.get(user.getDeptId()), userRolesMap.get(user.getId())));
+    }
+
     default UserRespVO convert(AdminUserDO user, DeptDO dept) {
         UserRespVO userVO = BeanUtils.toBean(user, UserRespVO.class);
         if (dept != null) {
             userVO.setDeptName(dept.getName());
+        }
+        return userVO;
+    }
+
+    default UserRespVO convert(AdminUserDO user, DeptDO dept, List<RoleDO> roles) {
+        UserRespVO userVO = BeanUtils.toBean(user, UserRespVO.class);
+        if (dept != null) {
+            userVO.setDeptName(dept.getName());
+        }
+        if (roles != null && !roles.isEmpty()) {
+            userVO.setRoleInfo(CollectionUtils.convertList(roles, role -> 
+                new UserRoleInfoVO(role.getId(), role.getCode(), role.getName())));
         }
         return userVO;
     }

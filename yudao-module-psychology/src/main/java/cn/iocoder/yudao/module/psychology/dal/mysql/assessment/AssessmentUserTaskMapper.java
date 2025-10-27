@@ -41,6 +41,24 @@ public interface AssessmentUserTaskMapper extends BaseMapperX<AssessmentUserTask
                 .eq(AssessmentUserTaskDO::getTaskNo, taskNo));
     }
 
+    /**
+     * 查询正在进行的测评任务（未完成状态，包含未开始和进行中）
+     * 
+     * @param eventId 危机事件ID
+     * @param userId 用户ID
+     * @return 用户任务对象（按创建时间倒序取第一条）
+     */
+    AssessmentUserTaskDO selectOngoingTaskByEventIdAndUserId(@Param("eventId") Long eventId, @Param("userId") Long userId);
+
+    /**
+     * 查询危机事件关联的所有测评任务（所有状态）
+     * 
+     * @param eventId 危机事件ID
+     * @param userId 用户ID
+     * @return 测评任务列表
+     */
+    List<cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.CrisisEventRespVO.AssessmentTaskVO> selectAllTasksByEventIdAndUserId(@Param("eventId") Long eventId, @Param("userId") Long userId);
+
     default int updateStatusById(Long id, Integer status) {
         return update(new LambdaUpdateWrapper<AssessmentUserTaskDO>()
                 .eq(AssessmentUserTaskDO::getId, id)

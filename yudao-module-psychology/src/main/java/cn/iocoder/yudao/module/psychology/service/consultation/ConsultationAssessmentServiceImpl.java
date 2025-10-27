@@ -136,6 +136,7 @@ public class ConsultationAssessmentServiceImpl implements ConsultationAssessment
 
         // 更新预约状态为已闭环
         appointment.setStatus(3);
+        appointment.setCurrentStep(3);
         appointmentMapper.updateById(appointment);
 
         return assessment.getId();

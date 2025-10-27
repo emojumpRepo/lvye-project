@@ -12,6 +12,5 @@ public class CrisisEventAssignReqVO {
     @NotNull(message = "处理人不能为空")
     private Long handlerUserId;
 
-    @Schema(description = "分配原因")
-    private String assignReason;
+    // 不再需要分配原因，由后端自动生成
 }

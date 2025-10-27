@@ -13,6 +13,9 @@ public class CrisisEventRespVO {
     @Schema(description = "ID", example = "1")
     private Long id;
 
+    @Schema(description = "事件编号", example = "RPT_2024_12345")
+    private String eventId;
+
     @Schema(description = "学生档案ID", example = "1")
     private Long studentProfileId;
 
@@ -24,6 +27,9 @@ public class CrisisEventRespVO {
 
     @Schema(description = "班级名称", example = "高一(1)班")
     private String className;
+
+    @Schema(description = "学生用户ID", example = "1")
+    private Long studentUserId;
 
     @Schema(description = "事件标题")
     private String title;
@@ -55,9 +61,6 @@ public class CrisisEventRespVO {
     @Schema(description = "上报时间")
     private LocalDateTime reportedAt;
 
-    @Schema(description = "紧急程度")
-    private Integer urgencyLevel;
-
     @Schema(description = "优先级", example = "1")
     private Integer priority;
 
@@ -76,8 +79,14 @@ public class CrisisEventRespVO {
     @Schema(description = "处理进度百分比", example = "50")
     private Integer progress;
 
+    @Schema(description = "处理状态", example = "1")
+    private Integer processStatus;
+
     @Schema(description = "是否自动分配", example = "false")
     private Boolean autoAssigned;
+
+    @Schema(description = "处理时间")
+    private LocalDateTime handleAt;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
@@ -91,8 +100,26 @@ public class CrisisEventRespVO {
     @Schema(description = "最新评估")
     private LatestAssessmentVO latestAssessment;
 
+    @Schema(description = "评估记录列表（按创建时间倒序）")
+    private List<AssessmentRecordVO> latestAssessments;
+
+    @Schema(description = "所有评估记录列表（按创建时间倒序）")
+    private List<AssessmentRecordVO> allAssessmentRecords;
+
+    @Schema(description = "正在进行的测评任务（未完成状态，包含未开始和进行中）")
+    private PendingAssessmentTaskVO pendingAssessmentTask;
+
+    @Schema(description = "测评任务列表（该危机事件关联的所有测评任务）")
+    private List<AssessmentTaskVO> assessmentTasks;
+
     @Data
     public static class ProcessHistoryVO {
+        @Schema(description = "处理记录ID")
+        private Long id;
+
+        @Schema(description = "危机事件ID")
+        private Long eventId;
+
         @Schema(description = "操作时间")
         private LocalDateTime operateTime;
 
@@ -105,8 +132,17 @@ public class CrisisEventRespVO {
         @Schema(description = "操作内容")
         private String content;
 
-        @Schema(description = "附件列表")
-        private List<String> attachments;
+        @Schema(description = "操作原因")
+        private String reason;
+
+        @Schema(description = "附件ID列表")
+        private List<Long> attachments;
+
+        @Schema(description = "评估记录ID")
+        private Long assessmentId;
+
+        @Schema(description = "测评结果ID")
+        private Long taskResultId;
     }
 
     @Data
@@ -122,5 +158,86 @@ public class CrisisEventRespVO {
 
         @Schema(description = "后续建议")
         private Integer followUpSuggestion;
+    }
+
+    @Data
+    public static class AssessmentRecordVO {
+        @Schema(description = "评估ID")
+        private Long id;
+
+        @Schema(description = "评估人ID")
+        private Long assessorUserId;
+
+        @Schema(description = "评估人姓名")
+        private String assessorName;
+
+        @Schema(description = "评估类型（1-阶段性评估、2-最终评估）")
+        private Integer assessmentType;
+
+        @Schema(description = "风险等级")
+        private Integer riskLevel;
+
+        @Schema(description = "风险等级名称")
+        private String riskLevelName;
+
+        @Schema(description = "问题类型识别")
+        private List<String> problemTypes;
+
+        @Schema(description = "后续建议")
+        private Integer followUpSuggestion;
+
+        @Schema(description = "后续建议名称")
+        private String followUpSuggestionName;
+
+        @Schema(description = "评估详细内容")
+        private String content;
+
+        @Schema(description = "附件ID列表")
+        private List<Long> attachments;
+
+        @Schema(description = "创建时间")
+        private LocalDateTime createTime;
+    }
+
+    @Data
+    public static class PendingAssessmentTaskVO {
+        @Schema(description = "任务ID")
+        private Long taskId;
+
+        @Schema(description = "任务编号")
+        private String taskNo;
+
+        @Schema(description = "任务名称")
+        private String taskName;
+
+        @Schema(description = "完成状态")
+        private Integer status;
+    }
+
+    @Data
+    public static class AssessmentTaskVO {
+        @Schema(description = "任务ID")
+        private Long taskId;
+
+        @Schema(description = "任务编号")
+        private String taskNo;
+
+        @Schema(description = "任务名称")
+        private String taskName;
+
+        @Schema(description = "完成状态")
+        private Integer status;
+
+        @Schema(description = "风险等级")
+        private Integer riskLevel;
+
+        @Schema(description = "任务开始时间")
+        private LocalDateTime startline;
+
+        @Schema(description = "任务截止时间")
+        private LocalDateTime deadline;
+
+        @Schema(description = "提交时间")
+        private LocalDateTime submitTime;
     }
 }

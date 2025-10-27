@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.psychology.controller.admin.intervention;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.intervention.vo.*;
 import cn.iocoder.yudao.module.psychology.service.intervention.CrisisInterventionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,8 +38,12 @@ public class CrisisInterventionController {
     @DataPermission(enable = false)
     public CommonResult<List<InterventionDashboardLevelVO>> getDashboardSummary(
             @RequestParam(value = "classId", required = false) Long classId,
-            @RequestParam(value = "counselorUserId", required = false) Long counselorUserId,
+            @RequestParam(value = "counselorType", required = false) Integer counselorType,
             @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize) {
+        // 当 counselorType 为 1 时，只查询当前用户负责的
+        Long counselorUserId = (counselorType != null && counselorType == 1) 
+            ? SecurityFrameworkUtils.getLoginUserId() 
+            : null;
         return success(interventionService.getDashboardLevels(classId, counselorUserId, pageSize));
     }
 
@@ -59,6 +64,22 @@ public class CrisisInterventionController {
         return success(interventionService.getStudentsByLevel(level, pageReqVO));
     }
 
+    @GetMapping("/dashboard/risk-level-summary")
+    @Operation(summary = "根据风险等级获取学生列表")
+    @DataPermission(enable = false)
+    public CommonResult<PageResult<InterventionStudentRespVO>> getStudentsByRiskLevel(
+            @RequestParam("riskLevel") Integer riskLevel,
+            @RequestParam(value = "classId", required = false) Long classId,
+            @RequestParam(value = "counselorType", required = false) Integer counselorType,
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+        // 当 counselorType 为 1 时，只查询当前用户负责的
+        Long counselorUserId = (counselorType != null && counselorType == 1) 
+            ? SecurityFrameworkUtils.getLoginUserId() 
+            : null;
+        return success(interventionService.getStudentsByRiskLevel(riskLevel, classId, counselorUserId, pageNo, pageSize));
+    }
+
     @PutMapping("/student/{studentProfileId}/level")
     @Operation(summary = "调整学生的心理健康风险等级")
     @DataPermission(enable = false)
@@ -75,7 +96,7 @@ public class CrisisInterventionController {
     @Operation(summary = "上报危机事件")
     @PreAuthorize("@ss.hasPermission('psychology:intervention:create')")
     @DataPermission(enable = false)
-    public CommonResult<Long> createCrisisEvent(@Valid @RequestBody CrisisEventCreateReqVO createReqVO) {
+    public CommonResult<CrisisEventCreateRespVO> createCrisisEvent(@Valid @RequestBody CrisisEventCreateReqVO createReqVO) {
         return success(interventionService.createCrisisEvent(createReqVO));
     }
 
@@ -91,8 +112,16 @@ public class CrisisInterventionController {
     @Operation(summary = "获取危机事件统计")
     @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
     @DataPermission(enable = false)
-    public CommonResult<Map<String, Long>> getCrisisEventStatistics() {
+    public CommonResult<List<CrisisEventProcessStatisticsVO.StatisticsItem>> getCrisisEventStatistics() {
         return success(interventionService.getCrisisEventStatistics());
+    }
+
+    @GetMapping("/event/process-statistics")
+    @Operation(summary = "获取危机事件处理统计")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
+    @DataPermission(enable = false)
+    public CommonResult<CrisisEventProcessStatisticsVO> getCrisisEventStatusStatistics() {
+        return success(interventionService.getCrisisEventStatusStatistics());
     }
 
     @GetMapping("/event/{id}")
@@ -179,17 +208,17 @@ public class CrisisInterventionController {
 
     // ========== 系统设置 ==========
 
-    @GetMapping("/admin/settings/intervention-assignment-mode")
-    @Operation(summary = "获取危机事件分配模式")
-    @PreAuthorize("@ss.hasPermission('psychology:settings:query')")
-    public CommonResult<InterventionAssignmentSettingVO> getAssignmentMode() {
+    @GetMapping("/admin/get-assignment-settings")
+    @Operation(summary = "获取危机事件分配设置")
+    @PreAuthorize("@ss.hasPermission('psychology:get-assignment-settings')")
+    public CommonResult<InterventionAssignmentSettingVO> getAssignmentSettings() {
         return success(interventionService.getAssignmentSettings());
     }
 
     @PutMapping("/admin/settings/intervention-assignment-mode")
     @Operation(summary = "设置危机事件分配模式")
     @PreAuthorize("@ss.hasPermission('psychology:settings:update')")
-    public CommonResult<Boolean> setAssignmentMode(@Valid @RequestBody InterventionAssignmentSettingVO settingVO) {
+    public CommonResult<Boolean> setAssignmentSettings(@Valid @RequestBody InterventionAssignmentSettingVO settingVO) {
         interventionService.setAssignmentSettings(settingVO);
         return success(true);
     }
@@ -202,6 +231,19 @@ public class CrisisInterventionController {
             @PathVariable("id") Long id,
             @Valid @RequestBody CrisisEventUpdateDescriptionReqVO updateReqVO) {
         interventionService.updateCrisisEventDescription(id, updateReqVO.getDescription());
+        return success(true);
+    }
+
+    @PutMapping("/event/process/{id}/update")
+    @Operation(summary = "更新事件处理记录",
+              description = "根据action类型更新不同字段：REASSIGN_HANDLER和CHOOSE_PROCESS更新reason字段，其他类型更新content字段")
+    @Parameter(name = "id", description = "处理记录ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> updateProcessRecord(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CrisisEventProcessUpdateReqVO updateReqVO) {
+        interventionService.updateProcessRecord(id, updateReqVO.getContent());
         return success(true);
     }
 }

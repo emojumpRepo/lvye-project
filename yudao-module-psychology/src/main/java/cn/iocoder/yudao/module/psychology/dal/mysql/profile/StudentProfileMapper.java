@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentClassVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfilePageReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileSimpleVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -48,6 +49,12 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
                 .set(StudentProfileDO::getRiskLevel, riskLevel));
     }
 
+    default int updateSpecialMarks(Long id, String specialMarks) {
+        return update(new LambdaUpdateWrapper<StudentProfileDO>()
+                .eq(StudentProfileDO::getId, id)
+                .set(StudentProfileDO::getSpecialMarks, specialMarks));
+    }
+
     IPage<StudentProfileVO> selectPageList(IPage<StudentProfileVO> page,
                                            @Param("pageReqVO") StudentProfilePageReqVO pageReqVO,
                                            @Param("deptIds") Collection<Long> deptIds,
@@ -64,6 +71,11 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
     List<StudentClassVO> selectClassStudentCount();
 
     List<StudentClassVO> selectGradeStudentCount();
+
+    List<StudentProfileSimpleVO> searchSimpleByStudentNoAndName(@Param("studentNo") String studentNo,
+                                                               @Param("name") String name,
+                                                               @Param("deptIds") Collection<Long> deptIds,
+                                                               @Param("selfUserId") Long selfUserId);
 
     default List<StudentProfileDO> selectGraduatedStudents() {
         return selectList(StudentProfileDO::getGraduationStatus, 1);

@@ -13,4 +13,12 @@ public interface AssessmentResultMapper extends BaseMapperX<AssessmentResultDO> 
                 .eq(AssessmentResultDO::getParticipantId, participantId)
                 .eq(AssessmentResultDO::getDimensionCode, dimensionCode));
     }
+
+    default AssessmentResultDO selectByTaskNoAndParticipantId(String taskNo, Long participantId) {
+        return selectOne(new LambdaQueryWrapperX<AssessmentResultDO>()
+                .eq(AssessmentResultDO::getTaskNo, taskNo)
+                .eq(AssessmentResultDO::getParticipantId, participantId)
+                .orderByDesc(AssessmentResultDO::getCreateTime)
+                .last("LIMIT 1"));
+    }
 }

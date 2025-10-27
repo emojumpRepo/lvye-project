@@ -45,4 +45,11 @@ public interface UserRoleMapper extends BaseMapperX<UserRoleDO> {
 
     List<QuickReportHandleUserVO> selectUserListByRoleIdAndDeptId(@Param("roleId") Long roleId, @Param("deptId") Long deptId);
 
+    /**
+     * 查询非学生角色的用户及其角色信息
+     *
+     * @return 用户及角色信息列表
+     */
+    List<cn.iocoder.yudao.module.system.controller.admin.user.vo.user.UserWithRoleInfoRespVO> selectNonStudentUsersWithRoles();
+
 }

@@ -11,8 +11,7 @@ import java.util.List;
 @Data
 public class CrisisEventCloseReqVO {
 
-    @Schema(description = "结案总结", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "结案总结不能为空")
+    @Schema(description = "结案总结")
     private String summary;
 
     @Schema(description = "最终风险等级", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -25,4 +24,7 @@ public class CrisisEventCloseReqVO {
     @Schema(description = "后续建议", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "后续建议不能为空")
     private Integer followUpSuggestion;
+
+    @Schema(description = "附件ID列表")
+    private List<Long> attachments;
 }
