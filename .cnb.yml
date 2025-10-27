@@ -38,9 +38,24 @@ main:
             else
               echo "Installing Maven..."
               MAVEN_VERSION=3.9.6
-              wget -q https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
-              tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz
+              
+              # 先安装下载工具（如果不存在）
+              if ! command -v curl &> /dev/null && ! command -v wget &> /dev/null; then
+                echo "Installing curl..."
+                apt-get update -qq
+                apt-get install -y -qq curl
+              fi
+              
+              # 使用 curl 或 wget 下载
+              if command -v curl &> /dev/null; then
+                curl -fsSL https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz -o maven.tar.gz
+              else
+                wget -q https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz -O maven.tar.gz
+              fi
+              
+              tar -xzf maven.tar.gz
               mv apache-maven-${MAVEN_VERSION} /opt/maven
+              rm -f maven.tar.gz
               export PATH=/opt/maven/bin:$PATH
             fi
             mvn -version
