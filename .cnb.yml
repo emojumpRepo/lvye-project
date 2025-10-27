@@ -3,27 +3,52 @@
 main:
   push:
     - name: Build Spring Boot Application
-      # 使用官方 Maven 镜像，包含 JDK 和 Maven，避免每次安装
-      image: maven:3.9-eclipse-temurin-17
       services:
         - docker
       env:
-        MAVEN_OPTS: "-Dmaven.repo.local=/cache/.m2/repository"
+        JAVA_VERSION: 17
       # 导入环境变量配置文件（用于 SSH 部署）
       imports: https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-backend-envs.yml
-      # 配置缓存目录
-      runner:
-        volumes:
-          - /cache/.m2/repository
+      # 配置缓存目录（使用 caches 而非 volumes）
+      caches:
+        - path: ~/.m2/repository
+        - path: /usr/lib/jvm
+        - path: /opt/maven
       stages:
-        - name: Verify Environment
+        - name: Setup JDK ${JAVA_VERSION}
           script: |
+            # 检查缓存，如果已安装则跳过
+            if [ -f "/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64/bin/java" ]; then
+              echo "JDK ${JAVA_VERSION} already installed (from cache)"
+            else
+              echo "Installing JDK ${JAVA_VERSION}..."
+              apt-get update -qq
+              apt-get install -y -qq openjdk-${JAVA_VERSION}-jdk
+            fi
+            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
             java -version
+
+        - name: Setup Maven
+          script: |
+            # 检查缓存，如果已安装则跳过
+            if [ -f "/opt/maven/bin/mvn" ]; then
+              echo "Maven already installed (from cache)"
+              export PATH=/opt/maven/bin:$PATH
+            else
+              echo "Installing Maven..."
+              MAVEN_VERSION=3.9.6
+              wget -q https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+              tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz
+              mv apache-maven-${MAVEN_VERSION} /opt/maven
+              export PATH=/opt/maven/bin:$PATH
+            fi
             mvn -version
-            echo "Maven repository: /cache/.m2/repository"
 
         - name: Build with Maven
           script: |
+            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+            export PATH=/opt/maven/bin:$JAVA_HOME/bin:$PATH
             # 从根目录构建整个项目（会自动处理所有模块依赖）
             mvn clean install -Dmaven.test.skip=true
 
