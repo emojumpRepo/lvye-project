@@ -9,73 +9,36 @@ main:
         JAVA_VERSION: 17
       # 导入环境变量配置文件（用于 SSH 部署）
       imports: https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-backend-envs.yml
-      # 声明式的构建缓存 - 参考: https://docs.cnb.cool/grammar/pipeline.html#volumes
-      volumes:
-        # Maven 依赖缓存（copy-on-write 支持并发构建）
-        - /root/.m2:copy-on-write
-        # JDK 安装缓存
-        - /usr/lib/jvm:copy-on-write
-        # Maven 安装缓存
-        - /opt/maven:copy-on-write
+      
+      # 使用 CNB 官方缓存机制
+      caches:
+        - path: ~/.m2/repository
+      
       stages:
-        - name: Setup JDK ${JAVA_VERSION}
+        - name: Setup Build Environment
           script: |
-            # 检查缓存，如果已安装则跳过
-            if [ -f "/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64/bin/java" ]; then
-              echo "JDK ${JAVA_VERSION} already installed (from cache)"
-            else
-              echo "Installing JDK ${JAVA_VERSION}..."
-              apt-get update -qq
-              apt-get install -y -qq openjdk-${JAVA_VERSION}-jdk
-            fi
+            apt-get update -qq
+            apt-get install -y -qq openjdk-${JAVA_VERSION}-jdk maven
+            
             export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
             export PATH=$JAVA_HOME/bin:$PATH
+            
             java -version
-
-        - name: Setup Maven
-          script: |
-            # 检查缓存，如果已安装则跳过
-            if [ -f "/opt/maven/bin/mvn" ]; then
-              echo "Maven already installed (from cache)"
-              export PATH=/opt/maven/bin:$PATH
-            else
-              echo "Installing Maven..."
-              MAVEN_VERSION=3.9.6
-              
-              # 先安装下载工具（如果不存在）
-              if ! command -v curl &> /dev/null && ! command -v wget &> /dev/null; then
-                echo "Installing curl..."
-                apt-get update -qq
-                apt-get install -y -qq curl
-              fi
-              
-              # 使用 curl 或 wget 下载
-              if command -v curl &> /dev/null; then
-                curl -fsSL https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz -o maven.tar.gz
-              else
-                wget -q https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz -O maven.tar.gz
-              fi
-              
-              tar -xzf maven.tar.gz
-              mv apache-maven-${MAVEN_VERSION} /opt/maven
-              rm -f maven.tar.gz
-              export PATH=/opt/maven/bin:$PATH
-            fi
             mvn -version
 
         - name: Build with Maven
           script: |
             export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
-            export PATH=/opt/maven/bin:$JAVA_HOME/bin:$PATH
-            # 从根目录构建整个项目（会自动处理所有模块依赖）
-            mvn clean install -Dmaven.test.skip=true
+            export PATH=$JAVA_HOME/bin:$PATH
+            # 从根目录构建整个项目（并行构建 + 批处理模式 + 禁用传输进度）
+            mvn clean install \
+              -Dmaven.test.skip=true \
+              -Dmaven.compile.fork=true \
+              -T 1C \
+              --batch-mode \
+              --no-transfer-progress
 
-        # - name: Build Docker Image
-        #   script: |
-        #     cd yudao-server
-        #     docker build -t yudao-server:latest .
-
-        # SSH 部署阶段（可选，需要在 CNB 平台配置环境变量）
+        # SSH 部署阶段
         - name: Deploy via SSH
           plugins:
             - name: ssh
@@ -85,5 +48,4 @@ main:
                 port: ${REMOTE_PORT}
                 privateKey: ${PRIVATE_KEY}
               script: |
-                # 部署 Docker 镜像或上传文件
                 echo "Deploying to remote server..."
