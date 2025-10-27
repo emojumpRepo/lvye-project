@@ -381,15 +381,10 @@ public class PermissionServiceImpl implements PermissionService {
             return result;
         }
 
-        // 【改进】获得用户的所有部门编号（主部门 + 多部门），通过 Guava 的 Suppliers 惰性求值
+        // 【改进】获得用户的所有部门编号（仅基于多部门关系），通过 Guava 的 Suppliers 惰性求值
         Supplier<Set<Long>> userDeptIds = Suppliers.memoize(() -> {
             Set<Long> deptIds = new HashSet<>();
-            // 1. 添加主部门（需要防止用户不存在的情况）
-            AdminUserDO user = userService.getUser(userId);
-            if (user != null) {
-                CollectionUtils.addIfNotNull(deptIds, user.getDeptId());
-            }
-            // 2. 添加用户关联的多部门（来自 system_user_dept 表）
+            // 仅使用 system_user_dept 表的多部门关系（废弃主部门 dept_id 的权限影响）
             Set<Long> userMultiDeptIds = getUserDeptIdListByUserId(userId);
             if (CollUtil.isNotEmpty(userMultiDeptIds)) {
                 deptIds.addAll(userMultiDeptIds);
@@ -411,20 +406,20 @@ public class PermissionServiceImpl implements PermissionService {
             // 情况二，DEPT_CUSTOM
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_CUSTOM.getScope())) {
                 CollUtil.addAll(result.getDeptIds(), role.getDataScopeDeptIds());
-                // 【改进】自定义可见部门时，保证可以看到自己所在的所有部门（主部门+多部门）
+                // 【改进】自定义可见部门时，保证可以看到自己所在的所有部门（仅多部门）
                 // 例如说，登录时，基于 t_user 的 username 查询会可能被 dept_id 过滤掉
                 CollUtil.addAll(result.getDeptIds(), userDeptIds.get());
                 continue;
             }
             // 情况三，DEPT_ONLY
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_ONLY.getScope())) {
-                // 【改进】添加用户的所有部门（主部门+多部门）
+                // 【改进】添加用户的所有部门（仅多部门）
                 CollUtil.addAll(result.getDeptIds(), userDeptIds.get());
                 continue;
             }
             // 情况四，DEPT_DEPT_AND_CHILD
             if (Objects.equals(role.getDataScope(), DataScopeEnum.DEPT_AND_CHILD.getScope())) {
-                // 【改进】遍历用户的所有部门，添加每个部门及其子部门
+                // 【改进】遍历用户的所有部门（仅多部门），添加每个部门及其子部门
                 Set<Long> allUserDeptIds = userDeptIds.get();
                 for (Long deptId : allUserDeptIds) {
                     // 添加该部门的所有子部门
