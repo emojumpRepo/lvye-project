@@ -9,11 +9,14 @@ main:
         JAVA_VERSION: 17
       # 导入环境变量配置文件（用于 SSH 部署）
       imports: https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-backend-envs.yml
-      # 配置缓存目录（使用 caches 而非 volumes）
-      caches:
-        - path: ~/.m2/repository
-        - path: /usr/lib/jvm
-        - path: /opt/maven
+      # 声明式的构建缓存 - 参考: https://docs.cnb.cool/grammar/pipeline.html#volumes
+      volumes:
+        # Maven 依赖缓存（copy-on-write 支持并发构建）
+        - /root/.m2:copy-on-write
+        # JDK 安装缓存
+        - /usr/lib/jvm:copy-on-write
+        # Maven 安装缓存
+        - /opt/maven:copy-on-write
       stages:
         - name: Setup JDK ${JAVA_VERSION}
           script: |
