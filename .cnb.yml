@@ -44,14 +44,14 @@ main:
         #     docker build -t yudao-server:latest .
 
         # SSH 部署阶段（可选，需要在 CNB 平台配置环境变量）
-        # - name: Deploy via SSH
-        #   plugins:
-        #     - name: ssh
-        #       config:
-        #         host: ${REMOTE_HOST}
-        #         user: ${REMOTE_USERNAME}
-        #         port: ${REMOTE_PORT}
-        #         privateKey: ${PRIVATE_KEY}
-        #       script: |
-        #         # 部署 Docker 镜像或上传文件
-        #         echo "Deploying to remote server..."
+        - name: Deploy via SSH
+          plugins:
+            - name: ssh
+              config:
+                host: ${REMOTE_HOST}
+                user: ${REMOTE_USERNAME}
+                port: ${REMOTE_PORT}
+                privateKey: ${PRIVATE_KEY}
+              script: |
+                # 部署 Docker 镜像或上传文件
+                echo "Deploying to remote server..."
