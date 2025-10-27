@@ -19,6 +19,7 @@ import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultCalculateService;
+// ScenarioBasedAssessmentResultService is in the same package; no import needed
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireDimensionService;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -26,7 +27,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import com.alibaba.fastjson.JSON;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -82,6 +82,9 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
 
     @Resource
     private AssessmentResultService assessmentResultService;
+
+    @Resource
+    private ScenarioBasedAssessmentResultService scenarioBasedAssessmentResultService;
 
     @Resource
     private cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireResultTxService questionnaireResultTxService;
@@ -202,17 +205,18 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
                                         resultCalculate
                                 );
 
-                                // 更新任务风险等级与学生风险（若有）
+                                // 计算该问卷所属模块是否可生成（插槽内问卷已全部完成）
                                 try {
-                                    if (updated != null && (updated.getRiskLevel() != null
-                                            || !StringUtils.isAnyBlank(updated.getEvaluate(), updated.getSuggestions()))) {
-                                        userTaskMapper.updateTaskRiskLevel(taskNo, userId, updated.getRiskLevel(), updated.getEvaluate(), updated.getSuggestions());
-                                        StudentProfileDO studentProfile2 = studentProfileService.getStudentProfileByUserId(userId);
-                                        if (studentProfile2 != null && updated.getRiskLevel() != null) {
-                                            studentProfileService.updateStudentRiskLevel(studentProfile2.getId(), updated.getRiskLevel());
-                                        }
+                                    AssessmentTaskDO at = assessmentTaskService.getAssessmentTaskByNo(taskNo);
+                                    StudentProfileDO sp2 = studentProfileService.getStudentProfileByUserId(userId);
+                                    if (at != null && at.getScenarioId() != null && sp2 != null) {
+                                        // 仅检查“包含当前问卷”的插槽，更高效
+                                        scenarioBasedAssessmentResultService.generateModuleResultsForCompletedSlots(
+                                                taskNo, at.getScenarioId(), sp2.getId(), userId, participateReqVO.getQuestionnaireId());
                                     }
-                                } catch (Exception ignore) {}
+                                } catch (Exception e) {
+                                    log.error("提前生成模块结果失败, taskNo={}, userId={}, err= {}", taskNo, userId, e.getMessage(), e);
+                                }
 
                                 // 重新计算该任务下该用户的完成情况
                                 List<Long> qids = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(taskNo, TenantContextHolder.getTenantId());
@@ -259,13 +263,24 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
                                                 taskNo, content, meta);
                                     }
 
-                                    // 触发组合测评结果生成
+                                    // 触发生态化（场景化）测评结果生成：包含模块结果与整体测评结果
                                     try {
                                         if (studentProfile2 != null) {
-                                            assessmentResultService.generateAndSaveCombinedResult(taskNo, studentProfile2.getId());
+                                            AssessmentTaskDO at = assessmentTaskService.getAssessmentTaskByNo(taskNo);
+                                            if (at != null && at.getScenarioId() != null) {
+                                                scenarioBasedAssessmentResultService.calculateAssessmentResult(
+                                                        at.getId(),
+                                                        at.getScenarioId(),
+                                                        studentProfile2.getId(),
+                                                        userId,
+                                                        taskNo);
+                                            } else {
+                                                // 无场景时回退到组合测评生成器
+                                                assessmentResultService.generateAndSaveCombinedResult(taskNo, studentProfile2.getId());
+                                            }
                                         }
                                     } catch (Exception e) {
-                                        log.error("生成组合测评结果失败, taskNo={}, userId={}, err= {}", taskNo, userId, e.getMessage(), e);
+                                        log.error("生成测评结果失败, taskNo={}, userId={}, err= {}", taskNo, userId, e.getMessage(), e);
                                     }
                                 }
                             }
@@ -291,19 +306,6 @@ public class AssessmentParticipantServiceImpl implements AssessmentParticipantSe
         }
         return assessmentUserTaskDO.getStatus();
 
-    }
-
-    private Long saveQuestionnaireResult(String taskNo, Long userId, Long questionnaireId, List<WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList) {
-        QuestionnaireResultDO resultDO = new QuestionnaireResultDO();
-        resultDO.setAssessmentTaskNo(taskNo);
-        resultDO.setUserId(userId);
-        resultDO.setQuestionnaireId(questionnaireId);
-        resultDO.setGenerationStatus(1);
-        String result = JSON.toJSONString(answerList);
-        resultDO.setAnswers(result);
-        logger.info("问卷ID={} 保存问卷结果: {}", questionnaireId, resultDO);
-        questionnaireResultMapper.insert(resultDO);
-        return resultDO.getId();
     }
 
     private QuestionnaireResultDO updateQuestionnaireResult(Long questionnaireResultId, Long questionnaireId, List<WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList, List<QuestionnaireResultVO> answerResultList) {

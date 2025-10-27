@@ -34,6 +34,8 @@ import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireDim
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.DimensionResultMapper;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.DimensionResultDO;
 import cn.iocoder.yudao.module.psychology.framework.resultgenerator.vo.QuestionnaireResultVO;
+import cn.iocoder.yudao.module.psychology.service.assessment.ScenarioBasedAssessmentResultService;
+import cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO.AssessmentAnswerItem;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -76,6 +78,9 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     private QuestionnaireDimensionService questionnaireDimensionService;
     @Resource
     private DimensionResultMapper dimensionResultMapper;
+
+    @Resource
+    private ScenarioBasedAssessmentResultService scenarioBasedAssessmentResultService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -548,7 +553,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void recalculateAssessmentResults(String taskNo) {
-        // 调用带userIds参数的方法，传null表示计算所有用户
+        // 复用正常流程：逐用户复算问卷→聚合→生成测评结果（或场景化）
         recalculateAssessmentResults(taskNo, null);
     }
 
@@ -581,7 +586,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
             }
         }
 
-        // 3. 按用户分组，为每个用户重新计算结果
+        // 3. 按用户分组，为每个用户重新计算结果（复用正常计算流程）
         Map<Long, List<QuestionnaireResultDO>> userResultsMap = allResults.stream()
             .collect(Collectors.groupingBy(QuestionnaireResultDO::getUserId));
 
@@ -614,7 +619,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                     log.warn("用户{}存在多个学生档案，使用最新的档案ID: {}", userId, studentProfile.getId());
                 }
 
-                // 3.2 为每个问卷结果重新计算维度结果
+                // 3.2 为每个问卷结果重新计算维度结果（复用问卷正常计算服务）
                 for (QuestionnaireResultDO result : userResults) {
                     try {
                         recalculateQuestionnaireResult(result);
@@ -625,13 +630,29 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                     }
                 }
 
-                // 3.3 重新生成组合测评结果
+                // 3.3 重新生成测评结果：优先走场景化（可生成模块与测评结果），否则回退组合生成器
                 try {
-                    generateAndSaveCombinedResult(taskNo, studentProfile.getId());
-                    log.info("用户{}的组合测评结果重新生成成功", userId);
+                    AssessmentTaskDO assessmentTask = assessmentTaskMapper.selectByTaskNo(taskNo);
+                    if (assessmentTask != null && assessmentTask.getScenarioId() != null) {
+                        // 先补齐模块结果（插槽内问卷均完成即可生成）
+                        try {
+                            // 重算场景：传 null 表示检查所有插槽
+                            scenarioBasedAssessmentResultService.generateModuleResultsForCompletedSlots(
+                                taskNo, assessmentTask.getScenarioId(), studentProfile.getId(), userId, null);
+                        } catch (Exception e) {
+                            log.warn("重算模块结果失败, taskNo={}, userId={}", taskNo, userId, e);
+                        }
+                        // 再计算整体测评结果
+                        scenarioBasedAssessmentResultService.calculateAssessmentResult(
+                            assessmentTask.getId(), assessmentTask.getScenarioId(), studentProfile.getId(), userId, taskNo);
+                        log.info("用户{}的场景化测评结果重新生成成功", userId);
+                    } else {
+                        generateAndSaveCombinedResult(taskNo, studentProfile.getId());
+                        log.info("用户{}的组合测评结果重新生成成功", userId);
+                    }
                     successCount++;
                 } catch (Exception e) {
-                    log.error("重新生成组合测评结果失败, taskNo={}, userId={}", taskNo, userId, e);
+                    log.error("重新生成测评结果失败, taskNo={}, userId={}", taskNo, userId, e);
                     errorCount++;
                 }
 
@@ -658,10 +679,10 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
             return;
         }
 
-        List<cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList;
+        List<AssessmentAnswerItem> answerList;
         try {
             answerList = JsonUtils.parseArray(result.getAnswers(),
-                cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO.AssessmentAnswerItem.class);
+                AssessmentAnswerItem.class);
         } catch (Exception e) {
             log.error("解析答题数据失败, questionnaireResultId={}", result.getId(), e);
             return;
@@ -698,7 +719,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
      */
     private void updateRecalculatedQuestionnaireResult(
             QuestionnaireResultDO originalResult,
-            List<cn.iocoder.yudao.module.psychology.controller.app.assessment.vo.WebAssessmentParticipateReqVO.AssessmentAnswerItem> answerList,
+            List<AssessmentAnswerItem> answerList,
             List<cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO> calculatedResults) {
 
         QuestionnaireResultDO updateResult = new QuestionnaireResultDO();
@@ -729,19 +750,18 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 originalResult.getId(), dimensionScores.size());
         }
 
-        // 重新计算风险等级和建议
+        // 聚合风险等级与建议（严格依据维度规则产出的 riskLevel/评语）
         Integer maxRiskLevel = null;
         StringBuilder combinedSuggestions = new StringBuilder();
         StringBuilder combinedEvaluate = new StringBuilder();
-        int abnormalDimensionCount = 0;
 
         for (cn.iocoder.yudao.module.psychology.service.questionnaire.vo.QuestionnaireResultVO calcResult : calculatedResults) {
-            // 统计异常维度数量
-            if (calcResult.getIsAbnormal() != null && calcResult.getIsAbnormal() > 0) {
-                abnormalDimensionCount++;
+            // 取最大风险等级
+            if (calcResult.getRiskLevel() != null) {
+                maxRiskLevel = (maxRiskLevel == null) ? calcResult.getRiskLevel() : Math.max(maxRiskLevel, calcResult.getRiskLevel());
             }
 
-            // 收集建议内容
+            // 学生评语合并（来自维度规则配置的学生评语）
             if (calcResult.getStudentComment() != null && !calcResult.getStudentComment().trim().isEmpty()) {
                 if (combinedSuggestions.length() > 0) {
                     combinedSuggestions.append("\n");
@@ -749,7 +769,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 combinedSuggestions.append(calcResult.getStudentComment());
             }
 
-            // 收集评价内容
+            // 维度描述合并（来自维度规则配置的描述/label汇总）
             if (calcResult.getDescription() != null && !calcResult.getDescription().trim().isEmpty()) {
                 if (combinedEvaluate.length() > 0) {
                     combinedEvaluate.append("\n");
@@ -757,16 +777,9 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 combinedEvaluate.append(calcResult.getDescription());
             }
         }
-
-        // 根据异常维度数量设置风险等级
-        if (abnormalDimensionCount == 0) {
-            maxRiskLevel = 1; // 正常
-        } else if (abnormalDimensionCount == 1) {
-            maxRiskLevel = 2; // 关注
-        } else if (abnormalDimensionCount == 2) {
-            maxRiskLevel = 3; // 预警
-        } else {
-            maxRiskLevel = 4; // 高危
+        // 兜底：若没有任何维度风险等级，视为1（无/低风险）
+        if (maxRiskLevel == null) {
+            maxRiskLevel = 1;
         }
 
         updateResult.setRiskLevel(maxRiskLevel);
@@ -825,8 +838,9 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         // 执行更新
         questionnaireResultMapper.updateById(updateResult);
 
-        log.info("问卷结果更新完成, questionnaireResultId={}, 异常维度数量={}, 风险等级={}",
-            originalResult.getId(), abnormalDimensionCount, maxRiskLevel);
+        log.info("问卷结果更新完成, questionnaireResultId={}, 聚合风险等级={}",
+            originalResult.getId(), maxRiskLevel);
     }
+
 }
 

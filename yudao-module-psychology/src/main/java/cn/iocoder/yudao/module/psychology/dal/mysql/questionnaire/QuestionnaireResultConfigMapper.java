@@ -30,6 +30,7 @@ public interface QuestionnaireResultConfigMapper extends BaseMapperX<Questionnai
                 .eqIfPresent(QuestionnaireResultConfigDO::getRiskLevel, reqVO.getRiskLevel())
                 .likeIfPresent(QuestionnaireResultConfigDO::getLevel, reqVO.getLevel())
                 .betweenIfPresent(QuestionnaireResultConfigDO::getCreateTime, reqVO.getCreateTime())
+                .orderByAsc(QuestionnaireResultConfigDO::getMatchOrder)
                 .orderByDesc(QuestionnaireResultConfigDO::getId));
     }
 
@@ -37,7 +38,10 @@ public interface QuestionnaireResultConfigMapper extends BaseMapperX<Questionnai
      * 根据维度ID查询结果配置列表
      */
     default List<QuestionnaireResultConfigDO> selectListByDimensionId(Long dimensionId) {
-        return selectList(QuestionnaireResultConfigDO::getDimensionId, dimensionId);
+        return selectList(new LambdaQueryWrapperX<QuestionnaireResultConfigDO>()
+                .eq(QuestionnaireResultConfigDO::getDimensionId, dimensionId)
+                .orderByAsc(QuestionnaireResultConfigDO::getMatchOrder)
+                .orderByAsc(QuestionnaireResultConfigDO::getId));
     }
 
     /**
@@ -54,7 +58,7 @@ public interface QuestionnaireResultConfigMapper extends BaseMapperX<Questionnai
     @Select("SELECT qrc.* FROM lvye_questionnaire_result_config qrc " +
             "INNER JOIN lvye_questionnaire_dimension qd ON qrc.dimension_id = qd.id " +
             "WHERE qd.questionnaire_id = #{questionnaireId} " +
-            "ORDER BY qd.sort_order, qrc.id")
+            "ORDER BY qd.sort_order, qrc.match_order ASC, qrc.id ASC")
     List<QuestionnaireResultConfigDO> selectListByQuestionnaireId(@Param("questionnaireId") Long questionnaireId);
 
 }

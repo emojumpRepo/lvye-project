@@ -26,9 +26,14 @@ public class ModuleResultDO extends TenantBaseDO {
     private Long id;
 
     /**
-     * 测评结果ID
+     * 测评任务编号
      */
-    private Long assessmentResultId;
+    private String assessmentTaskNo;
+
+    /**
+     * 用户ID
+     */
+    private Long userId;
 
     /**
      * 场景插槽ID
@@ -64,4 +69,9 @@ public class ModuleResultDO extends TenantBaseDO {
      * 模块描述
      */
     private String moduleDescription;
+
+    /**
+     * 规则计算的原始结果（JSON字符串，包含匹配分支的payload，如suggestion/description/命中信息等）
+     */
+    private String resultData;
 }

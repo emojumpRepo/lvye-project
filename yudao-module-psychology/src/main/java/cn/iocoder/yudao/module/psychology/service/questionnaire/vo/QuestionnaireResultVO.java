@@ -46,4 +46,8 @@ public class QuestionnaireResultVO {
      */
     private String description;
 
+    /**
+     * 风险等级（1-无/低风险，2-轻度风险，3-中度风险，4-重度风险）
+     */
+    private Integer riskLevel;
 }

@@ -230,7 +230,6 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
 
             // 生成新的字段值
             String newTitle = StringUtils.hasText(externalSurvey.getTitle()) ? externalSurvey.getTitle() : "未命名问卷";
-            String newDescription = SurveyDataConverter.generateDescription(externalSurvey);
             String newExternalLink = externalSurvey.getSurveyPath();
             String newSurveyCode = externalSurvey.getSurveyCode();
             Integer newQuestionnaireType = SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType());
@@ -247,7 +246,6 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
 
             // 检查是否需要更新
             if (!Objects.equals(localQuestionnaire.getTitle(), newTitle) ||
-                !Objects.equals(localQuestionnaire.getDescription(), newDescription) ||
                 !Objects.equals(localQuestionnaire.getExternalLink(), newExternalLink) ||
                 !Objects.equals(localQuestionnaire.getSurveyCode(), newSurveyCode) ||
                 !Objects.equals(localQuestionnaire.getQuestionnaireType(), newQuestionnaireType) ||
@@ -264,7 +262,6 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
             if (needUpdate) {
                 // 更新字段
                 localQuestionnaire.setTitle(newTitle);
-                localQuestionnaire.setDescription(newDescription);
                 localQuestionnaire.setExternalLink(newExternalLink);
                 localQuestionnaire.setQuestionnaireType(newQuestionnaireType);
                 localQuestionnaire.setStatus(newStatus);

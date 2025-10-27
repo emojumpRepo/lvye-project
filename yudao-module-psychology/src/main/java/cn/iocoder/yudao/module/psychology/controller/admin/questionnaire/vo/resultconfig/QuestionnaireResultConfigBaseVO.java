@@ -28,6 +28,9 @@ public class QuestionnaireResultConfigBaseVO {
     @Schema(description = "计算公式", example = "SUM(score)")
     private String calculateFormula;
 
+    @Schema(description = "规则匹配排序（升序）", example = "1")
+    private Integer matchOrder;
+
     @Schema(description = "教师端评语", example = "该生在睡眠质量方面表现良好")
     private String teacherComment;
 
@@ -49,5 +52,8 @@ public class QuestionnaireResultConfigBaseVO {
 
     @Schema(description = "状态（0：禁用，1：启用）", example = "1")
     private Integer status;
+
+    @Schema(description = "是否可多命中（0：否，1：是）", example = "0")
+    private Integer isMultiHit;
 
 }

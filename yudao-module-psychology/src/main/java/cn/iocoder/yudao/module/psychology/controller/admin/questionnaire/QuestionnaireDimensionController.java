@@ -88,6 +88,24 @@ public class QuestionnaireDimensionController {
         return CommonResult.success(list);
     }
 
+    @GetMapping("/list-by-scenario-slot")
+    @Operation(summary = "根据测评场景插槽ID获得维度列表")
+    @Parameter(name = "scenarioSlotId", description = "场景插槽ID", required = true, example = "1001")
+    @PreAuthorize("@ss.hasPermission('psychology:questionnaire-dimension:query')")
+    public CommonResult<List<QuestionnaireDimensionRespVO>> getDimensionListByScenarioSlot(@RequestParam("scenarioSlotId") Long scenarioSlotId) {
+        List<QuestionnaireDimensionRespVO> list = questionnaireDimensionService.getDimensionListByScenarioSlot(scenarioSlotId);
+        return CommonResult.success(list);
+    }
+
+    @GetMapping("/list-by-scenario")
+    @Operation(summary = "根据测评场景ID获得参与测评计算的维度列表")
+    @Parameter(name = "scenarioId", description = "测评场景ID", required = true, example = "2001")
+    @PreAuthorize("@ss.hasPermission('psychology:questionnaire-dimension:query')")
+    public CommonResult<List<QuestionnaireDimensionRespVO>> getAssessmentDimensionsByScenario(@RequestParam("scenarioId") Long scenarioId) {
+        List<QuestionnaireDimensionRespVO> list = questionnaireDimensionService.getAssessmentDimensionsByScenario(scenarioId);
+        return CommonResult.success(list);
+    }
+
     @PostMapping("/batch-create")
     @Operation(summary = "批量创建问卷维度")
     @PreAuthorize("@ss.hasPermission('psychology:questionnaire-dimension:create')")

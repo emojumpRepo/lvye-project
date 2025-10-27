@@ -46,6 +46,11 @@ public class QuestionnaireResultConfigDO extends BaseDO {
     private String calculateFormula;
 
     /**
+     * 规则匹配排序（升序）
+     */
+    private Integer matchOrder;
+
+    /**
      * 教师端评语
      */
     private String teacherComment;
@@ -79,5 +84,10 @@ public class QuestionnaireResultConfigDO extends BaseDO {
      * 状态（0：禁用，1：启用）
      */
     private Integer status;
+
+    /**
+     * 是否可多命中（0：否，1：是）
+     */
+    private Integer isMultiHit;
 
 }

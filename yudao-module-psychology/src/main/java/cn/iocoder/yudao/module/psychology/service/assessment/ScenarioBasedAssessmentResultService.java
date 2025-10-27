@@ -28,4 +28,10 @@ public interface ScenarioBasedAssessmentResultService {
      */
     AssessmentResultDO recalculateAssessmentResult(Long assessmentResultId);
 
+    /**
+     * 为（包含当前问卷ID的）插槽生成模块结果：当该插槽内关联问卷均已完成时，执行模块规则并落库。
+     * 若 currentQuestionnaireId 为空，则退化为检查全部插槽。
+     */
+    void generateModuleResultsForCompletedSlots(String taskNo, Long scenarioId, Long studentProfileId, Long userId, Long currentQuestionnaireId);
+
 }

@@ -81,6 +81,20 @@ public interface QuestionnaireDimensionService {
     List<Long> batchCreateDimensions(List<QuestionnaireDimensionCreateReqVO> createReqVOList);
 
     /**
+     * 根据测评场景插槽ID，获取该插槽关联的所有问卷的维度列表（仅返回启用维度）
+     * @param scenarioSlotId 插槽ID
+     * @return 维度列表（聚合）
+     */
+    List<QuestionnaireDimensionRespVO> getDimensionListByScenarioSlot(Long scenarioSlotId);
+
+    /**
+     * 根据测评场景ID，获取该场景下所有插槽关联问卷中，参与测评计算的维度列表（启用维度）
+     * @param scenarioId 场景ID
+     * @return 维度列表（仅 participateAssessmentCalc = 1）
+     */
+    List<QuestionnaireDimensionRespVO> getAssessmentDimensionsByScenario(Long scenarioId);
+
+    /**
      * 更新问卷维度状态
      *
      * @param id     编号

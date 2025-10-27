@@ -36,6 +36,7 @@ public class WebAssessmentParticipateReqVO {
         private Integer index;
 
         @Schema(description = "答案内容", requiredMode = Schema.RequiredMode.REQUIRED, example = "A")
+        @JsonDeserialize(using = AnswerStringDeserializer.class)
         private String answer;
 
         @Schema(description = "得分", example = "5")

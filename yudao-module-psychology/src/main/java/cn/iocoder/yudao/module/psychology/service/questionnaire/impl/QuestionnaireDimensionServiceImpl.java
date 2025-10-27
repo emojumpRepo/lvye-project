@@ -5,6 +5,8 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.questionnaire.vo.*;
 import cn.iocoder.yudao.module.psychology.convert.questionnaire.QuestionnaireDimensionConvert;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDimensionDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioSlotDO;
+import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentScenarioSlotMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.questionnaire.QuestionnaireDimensionMapper;
 import cn.iocoder.yudao.module.psychology.service.questionnaire.QuestionnaireDimensionService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -17,6 +19,7 @@ import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.*;
@@ -30,6 +33,8 @@ public class QuestionnaireDimensionServiceImpl implements QuestionnaireDimension
 
     @Resource
     private QuestionnaireDimensionMapper questionnaireDimensionMapper;
+    @Resource
+    private AssessmentScenarioSlotMapper assessmentScenarioSlotMapper;
 
     @Override
     @Transactional
@@ -174,6 +179,103 @@ public class QuestionnaireDimensionServiceImpl implements QuestionnaireDimension
         
         log.info("批量创建问卷维度成功: count={}", createReqVOList.size());
         return dimensionIds;
+    }
+
+    @Override
+    public List<QuestionnaireDimensionRespVO> getDimensionListByScenarioSlot(Long scenarioSlotId) {
+        // 1. 查询插槽信息
+        AssessmentScenarioSlotDO slot = assessmentScenarioSlotMapper.selectById(scenarioSlotId);
+        if (slot == null) {
+            return new ArrayList<>();
+        }
+        // 2. 解析问卷ID列表（questionnaireIds 以 JSON 文本或逗号文本存储，兼容处理）
+        List<Long> qIds = parseQuestionnaireIds(slot.getQuestionnaireIds());
+        if (qIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        // 3. 聚合所有启用维度并按 sortOrder 排序
+        List<QuestionnaireDimensionDO> all = new ArrayList<>();
+        for (Long qid : qIds) {
+            all.addAll(
+                questionnaireDimensionMapper.selectList(
+                    new LambdaQueryWrapper<QuestionnaireDimensionDO>()
+                        .eq(QuestionnaireDimensionDO::getQuestionnaireId, qid)
+                        .eq(QuestionnaireDimensionDO::getStatus, 1)
+                        .orderByAsc(QuestionnaireDimensionDO::getSortOrder)
+                )
+            );
+        }
+        // 4. 去重（同一维度ID只保留一次）并转换
+        List<QuestionnaireDimensionDO> distinct = all.stream()
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(QuestionnaireDimensionDO::getId, d -> d, (a, b) -> a),
+                        m -> m.values().stream().sorted((x, y) -> Integer.compare(
+                                x.getSortOrder() == null ? 0 : x.getSortOrder(),
+                                y.getSortOrder() == null ? 0 : y.getSortOrder()
+                        )).collect(Collectors.toList())
+                ));
+        return QuestionnaireDimensionConvert.INSTANCE.convertList(distinct);
+    }
+
+    @Override
+    public List<QuestionnaireDimensionRespVO> getAssessmentDimensionsByScenario(Long scenarioId) {
+        // 1. 查询该场景的所有插槽
+        List<AssessmentScenarioSlotDO> slots = assessmentScenarioSlotMapper.selectListByScenarioId(scenarioId);
+        if (slots == null || slots.isEmpty()) return new ArrayList<>();
+
+        // 2. 聚合问卷ID
+        List<Long> qIds = new ArrayList<>();
+        for (AssessmentScenarioSlotDO slot : slots) {
+            qIds.addAll(parseQuestionnaireIds(slot.getQuestionnaireIds()));
+        }
+        if (qIds.isEmpty()) return new ArrayList<>();
+
+        // 3. 查询参与测评计算的启用维度
+        List<QuestionnaireDimensionDO> all = new ArrayList<>();
+        for (Long qid : qIds) {
+            all.addAll(
+                questionnaireDimensionMapper.selectList(
+                    new LambdaQueryWrapper<QuestionnaireDimensionDO>()
+                        .eq(QuestionnaireDimensionDO::getQuestionnaireId, qid)
+                        .eq(QuestionnaireDimensionDO::getStatus, 1)
+                        .eq(QuestionnaireDimensionDO::getParticipateAssessmentCalc, 1)
+                        .orderByAsc(QuestionnaireDimensionDO::getSortOrder)
+                )
+            );
+        }
+
+        // 4. 去重并排序
+        List<QuestionnaireDimensionDO> distinct = all.stream()
+            .collect(Collectors.collectingAndThen(
+                    Collectors.toMap(QuestionnaireDimensionDO::getId, d -> d, (a, b) -> a),
+                    m -> m.values().stream().sorted((x, y) -> Integer.compare(
+                            x.getSortOrder() == null ? 0 : x.getSortOrder(),
+                            y.getSortOrder() == null ? 0 : y.getSortOrder()
+                    )).collect(Collectors.toList())
+            ));
+        return QuestionnaireDimensionConvert.INSTANCE.convertList(distinct);
+    }
+
+    private List<Long> parseQuestionnaireIds(String questionnaireIds) {
+        List<Long> list = new ArrayList<>();
+        if (questionnaireIds == null || questionnaireIds.trim().isEmpty()) return list;
+        String text = questionnaireIds.trim();
+        try {
+            if (text.startsWith("[") && text.endsWith("]")) {
+                // JSON 数组
+                for (String s : text.substring(1, text.length() - 1).split(",")) {
+                    String t = s.trim().replace("\"", "");
+                    if (!t.isEmpty()) list.add(Long.parseLong(t));
+                }
+            } else {
+                // 逗号分隔
+                for (String s : text.split(",")) {
+                    String t = s.trim();
+                    if (!t.isEmpty()) list.add(Long.parseLong(t));
+                }
+            }
+        } catch (Exception ignore) { }
+        return list;
     }
 
     @Override

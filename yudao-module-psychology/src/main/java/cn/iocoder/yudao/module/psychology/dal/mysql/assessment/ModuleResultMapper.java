@@ -15,21 +15,19 @@ import java.util.List;
 @Mapper
 public interface ModuleResultMapper extends BaseMapperX<ModuleResultDO> {
 
-    /**
-     * 根据测评结果ID查询模块结果列表
-     */
-    default List<ModuleResultDO> selectListByAssessmentResultId(Long assessmentResultId) {
+    // 根据任务编号+用户ID查询模块结果列表
+    default List<ModuleResultDO> selectListByTaskNoAndUserId(String taskNo, Long userId) {
         return selectList(new LambdaQueryWrapperX<ModuleResultDO>()
-                .eq(ModuleResultDO::getAssessmentResultId, assessmentResultId)
+                .eq(ModuleResultDO::getAssessmentTaskNo, taskNo)
+                .eq(ModuleResultDO::getUserId, userId)
                 .orderByAsc(ModuleResultDO::getScenarioSlotId));
     }
 
-    /**
-     * 根据测评结果ID和场景插槽ID查询模块结果
-     */
-    default ModuleResultDO selectByAssessmentResultIdAndScenarioSlotId(Long assessmentResultId, Long scenarioSlotId) {
+    // 根据任务编号+用户ID+插槽ID查询
+    default ModuleResultDO selectByTaskNoAndUserIdAndSlotId(String taskNo, Long userId, Long scenarioSlotId) {
         return selectOne(new LambdaQueryWrapperX<ModuleResultDO>()
-                .eq(ModuleResultDO::getAssessmentResultId, assessmentResultId)
+                .eq(ModuleResultDO::getAssessmentTaskNo, taskNo)
+                .eq(ModuleResultDO::getUserId, userId)
                 .eq(ModuleResultDO::getScenarioSlotId, scenarioSlotId));
     }
 
@@ -47,11 +45,10 @@ public interface ModuleResultMapper extends BaseMapperX<ModuleResultDO> {
         return selectList(ModuleResultDO::getRiskLevel, riskLevel);
     }
 
-    /**
-     * 根据测评结果ID删除所有模块结果
-     */
-    default void deleteByAssessmentResultId(Long assessmentResultId) {
+    // 根据任务编号+用户ID删除
+    default void deleteByTaskNoAndUserId(String taskNo, Long userId) {
         delete(new LambdaQueryWrapperX<ModuleResultDO>()
-                .eq(ModuleResultDO::getAssessmentResultId, assessmentResultId));
+                .eq(ModuleResultDO::getAssessmentTaskNo, taskNo)
+                .eq(ModuleResultDO::getUserId, userId));
     }
 }

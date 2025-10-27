@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 /**
@@ -36,19 +37,37 @@ public class SimpleExpressionExecutor implements ExpressionExecutor {
         
         if (node.has("and")) {
             System.out.println("[DEBUG] 执行and操作");
-            return evalAnd(node.get("and"), ctx, payload, debug);
+            boolean ok = evalAnd(node.get("and"), ctx, payload, debug);
+            if (ok && node.has("result")) mergeResultToPayload(node.get("result"), payload);
+            return ok;
         }
         if (node.has("or")) {
             System.out.println("[DEBUG] 执行or操作");
-            return evalOr(node.get("or"), ctx, payload, debug);
+            boolean ok = evalOr(node.get("or"), ctx, payload, debug);
+            if (ok && node.has("result")) mergeResultToPayload(node.get("result"), payload);
+            return ok;
         }
         if (node.has("cmp")) {
             System.out.println("[DEBUG] 执行cmp操作");
-            return evalCmp(node.get("cmp"), ctx);
+            boolean matched = evalCmp(node.get("cmp"), ctx);
+            if (matched) {
+                if (node.has("label")) {
+                    recordLabelValue(node, node.get("cmp"), ctx, payload);
+                }
+                if (node.has("result")) mergeResultToPayload(node.get("result"), payload);
+            }
+            return matched;
         }
         if (node.has("range")) {
             System.out.println("[DEBUG] 执行range操作");
-            return evalRange(node.get("range"), ctx);
+            boolean matched = evalRange(node.get("range"), ctx);
+            if (matched) {
+                if (node.has("label")) {
+                    recordLabelValue(node, node.get("range"), ctx, payload);
+                }
+                if (node.has("result")) mergeResultToPayload(node.get("result"), payload);
+            }
+            return matched;
         }
         if (node.has("count")) {
             System.out.println("[DEBUG] 执行count操作");
@@ -72,16 +91,44 @@ public class SimpleExpressionExecutor implements ExpressionExecutor {
 
     private boolean evalOr(JsonNode arr, EvaluateContext ctx, Map<String,Object> payload, Map<String,Object> debug) {
         if (!(arr instanceof ArrayNode)) return false;
+        boolean anyMatched = false;
+        
+        // 对于包含 label 的 or 规则，需要计算所有条件的值（即使某个已经命中）
+        boolean hasAnyLabel = false;
         for (JsonNode n : arr) {
-            if (eval(n, ctx, payload, debug)) return true;
+            if (n.has("label")) {
+                hasAnyLabel = true;
+                break;
+            }
         }
-        return false;
+        
+        if (hasAnyLabel) {
+            // 如果有任何条件带 label，则计算所有条件并记录所有 label 的值
+            for (JsonNode n : arr) {
+                boolean matched = eval(n, ctx, payload, debug);
+                if (matched) {
+                    anyMatched = true;
+                }
+                // 即使不匹配，如果有 label 也要记录其值
+                if (n.has("label") && !matched) {
+                    recordLabelValueAlways(n, ctx, payload);
+                }
+            }
+            return anyMatched;
+        } else {
+            // 没有 label 的情况，保持原有逻辑：短路求值
+            for (JsonNode n : arr) {
+                if (eval(n, ctx, payload, debug)) return true;
+            }
+            return false;
+        }
     }
 
     private boolean evalCmp(JsonNode cmp, EvaluateContext ctx) {
-        Object lhs = evalValue(cmp.get("lhs"), ctx);
-        String op = cmp.get("op").asText();
-        JsonNode rhsNode = cmp.get("rhs");
+        JsonNode lhsNode = cmp.get("lhs") != null ? cmp.get("lhs") : cmp.get("left");
+        JsonNode rhsNode = cmp.get("rhs") != null ? cmp.get("rhs") : cmp.get("right");
+        Object lhs = evalValue(lhsNode, ctx);
+        String op = normalizeOp(cmp.get("op").asText());
         
         System.out.println("[DEBUG] evalCmp: lhs=" + lhs + " (类型:" + (lhs != null ? lhs.getClass().getSimpleName() : "null") + "), op=" + op);
         
@@ -99,6 +146,126 @@ public class SimpleExpressionExecutor implements ExpressionExecutor {
             boolean result = compare(lhs, op, rhs);
             System.out.println("[DEBUG] evalCmp结果: " + lhs + " " + op + " " + rhs + " = " + result);
             return result;
+        }
+    }
+
+    /**
+     * 当节点包含 label 且命中时，记录 label 以及 lhs/target 的求值（如 sum 的结果）到 payload.labels 数组中
+     */
+    @SuppressWarnings("unchecked")
+    private void recordLabelValue(JsonNode node, JsonNode opNode, EvaluateContext ctx, Map<String,Object> payload) {
+        try {
+            String label = node.get("label").asText();
+            Object value = null;
+            Object threshold = null;
+
+            // 支持从 cmp 的 lhs 或 range 的 target/field 取值
+            if (node.has("cmp")) {
+                JsonNode lhs = opNode.get("lhs") != null ? opNode.get("lhs") : opNode.get("left");
+                if (lhs != null) {
+                    value = evalValue(lhs, ctx);
+                }
+                // 提取边界值
+                JsonNode rhs = opNode.get("rhs") != null ? opNode.get("rhs") : opNode.get("right");
+                if (rhs != null) {
+                    threshold = evalValue(rhs, ctx);
+                }
+            } else if (node.has("range")) {
+                JsonNode targetNode = opNode.get("target") != null ? opNode.get("target") : opNode.get("field");
+                if (targetNode != null) {
+                    value = evalValue(targetNode, ctx);
+                }
+                // range 的边界值（优先取 min，其次 max）
+                if (opNode.has("min")) {
+                    threshold = evalValue(opNode.get("min"), ctx);
+                } else if (opNode.has("max")) {
+                    threshold = evalValue(opNode.get("max"), ctx);
+                }
+            }
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("label", label);
+            if (value != null) item.put("value", value);
+            if (threshold != null) item.put("threshold", threshold);
+            item.put("matched", true); // 标记为已匹配
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> labels = (List<Map<String, Object>>) payload.computeIfAbsent("labels", k -> new ArrayList<Map<String, Object>>());
+            labels.add(item);
+            System.out.println("[DEBUG] 记录label结果(已匹配): " + item);
+        } catch (Exception e) {
+            System.out.println("[DEBUG] 记录label结果异常: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 无论条件是否匹配，都记录带 label 的条件的计算值
+     * 用于在 or 规则中收集所有 label 的分数
+     */
+    @SuppressWarnings("unchecked")
+    private void recordLabelValueAlways(JsonNode node, EvaluateContext ctx, Map<String,Object> payload) {
+        try {
+            if (!node.has("label")) {
+                return;
+            }
+            
+            String label = node.get("label").asText();
+            Object value = null;
+            Object threshold = null;
+
+            // 从 cmp 的 lhs 获取值
+            if (node.has("cmp")) {
+                JsonNode cmpNode = node.get("cmp");
+                JsonNode lhs = cmpNode.get("lhs") != null ? cmpNode.get("lhs") : cmpNode.get("left");
+                if (lhs != null) {
+                    value = evalValue(lhs, ctx);
+                }
+                // 提取边界值
+                JsonNode rhs = cmpNode.get("rhs") != null ? cmpNode.get("rhs") : cmpNode.get("right");
+                if (rhs != null) {
+                    threshold = evalValue(rhs, ctx);
+                }
+            } 
+            // 从 range 的 target/field 获取值
+            else if (node.has("range")) {
+                JsonNode rangeNode = node.get("range");
+                JsonNode targetNode = rangeNode.get("target") != null ? rangeNode.get("target") : rangeNode.get("field");
+                if (targetNode != null) {
+                    value = evalValue(targetNode, ctx);
+                }
+                // range 的边界值（优先取 min，其次 max）
+                if (rangeNode.has("min")) {
+                    threshold = evalValue(rangeNode.get("min"), ctx);
+                } else if (rangeNode.has("max")) {
+                    threshold = evalValue(rangeNode.get("max"), ctx);
+                }
+            }
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("label", label);
+            if (value != null) item.put("value", value);
+            if (threshold != null) item.put("threshold", threshold);
+            item.put("matched", false); // 标记为未匹配
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> labels = (List<Map<String, Object>>) payload.computeIfAbsent("labels", k -> new ArrayList<Map<String, Object>>());
+            labels.add(item);
+            System.out.println("[DEBUG] 记录label结果(未匹配): " + item);
+        } catch (Exception e) {
+            System.out.println("[DEBUG] 记录label结果异常: " + e.getMessage());
+        }
+    }
+
+    private String normalizeOp(String op) {
+        if (op == null) return null;
+        switch (op) {
+            case "eq": return "==";
+            case "ne": return "!=";
+            case "gt": return ">";
+            case "gte": return ">=";
+            case "lt": return "<";
+            case "lte": return "<=";
+            default: return op; // 兼容原有 '==', '=', '!=', '>', '>=', '<', '<='
         }
     }
 
@@ -162,12 +329,97 @@ public class SimpleExpressionExecutor implements ExpressionExecutor {
 
     private Object evalValue(JsonNode n, EvaluateContext ctx) {
         if (n == null) return null;
+        // 支持按维度变量取值：{"dim":"code|main|other", "var":"riskLevel|riskLevel3Count|..."}
+        if (n.has("dim")) {
+            String dim = n.get("dim").asText();
+            String var = n.has("var") ? n.get("var").asText() : null;
+            if (var == null) return null;
+            // main/other 特殊命名空间
+            if ("main".equals(dim)) {
+                Object v = ctx.getVariables().get("main." + var);
+                if (v != null) return v;
+            } else if ("other".equals(dim)) {
+                Object v = ctx.getVariables().get("other." + var);
+                if (v != null) return v;
+            }
+            // 一般维度：从变量 dimension_{code}_{var} 获取；若不存在，尝试 ext 中的维度结果
+            String key = "dimension_" + dim + "_" + var;
+            if (ctx.getVariables().containsKey(key)) {
+                return ctx.getVariables().get(key);
+            }
+            Object slotMap = ctx.getExt().get("slotDimensionMap");
+            if (slotMap instanceof java.util.Map) {
+                Object dr = ((java.util.Map<?, ?>) slotMap).get(dim);
+                if (dr instanceof cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.DimensionResultDO) {
+                    cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.DimensionResultDO d = (cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.DimensionResultDO) dr;
+                    if ("riskLevel".equals(var)) return d.getRiskLevel();
+                    if ("level".equals(var)) return d.getLevel();
+                    if ("score".equals(var)) return d.getScore();
+                }
+            }
+            return null;
+        }
         if (n.has("sum")) {
             BigDecimal sum = BigDecimal.ZERO;
-            for (JsonNode q : n.get("sum")) {
-                sum = sum.add(scoreOf(q.asText(), ctx));
+            JsonNode sumNode = n.get("sum");
+            if (sumNode.isArray()) {
+                for (JsonNode q : sumNode) {
+                    sum = sum.add(scoreOf(q.asText(), ctx));
+                }
+                return sum;
+            } else if (sumNode.isObject()) {
+                ArrayNode of = (ArrayNode) sumNode.get("of");
+                JsonNode when = sumNode.get("when");
+                if (of != null) {
+                    for (JsonNode q : of) {
+                        String qn = q.asText();
+                        if (when != null) {
+                            EvaluateContext sub = new EvaluateContext();
+                            sub.getVariables().putAll(ctx.getVariables());
+                            sub.getQuestionScoreMap().putAll(ctx.getQuestionScoreMap());
+                            sub.getQuestionOptionTextMap().putAll(ctx.getQuestionOptionTextMap());
+                            sub.withVar("current.question", qn);
+                            if (!eval(when, sub, Collections.emptyMap(), Collections.emptyMap())) continue;
+                        }
+                        sum = sum.add(scoreOf(qn, ctx));
+                    }
+                }
+                return sum;
             }
             return sum;
+        }
+        if (n.has("avg")) {
+            // 支持两种写法：
+            // 1) {"avg": ["Q1","Q2",...]}
+            // 2) {"avg": {"of": ["Q1","Q2",...], "when": { ... 可选过滤条件 ... }}}
+            JsonNode avgNode = n.get("avg");
+            List<BigDecimal> values = new ArrayList<>();
+            if (avgNode.isArray()) {
+                for (JsonNode q : avgNode) {
+                    values.add(scoreOf(q.asText(), ctx));
+                }
+            } else if (avgNode.isObject()) {
+                ArrayNode of = (ArrayNode) avgNode.get("of");
+                JsonNode when = avgNode.get("when");
+                if (of != null) {
+                    for (JsonNode q : of) {
+                        String qn = q.asText();
+                        if (when != null) {
+                            EvaluateContext sub = new EvaluateContext();
+                            sub.getVariables().putAll(ctx.getVariables());
+                            sub.getQuestionScoreMap().putAll(ctx.getQuestionScoreMap());
+                            sub.getQuestionOptionTextMap().putAll(ctx.getQuestionOptionTextMap());
+                            sub.withVar("current.question", qn);
+                            if (!eval(when, sub, Collections.emptyMap(), Collections.emptyMap())) continue;
+                        }
+                        values.add(scoreOf(qn, ctx));
+                    }
+                }
+            }
+            if (values.isEmpty()) return BigDecimal.ZERO;
+            BigDecimal total = BigDecimal.ZERO;
+            for (BigDecimal v : values) total = total.add(v);
+            return total.divide(new BigDecimal(values.size()), 8, RoundingMode.HALF_UP);
         }
         if (n.has("count")) {
             System.out.println("[DEBUG] evalValue处理count操作");
@@ -316,6 +568,19 @@ public class SimpleExpressionExecutor implements ExpressionExecutor {
                 value = null;
             }
             if (value != null) arr.add(value);
+        }
+    }
+
+    private void mergeResultToPayload(JsonNode resultNode, Map<String,Object> payload) {
+        if (resultNode == null || !resultNode.isObject()) return;
+        for (java.util.Iterator<String> it = resultNode.fieldNames(); it.hasNext();) {
+            String k = it.next();
+            JsonNode v = resultNode.get(k);
+            if (v == null || v.isNull()) continue;
+            if (v.isNumber()) payload.put(k, new java.math.BigDecimal(v.asText()));
+            else if (v.isTextual()) payload.put(k, v.asText());
+            else if (v.isBoolean()) payload.put(k, v.asBoolean());
+            else payload.put(k, v.toString());
         }
     }
 }
