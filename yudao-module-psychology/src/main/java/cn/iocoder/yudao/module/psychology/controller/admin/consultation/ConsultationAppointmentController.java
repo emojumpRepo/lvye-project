@@ -26,11 +26,11 @@ public class ConsultationAppointmentController {
     @Resource
     private ConsultationAppointmentService appointmentService;
 
-    @GetMapping("/today")
-    @Operation(summary = "获取今日咨询列表和统计")
+    @GetMapping("/statistics")
+    @Operation(summary = "获取咨询预约统计数据")
     @DataPermission(enable = false)
-    public CommonResult<TodayConsultationRespVO> getTodayConsultations() {
-        return success(appointmentService.getTodayConsultations());
+    public CommonResult<ConsultationStatisticsRespVO> getStatistics() {
+        return success(appointmentService.getStatistics());
     }
 
     @PostMapping("/appointment/create")
@@ -120,5 +120,35 @@ public class ConsultationAppointmentController {
     public CommonResult<Boolean> sendReminder(@PathVariable("id") Long id) {
         appointmentService.sendReminder(id);
         return success(true);
+    }
+
+    @PostMapping("/appointment/check-time-conflict")
+    @Operation(summary = "校验预约时间冲突")
+    @DataPermission(enable = false)
+    public CommonResult<ConsultationAppointmentCheckTimeConflictRespVO> checkTimeConflict(
+            @Valid @RequestBody ConsultationAppointmentCheckTimeConflictReqVO reqVO) {
+        return success(appointmentService.checkTimeConflict(reqVO));
+    }
+
+    @GetMapping("/appointment/weekly")
+    @Operation(summary = "获取周预约数据")
+    @Parameter(name = "weekOffset", description = "周偏移量（0-当前周，-1-上一周，1-下一周）", example = "0")
+    @DataPermission(enable = false)
+    public CommonResult<ConsultationAppointmentWeeklyRespVO> getWeeklyAppointments(@Valid ConsultationAppointmentWeeklyReqVO reqVO) {
+        return success(appointmentService.getWeeklyAppointments(reqVO));
+    }
+
+    @GetMapping("/appointment/time-range-data")
+    @Operation(summary = "获取时间范围内的咨询数据")
+    @DataPermission(enable = false)
+    public CommonResult<ConsultationAppointmentTimeRangeRespVO> getTimeRangeData(@Valid ConsultationAppointmentTimeRangeReqVO reqVO) {
+        return success(appointmentService.getTimeRangeData(reqVO));
+    }
+
+    @GetMapping("/appointment/by-date")
+    @Operation(summary = "根据日期查询咨询预约数据")
+    @DataPermission(enable = false)
+    public CommonResult<ConsultationAppointmentDateQueryRespVO> getAppointmentsByDate(@Valid ConsultationAppointmentDateQueryReqVO reqVO) {
+        return success(appointmentService.getAppointmentsByDate(reqVO));
     }
 }

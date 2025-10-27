@@ -57,6 +57,15 @@ public interface RoleService {
     void updateRoleDataScope(Long id, Integer dataScope, Set<Long> dataScopeDeptIds);
 
     /**
+     * 直接设置角色的数据权限（不进行系统角色校验，用于初始化系统内置角色）
+     *
+     * @param id 角色编号
+     * @param dataScope 数据范围
+     * @param dataScopeDeptIds 部门编号数组
+     */
+    void updateRoleDataScopeDirectly(Long id, Integer dataScope, Set<Long> dataScopeDeptIds);
+
+    /**
      * 获得角色
      *
      * @param id 角色编号

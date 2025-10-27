@@ -104,4 +104,42 @@
         select grade_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 and graduation_status != 1 group by grade_dept_id;
     </select>
 
+    <!-- 根据学号和姓名模糊查询学生档案简化列表 -->
+    <select id="searchSimpleByStudentNoAndName"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileSimpleVO">
+        SELECT a.id, a.student_no, a.name, a.grade_dept_id, a.class_dept_id,
+               c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0
+            <if test="studentNo != null and studentNo != ''">
+                AND a.student_no LIKE CONCAT('%', #{studentNo}, '%')
+            </if>
+            <if test="name != null and name != ''">
+                AND a.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <!-- 数据权限控制 -->
+            <if test="(deptIds != null and deptIds.size > 0) or selfUserId != null">
+                AND (
+                <if test="deptIds != null and deptIds.size > 0">
+                    (
+                        a.class_dept_id IN
+                        <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+                        OR
+                        a.grade_dept_id IN
+                        <foreach collection="deptIds" item="gid" open="(" separator="," close=")">#{gid}</foreach>
+                    )
+                </if>
+                <if test="selfUserId != null">
+                    <if test="deptIds != null and deptIds.size > 0"> OR </if>
+                    a.user_id = #{selfUserId}
+                </if>
+                )
+            </if>
+        </where>
+        ORDER BY a.id DESC
+    </select>
+
 </mapper>

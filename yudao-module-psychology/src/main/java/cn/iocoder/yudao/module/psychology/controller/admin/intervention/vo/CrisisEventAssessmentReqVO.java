@@ -23,4 +23,7 @@ public class CrisisEventAssessmentReqVO {
 
     @Schema(description = "评估内容")
     private String content;
+
+    @Schema(description = "附件ID列表")
+    private List<Long> attachments;
 }

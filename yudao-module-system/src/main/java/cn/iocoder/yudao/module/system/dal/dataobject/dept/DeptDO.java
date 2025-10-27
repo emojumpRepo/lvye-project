@@ -7,8 +7,11 @@ import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 /**
  * 部门表
@@ -16,7 +19,7 @@ import lombok.EqualsAndHashCode;
  * @author ruoyi
  * @author 芋道源码
  */
-@TableName("system_dept")
+@TableName(value = "system_dept", autoResultMap = true)
 @KeySequence("system_dept_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -66,5 +69,13 @@ public class DeptDO extends TenantBaseDO {
 
     @TableField(exist = false)
     private Long count;
+
+    /**
+     * 负责人用户编号列表（从 system_user_dept 表查询填充）
+     *
+     * 关联 {@link AdminUserDO#getId()}
+     */
+    @TableField(exist = false)
+    private List<Long> leaderUserIds;
 
 }

@@ -11,13 +11,11 @@ import lombok.Data;
 @Data
 public class InterventionAssignmentSettingVO {
 
-    @Schema(description = "分配模式", example = "manual", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "分配模式：manual-手动分配, auto-psychology-自动分配给心理老师, auto-head-teacher-自动分配给班主任",
+            example = "manual", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "分配模式不能为空")
     private String mode;
 
-    @Schema(description = "默认分配老师ID（当学生档案未绑定责任心理老师时使用）", example = "100")
-    private Long defaultHandlerUserId;
-
-    @Schema(description = "默认分配老师姓名", example = "王老师")
-    private String defaultHandlerName;
+    @Schema(description = "默认心理老师ID（当学生档案未绑定责任心理老师时使用）", example = "100")
+    private Long defaultPsychologyId;
 }

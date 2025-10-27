@@ -74,6 +74,11 @@ public class AssessmentTaskDO extends TenantBaseDO {
     private String description;
 
     /**
+     * 危机事件ID
+     */
+    private Long eventId;
+
+    /**
      * 发布人管理员
      */
     @TableField(exist = false)

@@ -40,6 +40,13 @@ import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.service.dept.DeptService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
+// 危机事件相关
+import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisInterventionDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisEventProcessDO;
+import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisInterventionMapper;
+import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisEventProcessMapper;
+import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -110,7 +117,13 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     private ConfigApi configApi;
 
     @Resource
-    private cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper studentProfileMapper;
+    private CrisisInterventionMapper crisisInterventionMapper;
+
+    @Resource
+    private CrisisEventProcessMapper crisisEventProcessMapper;
+
+    @Resource
+    private StudentTimelineService studentTimelineService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -259,6 +272,17 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
                 log.error("创建任务后自动发布失败，任务编号：{}，错误信息：{}", createReqVO.getTaskNo(), e.getMessage(), e);
                 // 这里可以选择抛出异常或者记录日志继续执行
                 // 为了保证任务创建成功，这里选择记录日志继续执行
+            }
+        }
+
+        // 如果传入了 eventId，记录危机事件处理过程和学生时间线
+        if (createReqVO.getEventId() != null) {
+            try {
+                recordCrisisEventAssessmentTask(createReqVO.getEventId(), assessmentTask.getTaskNo(), assessmentTask.getTaskName());
+            } catch (Exception e) {
+                log.error("记录危机事件测评任务失败，eventId: {}, taskNo: {}",
+                    createReqVO.getEventId(), assessmentTask.getTaskNo(), e);
+                // 不影响任务创建，仅记录日志
             }
         }
 
@@ -1032,46 +1056,62 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         return resultList;
     }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Integer removeGraduatedStudents(String taskNo) {
-        // 校验任务存在
-        validateAssessmentTaskExists(taskNo);
-
-        // 查询所有已毕业的学生
-        List<StudentProfileDO> graduatedStudents = studentProfileMapper.selectGraduatedStudents();
-
-        if (CollUtil.isEmpty(graduatedStudents)) {
-            log.info("未找到已毕业学生，任务编号：{}", taskNo);
-            return 0;
+    /**
+     * 记录危机事件创建测评任务
+     * 参考 CrisisInterventionServiceImpl 的实现方式
+     * @param eventId 危机事件ID
+     * @param taskNo 测评任务编号
+     */
+    private void recordCrisisEventAssessmentTask(Long eventId, String taskNo, String taskName) {
+        // 查询危机事件
+        CrisisInterventionDO event = crisisInterventionMapper.selectById(eventId);
+        if (event == null) {
+            log.warn("危机事件不存在，eventId: {}", eventId);
+            return;
         }
 
-        // 提取已毕业学生的userId列表
-        List<Long> graduatedUserIds = graduatedStudents.stream()
-                .map(StudentProfileDO::getUserId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        // 1. 使用 recordEventProcessWithUsers 添加危机事件处理记录
+        String content = "发布测评任务：" + taskName + "(" + taskNo + ")";
+        recordEventProcessWithUsers(eventId, "CREATE_ASSESSMENT", content, null, null, null, taskNo);
 
-        if (CollUtil.isEmpty(graduatedUserIds)) {
-            log.info("已毕业学生无有效userId，任务编号：{}", taskNo);
-            return 0;
-        }
+        // 2. 使用 saveTimelineWithMeta 添加学生时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("eventId", eventId);
+        meta.put("eventNo", event.getEventId());
+        meta.put("taskNo", taskNo);
+        meta.put("action", "CREATE_ASSESSMENT");
 
-        // 统计删除数量
-        int removedCount = 0;
+        String timelineContent = String.format("危机事件(%s)发布了测评任务：%s(%s)", event.getEventId(),taskName, taskNo);
 
-        // 遍历删除关联记录
-        for (Long userId : graduatedUserIds) {
-            AssessmentUserTaskDO userTask = userTaskMapper.selectByTaskNoAndUserId(taskNo, userId);
-            if (userTask != null) {
-                userTaskMapper.deleteByTaskNoAndUserId(taskNo, userId);
-                removedCount++;
-                log.debug("移除已毕业学生，任务编号：{}，用户ID：{}", taskNo, userId);
-            }
-        }
+        studentTimelineService.saveTimelineWithMeta(
+            event.getStudentProfileId(),
+            TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+            "危机事件(" + event.getEventId() + ")发布测评任务",
+            event.getEventId(),
+            timelineContent,
+            meta
+        );
 
-        log.info("移除已毕业学生完成，任务编号：{}，移除数量：{}", taskNo, removedCount);
-        return removedCount;
+        log.info("成功记录危机事件测评任务，eventId: {}, taskNo: {}, studentProfileId: {}",
+            eventId, taskNo, event.getStudentProfileId());
+    }
+
+    /**
+     * 记录危机事件处理过程（带用户信息）
+     * 参考 CrisisInterventionServiceImpl.recordEventProcessWithUsers
+     */
+    private void recordEventProcessWithUsers(Long eventId, String action, String content,
+                                            String reason, Long relatedUserId, Long originalUserId, String taskNo) {
+        CrisisEventProcessDO process = new CrisisEventProcessDO();
+        process.setEventId(eventId);
+        process.setTaskNo(taskNo);
+        process.setOperatorUserId(SecurityFrameworkUtils.getLoginUserId());
+        process.setAction(action);
+        process.setContent(content != null && !content.isEmpty() ? content : action);
+        process.setReason(reason);
+        process.setRelatedUserId(relatedUserId);
+        process.setOriginalUserId(originalUserId);
+        crisisEventProcessMapper.insert(process);
     }
 
 }

@@ -8,7 +8,9 @@ import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 import cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptListReqVO;
 import cn.iocoder.yudao.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO;
 import cn.iocoder.yudao.module.system.dal.dataobject.dept.DeptDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.UserDeptDO;
 import cn.iocoder.yudao.module.system.dal.mysql.dept.DeptMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.UserDeptMapper;
 import cn.iocoder.yudao.module.system.dal.redis.RedisKeyConstants;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,8 @@ public class DeptServiceImpl implements DeptService {
 
     @Resource
     private DeptMapper deptMapper;
+    @Resource
+    private UserDeptMapper userDeptMapper;
 
     @Override
     @CacheEvict(cacheNames = RedisKeyConstants.DEPT_CHILDREN_ID_LIST,
@@ -52,6 +56,10 @@ public class DeptServiceImpl implements DeptService {
         // 插入部门
         DeptDO dept = BeanUtils.toBean(createReqVO, DeptDO.class);
         deptMapper.insert(dept);
+        
+        // 插入部门负责人关联关系
+        saveLeaderUserIds(dept.getId(), createReqVO.getLeaderUserIds());
+        
         return dept.getId();
     }
 
@@ -72,6 +80,9 @@ public class DeptServiceImpl implements DeptService {
         // 更新部门
         DeptDO updateObj = BeanUtils.toBean(updateReqVO, DeptDO.class);
         deptMapper.updateById(updateObj);
+        
+        // 更新部门负责人关联关系：先删除旧的，再插入新的
+        saveLeaderUserIds(updateReqVO.getId(), updateReqVO.getLeaderUserIds());
     }
 
     @Override
@@ -86,6 +97,8 @@ public class DeptServiceImpl implements DeptService {
         }
         // 删除部门
         deptMapper.deleteById(id);
+        // 删除部门负责人关联关系
+        userDeptMapper.deleteListByDeptId(id);
     }
 
     @Override
@@ -101,6 +114,8 @@ public class DeptServiceImpl implements DeptService {
 
         // 批量删除部门
         deptMapper.deleteByIds(ids);
+        // 删除部门负责人关联关系
+        ids.forEach(id -> userDeptMapper.deleteListByDeptId(id));
     }
 
     @VisibleForTesting
@@ -166,7 +181,11 @@ public class DeptServiceImpl implements DeptService {
 
     @Override
     public DeptDO getDept(Long id) {
-        return deptMapper.selectById(id);
+        DeptDO dept = deptMapper.selectById(id);
+        if (dept != null) {
+            fillLeaderUserIds(Collections.singletonList(dept));
+        }
+        return dept;
     }
 
     @Override
@@ -174,13 +193,16 @@ public class DeptServiceImpl implements DeptService {
         if (CollUtil.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        return deptMapper.selectByIds(ids);
+        List<DeptDO> deptList = deptMapper.selectByIds(ids);
+        fillLeaderUserIds(deptList);
+        return deptList;
     }
 
     @Override
     public List<DeptDO> getDeptList(DeptListReqVO reqVO) {
         List<DeptDO> list = deptMapper.selectList(reqVO);
         list.sort(Comparator.comparing(DeptDO::getSort));
+        fillLeaderUserIds(list);
         return list;
     }
 
@@ -200,12 +222,32 @@ public class DeptServiceImpl implements DeptService {
             children.addAll(depts);
             parentIds = convertSet(depts, DeptDO::getId);
         }
+        fillLeaderUserIds(children);
         return children;
     }
 
     @Override
     public List<DeptDO> getDeptListByLeaderUserId(Long id) {
-        return deptMapper.selectListByLeaderUserId(id);
+        // 从两个地方查询：1. leaderUserId 字段，2. system_user_dept 表
+        List<DeptDO> deptList = deptMapper.selectListByLeaderUserId(id);
+        
+        // 从 system_user_dept 表中查询该用户作为负责人的部门
+        List<UserDeptDO> userDeptList = userDeptMapper.selectListByUserId(id);
+        if (CollUtil.isNotEmpty(userDeptList)) {
+            Set<Long> deptIds = convertSet(userDeptList, UserDeptDO::getDeptId);
+            List<DeptDO> deptListFromUserDept = deptMapper.selectByIds(deptIds);
+            
+            // 合并结果并去重
+            Set<Long> existingDeptIds = convertSet(deptList, DeptDO::getId);
+            for (DeptDO dept : deptListFromUserDept) {
+                if (!existingDeptIds.contains(dept.getId())) {
+                    deptList.add(dept);
+                }
+            }
+        }
+        
+        fillLeaderUserIds(deptList);
+        return deptList;
     }
 
     @Override
@@ -238,6 +280,60 @@ public class DeptServiceImpl implements DeptService {
     @Override
     public DeptDO getDeptByName(String name){
         return deptMapper.selectByName(name);
+    }
+
+    /**
+     * 保存部门负责人关联关系
+     *
+     * @param deptId 部门ID
+     * @param leaderUserIds 负责人用户ID列表
+     */
+    private void saveLeaderUserIds(Long deptId, List<Long> leaderUserIds) {
+        // 先删除旧的关联关系
+        userDeptMapper.deleteListByDeptId(deptId);
+        
+        // 插入新的关联关系
+        if (CollUtil.isNotEmpty(leaderUserIds)) {
+            List<UserDeptDO> userDeptList = leaderUserIds.stream()
+                    .map(userId -> {
+                        UserDeptDO userDept = new UserDeptDO();
+                        userDept.setUserId(userId);
+                        userDept.setDeptId(deptId);
+                        return userDept;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+            userDeptList.forEach(userDept -> userDeptMapper.insert(userDept));
+        }
+    }
+
+    /**
+     * 为部门列表填充负责人用户ID列表
+     *
+     * @param deptList 部门列表
+     */
+    private void fillLeaderUserIds(List<DeptDO> deptList) {
+        if (CollUtil.isEmpty(deptList)) {
+            return;
+        }
+        
+        // 获取所有部门ID
+        Set<Long> deptIds = convertSet(deptList, DeptDO::getId);
+        
+        // 查询所有部门的负责人关联关系
+        List<UserDeptDO> userDeptList = userDeptMapper.selectListByDeptIds(deptIds);
+        
+        // 按部门ID分组
+        Map<Long, List<Long>> deptUserMap = userDeptList.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        UserDeptDO::getDeptId,
+                        java.util.stream.Collectors.mapping(UserDeptDO::getUserId, java.util.stream.Collectors.toList())
+                ));
+        
+        // 填充到部门对象中
+        deptList.forEach(dept -> {
+            List<Long> userIds = deptUserMap.get(dept.getId());
+            dept.setLeaderUserIds(userIds != null ? userIds : Collections.emptyList());
+        });
     }
 
 }

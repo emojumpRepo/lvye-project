@@ -25,6 +25,14 @@ public interface FileService {
     PageResult<FileDO> getFilePage(FilePageReqVO pageReqVO);
 
     /**
+     * 通过id获取文件
+     *
+     * @param id 文件编号
+     * @return 文件信息
+     */
+    FileDO getFileById(Long id);
+
+    /**
      * 保存文件，并返回文件的访问路径
      *
      * @param content   文件内容
@@ -32,9 +40,23 @@ public interface FileService {
      * @param directory 目录，允许空
      * @param type      文件的 MIME 类型，允许空
      * @return 文件路径
+     * @deprecated 使用 {@link #createFileAndReturnDO} 替代
      */
+    @Deprecated
     String createFile(@NotEmpty(message = "文件内容不能为空") byte[] content,
                       String name, String directory, String type);
+
+    /**
+     * 保存文件，并返回文件对象
+     *
+     * @param content   文件内容
+     * @param name      文件名称，允许空
+     * @param directory 目录，允许空
+     * @param type      文件的 MIME 类型，允许空
+     * @return 文件对象
+     */
+    FileDO createFileAndReturnDO(@NotEmpty(message = "文件内容不能为空") byte[] content,
+                                  String name, String directory, String type);
 
     /**
      * 生成文件预签名地址信息，用于上传

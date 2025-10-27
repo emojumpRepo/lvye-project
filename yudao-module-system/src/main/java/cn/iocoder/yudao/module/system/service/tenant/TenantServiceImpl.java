@@ -21,6 +21,7 @@ import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.tenant.TenantDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.tenant.TenantPackageDO;
 import cn.iocoder.yudao.module.system.dal.mysql.tenant.TenantMapper;
+import cn.iocoder.yudao.module.system.enums.permission.DataScopeEnum;
 import cn.iocoder.yudao.module.system.enums.permission.RoleCodeEnum;
 import cn.iocoder.yudao.module.system.enums.permission.RoleTypeEnum;
 import cn.iocoder.yudao.module.system.service.permission.MenuService;
@@ -112,6 +113,8 @@ public class TenantServiceImpl implements TenantService {
         TenantUtils.execute(tenant.getId(), () -> {
             // 创建角色
             Long roleId = createRole(tenantPackage);
+            // 创建业务角色
+            createBusinessRoles();
             // 创建用户，并分配角色
             Long userId = createUser(roleId, createReqVO);
             // 修改租户的管理员
@@ -137,6 +140,35 @@ public class TenantServiceImpl implements TenantService {
         // 分配权限
         permissionService.assignRoleMenu(roleId, tenantPackage.getMenuIds());
         return roleId;
+    }
+
+    private void createBusinessRoles() {
+        // 创建系统管理员角色
+        createBusinessRole(RoleCodeEnum.SYS_ADMIN, 0, DataScopeEnum.ALL.getScope());
+        // 创建年级管理员角色
+        createBusinessRole(RoleCodeEnum.GRADE_TEACHER, 1, DataScopeEnum.DEPT_AND_CHILD.getScope());
+        // 创建心理老师角色
+        createBusinessRole(RoleCodeEnum.PSYCHOLOGY_TEACHER, 2, DataScopeEnum.SELF.getScope());
+        // 创建默认心理老师角色
+        createBusinessRole(RoleCodeEnum.DEFAULT_PSYCHOLOGY_TEACHER, 3, DataScopeEnum.SELF.getScope());
+        // 创建班主任角色
+        createBusinessRole(RoleCodeEnum.HEAD_TEACHER, 4, DataScopeEnum.SELF.getScope());
+        // 创建学生角色
+        createBusinessRole(RoleCodeEnum.STUDENT, 5, DataScopeEnum.SELF.getScope());
+        // TODO 分配菜单权限
+    }
+
+    private void createBusinessRole(RoleCodeEnum roleCodeEnum, Integer sort, Integer dataScope) {
+        // 创建角色（系统内置角色）
+        RoleSaveReqVO reqVO = new RoleSaveReqVO();
+        reqVO.setName(roleCodeEnum.getName()).setCode(roleCodeEnum.getCode())
+                .setSort(sort).setRemark("系统自动生成");
+        Long roleId = roleService.createRole(reqVO, RoleTypeEnum.SYSTEM.getType());
+        
+        // 更新数据权限（系统内置角色创建后需要直接设置数据权限，不能使用 updateRoleDataScope 方法）
+        if (dataScope != null) {
+            roleService.updateRoleDataScopeDirectly(roleId, dataScope, null);
+        }
     }
 
     @Override

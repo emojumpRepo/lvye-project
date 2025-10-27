@@ -35,6 +35,11 @@ public class CrisisEventProcessDO extends TenantBaseDO {
     private Long eventId;
 
     /**
+     * 测评任务编号
+     */
+    private String taskNo;
+
+    /**
      * 操作人管理员编号
      */
     private Long operatorUserId;
@@ -65,9 +70,15 @@ public class CrisisEventProcessDO extends TenantBaseDO {
      */
     private Long originalUserId;
 
+
     /**
-     * 附件URL列表（JSON数组）
+     * 附件ID列表（JSON数组）
      */
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<String> attachments;
+    private List<Long> attachments;
+
+    /**
+     * 评估ID（关联评估记录）
+     */
+    private Long assessmentId;
 }

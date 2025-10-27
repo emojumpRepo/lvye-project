@@ -52,11 +52,11 @@ public interface ConsultationAppointmentService {
     PageResult<ConsultationAppointmentRespVO> getAppointmentPage(ConsultationAppointmentPageReqVO pageReqVO);
 
     /**
-     * 获取今日咨询列表和统计
+     * 获取咨询预约统计数据
      *
-     * @return 今日咨询数据
+     * @return 统计数据
      */
-    TodayConsultationRespVO getTodayConsultations();
+    ConsultationStatisticsRespVO getStatistics();
 
     /**
      * 完成咨询
@@ -96,4 +96,36 @@ public interface ConsultationAppointmentService {
      * @param id 预约ID
      */
     void sendReminder(Long id);
+
+    /**
+     * 校验预约时间是否冲突
+     *
+     * @param reqVO 时间冲突校验请求
+     * @return 冲突校验结果
+     */
+    ConsultationAppointmentCheckTimeConflictRespVO checkTimeConflict(ConsultationAppointmentCheckTimeConflictReqVO reqVO);
+
+    /**
+     * 获取周预约数据
+     *
+     * @param reqVO 周查询请求
+     * @return 周预约数据
+     */
+    ConsultationAppointmentWeeklyRespVO getWeeklyAppointments(ConsultationAppointmentWeeklyReqVO reqVO);
+
+    /**
+     * 获取时间范围内的咨询数据
+     *
+     * @param reqVO 时间范围查询请求
+     * @return 时间范围内的咨询数据
+     */
+    ConsultationAppointmentTimeRangeRespVO getTimeRangeData(ConsultationAppointmentTimeRangeReqVO reqVO);
+
+    /**
+     * 根据日期查询咨询预约数据
+     *
+     * @param reqVO 日期查询请求
+     * @return 咨询预约数据
+     */
+    ConsultationAppointmentDateQueryRespVO getAppointmentsByDate(ConsultationAppointmentDateQueryReqVO reqVO);
 }
