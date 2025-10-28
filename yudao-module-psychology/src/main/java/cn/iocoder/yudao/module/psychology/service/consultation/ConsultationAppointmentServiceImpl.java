@@ -12,7 +12,9 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.Consultati
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.ConsultationAssessmentDO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAppointmentMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAssessmentMapper;
+import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import jakarta.annotation.Resource;
@@ -50,9 +52,12 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
     
     @Resource
     private StudentProfileService studentProfileService;
-    
+
     @Resource
     private AdminUserApi adminUserApi;
+
+    @Resource
+    private StudentTimelineService studentTimelineService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -93,7 +98,39 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         }
         
         appointmentMapper.insert(appointment);
-        
+
+        // 记录学生时间线
+        AdminUserRespDTO counselor = adminUserApi.getUser(counselorUserId);
+        String counselorName = counselor != null ? counselor.getNickname() : "未知";
+
+        // 格式化时间
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm");
+        String appointmentTimeStr = createReqVO.getAppointmentStartTime().format(formatter);
+
+        String content = String.format("%s 创建了咨询预约，咨询类型：%s，预约时间：%s，咨询地点：%s",
+            counselorName, createReqVO.getConsultationType(), appointmentTimeStr,
+            createReqVO.getLocation() != null ? createReqVO.getLocation() : "未指定");
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("appointmentId", appointment.getId());
+        meta.put("counselorUserId", counselorUserId);
+        meta.put("counselorName", counselorName);
+        meta.put("consultationType", createReqVO.getConsultationType());
+        meta.put("appointmentStartTime", createReqVO.getAppointmentStartTime());
+        meta.put("appointmentEndTime", createReqVO.getAppointmentEndTime());
+        meta.put("durationMinutes", appointment.getDurationMinutes());
+        meta.put("location", createReqVO.getLocation());
+        meta.put("operationType", "create");
+
+        studentTimelineService.saveTimelineWithMeta(
+            createReqVO.getStudentProfileId(),
+            TimelineEventTypeEnum.CONSULTATION_RECORD.getType(),
+            "创建咨询预约",
+            "appointment_" + appointment.getId(),
+            content,
+            meta
+        );
+
         // TODO: 发送通知给学生
         if (createReqVO.getNotifyStudent()) {
             sendNotificationToStudent(appointment.getId(), student.getId());
@@ -146,12 +183,93 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         }
         
         appointmentMapper.updateById(updateObj);
+
+        // 记录学生时间线
+        AdminUserRespDTO counselor = adminUserApi.getUser(counselorUserId);
+        String counselorName = counselor != null ? counselor.getNickname() : "未知";
+
+        // 构建修改内容说明
+        List<String> changes = new ArrayList<>();
+        if (updateReqVO.getAppointmentStartTime() != null || updateReqVO.getAppointmentEndTime() != null) {
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm");
+            String timeStr = startTime.format(formatter);
+            changes.add("预约时间：" + timeStr);
+        }
+        if (updateReqVO.getConsultationType() != null) {
+            changes.add("咨询类型：" + updateReqVO.getConsultationType());
+        }
+        if (updateReqVO.getLocation() != null) {
+            changes.add("咨询地点：" + updateReqVO.getLocation());
+        }
+        if (updateReqVO.getNotes() != null) {
+            changes.add("备注信息已更新");
+        }
+
+        String content = String.format("%s 更新了咨询预约%s",
+            counselorName, changes.isEmpty() ? "" : "，" + String.join("，", changes));
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("appointmentId", updateReqVO.getId());
+        meta.put("counselorUserId", counselorUserId);
+        meta.put("counselorName", counselorName);
+        meta.put("appointmentStartTime", startTime);
+        meta.put("appointmentEndTime", endTime);
+        meta.put("operationType", "update");
+        if (updateReqVO.getConsultationType() != null) {
+            meta.put("consultationType", updateReqVO.getConsultationType());
+        }
+        if (updateReqVO.getLocation() != null) {
+            meta.put("location", updateReqVO.getLocation());
+        }
+        if (updateReqVO.getDurationMinutes() != null || updateObj.getDurationMinutes() != null) {
+            meta.put("durationMinutes", updateObj.getDurationMinutes());
+        }
+
+        studentTimelineService.saveTimelineWithMeta(
+            appointment.getStudentProfileId(),
+            TimelineEventTypeEnum.CONSULTATION_RECORD.getType(),
+            "更新咨询预约",
+            "appointment_" + updateReqVO.getId() + "_update",
+            content,
+            meta
+        );
     }
 
     @Override
     public void deleteAppointment(Long id) {
         // 校验存在
-        validateAppointmentExists(id);
+        ConsultationAppointmentDO appointment = validateAppointmentExists(id);
+
+        // 记录学生时间线（在删除前记录）
+        AdminUserRespDTO counselor = adminUserApi.getUser(appointment.getCounselorUserId());
+        String counselorName = counselor != null ? counselor.getNickname() : "未知";
+
+        // 格式化时间
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm");
+        String appointmentTimeStr = appointment.getAppointmentStartTime().format(formatter);
+
+        String content = String.format("%s 删除了咨询预约，原预约时间：%s，咨询类型：%s",
+            counselorName, appointmentTimeStr, appointment.getConsultationType());
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("appointmentId", id);
+        meta.put("counselorUserId", appointment.getCounselorUserId());
+        meta.put("counselorName", counselorName);
+        meta.put("consultationType", appointment.getConsultationType());
+        meta.put("appointmentStartTime", appointment.getAppointmentStartTime());
+        meta.put("appointmentEndTime", appointment.getAppointmentEndTime());
+        meta.put("location", appointment.getLocation());
+        meta.put("operationType", "delete");
+
+        studentTimelineService.saveTimelineWithMeta(
+            appointment.getStudentProfileId(),
+            TimelineEventTypeEnum.CONSULTATION_RECORD.getType(),
+            "删除咨询预约",
+            "appointment_" + id + "_delete",
+            content,
+            meta
+        );
+
         // 删除
         appointmentMapper.deleteById(id);
     }

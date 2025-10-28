@@ -17,7 +17,8 @@ public enum TimelineEventTypeEnum {
     STATUS_CHANGE(5, "状态变更", "心理状态变更"),
     FAMILY_INFO_UPDATE(6, "家庭情况变更", "家庭情况信息更新"),
     GRADUATION(7, "毕业处理", "学生毕业相关处理"),
-    QUICK_REPORT(8, "快速上报", "教师快速上报事件");
+    QUICK_REPORT(8, "快速上报", "教师快速上报事件"),
+    ASSESSMENT_REPORT(9, "评估报告", "提交评估报告");
 
     private final Integer type;
     private final String name;
