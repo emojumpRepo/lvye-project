@@ -136,7 +136,7 @@ public class CrisisEventRespVO {
         private String reason;
 
         @Schema(description = "附件ID列表")
-        private List<Long> attachments;
+        private List<Long> attachmentIds;
 
         @Schema(description = "评估记录ID")
         private Long assessmentId;

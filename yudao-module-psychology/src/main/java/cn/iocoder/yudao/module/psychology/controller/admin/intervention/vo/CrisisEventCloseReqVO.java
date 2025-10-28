@@ -21,10 +21,18 @@ public class CrisisEventCloseReqVO {
     @Schema(description = "问题类型")
     private List<String> problemTypes;
 
-    @Schema(description = "后续建议", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "后续建议不能为空")
+    @Schema(description = "后续建议")
     private Integer followUpSuggestion;
 
+    @Schema(description = "是否有就诊用药情况")
+    private Boolean hasMedicalVisit;
+
+    @Schema(description = "就诊记录")
+    private String medicalVisitRecord;
+
+    @Schema(description = "持续关注记录")
+    private String observationRecord;
+
     @Schema(description = "附件ID列表")
-    private List<Long> attachments;
+    private List<Long> attachmentIds;
 }

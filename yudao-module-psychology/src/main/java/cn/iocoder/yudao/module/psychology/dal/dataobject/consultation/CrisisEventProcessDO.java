@@ -75,7 +75,7 @@ public class CrisisEventProcessDO extends TenantBaseDO {
      * 附件ID列表（JSON数组）
      */
     @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<Long> attachments;
+    private List<Long> attachmentIds;
 
     /**
      * 评估ID（关联评估记录）
