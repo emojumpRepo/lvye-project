@@ -185,6 +185,14 @@ public interface CrisisInterventionService {
     void updateProcessRecord(Long id, String content);
 
     /**
+     * 切换危机事件关闭状态
+     *
+     * @param id 事件ID
+     * @param closed 是否关闭
+     */
+    void toggleEventClosed(Long id, Boolean closed);
+
+    /**
      * 获取危机事件分配设置
      */
     InterventionAssignmentSettingVO getAssignmentSettings();

@@ -177,6 +177,17 @@ public class CrisisInterventionController {
         return success(true);
     }
 
+    @PutMapping("/event/{id}/toggle-closed")
+    @Operation(summary = "切换危机事件关闭状态")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> toggleEventClosed(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CrisisEventToggleClosedReqVO toggleReqVO) {
+        interventionService.toggleEventClosed(id, toggleReqVO.getClosed());
+        return success(true);
+    }
+
     @PostMapping("/event/{id}/stage-assessment")
     @Operation(summary = "提交阶段性评估")
     @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")

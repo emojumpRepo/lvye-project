@@ -23,6 +23,14 @@
             <if test="reqVO.counselorUserId != null">
                 AND a.handler_user_id = #{reqVO.counselorUserId}
             </if>
+            <!-- 事件来源类型查询 -->
+            <if test="reqVO.sourceType != null">
+                AND a.source_type = #{reqVO.sourceType}
+            </if>
+            <!-- 状态查询 -->
+            <if test="reqVO.status != null">
+                AND a.status = #{reqVO.status}
+            </if>
             <!-- 学号模糊查询 -->
             <if test="reqVO.studentNo != null and reqVO.studentNo != ''">
                 AND b.student_no LIKE CONCAT('%', #{reqVO.studentNo}, '%')
@@ -59,6 +67,14 @@
             <!-- 负责心理老师查询 -->
             <if test="reqVO.counselorUserId != null">
                 AND a.handler_user_id = #{reqVO.counselorUserId}
+            </if>
+            <!-- 事件来源类型查询 -->
+            <if test="reqVO.sourceType != null">
+                AND a.source_type = #{reqVO.sourceType}
+            </if>
+            <!-- 状态查询 -->
+            <if test="reqVO.status != null">
+                AND a.status = #{reqVO.status}
             </if>
             <!-- 学号模糊查询 -->
             <if test="reqVO.studentNo != null and reqVO.studentNo != ''">

@@ -467,7 +467,21 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Override
     public void updateStudentSpecialMarks(Long studentProfileId, String specialMarks) {
-        studentProfileMapper.updateSpecialMarks(studentProfileId, specialMarks);
+        // 查询学生档案获取当前的特殊标记
+        StudentProfileDO studentProfile = studentProfileMapper.selectById(studentProfileId);
+        if (studentProfile == null) {
+            throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
+        }
+
+        // 合并新旧值，不去重
+        String mergedMarks = specialMarks;
+        if (studentProfile.getSpecialMarks() != null && !studentProfile.getSpecialMarks().trim().isEmpty()) {
+            // 如果当前有值，将新值追加到后面（使用逗号分隔）
+            mergedMarks = studentProfile.getSpecialMarks() + "," + specialMarks;
+        }
+
+        // 更新到数据库
+        studentProfileMapper.updateSpecialMarks(studentProfileId, mergedMarks);
     }
 
     @Override

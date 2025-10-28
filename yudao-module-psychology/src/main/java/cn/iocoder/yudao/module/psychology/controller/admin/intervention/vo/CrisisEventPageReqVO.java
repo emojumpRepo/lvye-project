@@ -32,4 +32,10 @@ public class CrisisEventPageReqVO extends PageParam {
 
     @Schema(description = "处理进度状态", example = "1")
     private Integer processStatus;
+
+    @Schema(description = "事件来源类型", example = "1")
+    private Integer sourceType;
+
+    @Schema(description = "状态（字典：intervention_status）", example = "1")
+    private Integer status;
 }

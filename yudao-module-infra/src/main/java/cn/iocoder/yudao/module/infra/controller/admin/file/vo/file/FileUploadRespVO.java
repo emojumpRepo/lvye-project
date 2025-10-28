@@ -26,5 +26,14 @@ public class FileUploadRespVO {
     @Schema(description = "文件类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "image/jpeg")
     private String type;
 
+    @Schema(description = "文件路径", requiredMode = Schema.RequiredMode.REQUIRED, example = "xxx.jpg")
+    private String path;
+
+    @Schema(description = "文件大小", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
+    private Integer size;
+
+    @Schema(description = "配置ID", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long configId;
+
 }
 

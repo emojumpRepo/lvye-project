@@ -54,6 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -551,7 +552,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
         // 记录上报动作
         List<Long> attachments = createReqVO.getAttachments();
-        String content = String.format("事件标题：%s，发生时间：%s，发生地点：%s，紧急程度：%s", createReqVO.getTitle(), createReqVO.getEventTime(), createReqVO.getLocation(), getPriorityLevelName(createReqVO.getPriority()));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String eventTimeStr = createReqVO.getEventTime() != null ? createReqVO.getEventTime().format(formatter) : "";
+        String content = String.format("事件标题：%s，发生时间：%s，发生地点：%s，紧急程度：%s", createReqVO.getTitle(), eventTimeStr, createReqVO.getLocation(), getPriorityLevelName(createReqVO.getPriority()));
         recordEventProcessWithUsers(event.getId(), "REPORT", createReqVO.getDescription(),
             content,
             null, null, CollUtil.isNotEmpty(attachments) ? attachments : null, null);
@@ -958,7 +961,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         meta.put("finalRiskLevel", closeReqVO.getRiskLevel());
         meta.put("finalRiskLevelName", getRiskLevelName(closeReqVO.getRiskLevel()));
         meta.put("problemTypes", closeReqVO.getProblemTypes());
-        meta.put("followUpSuggestion", closeReqVO.getFollowUpSuggestion());
+        // meta.put("followUpSuggestion", closeReqVO.getFollowUpSuggestion());
         meta.put("summary", closeReqVO.getSummary());
         meta.put("status", "已结案");
         meta.put("progress", 100);
@@ -985,11 +988,14 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             problemTypesInfo += "无";
         }
 
+        // 是否就诊用药情况
+        String hasMedicalVisitInfo = "是否有就诊用药情况：" + (closeReqVO.getHasMedicalVisit() ? "是" : "否");
+
         // 获取后续建议
-        String followUpInfo = "后续建议：" + getFollowUpSuggestionName(closeReqVO.getFollowUpSuggestion());
+        // String followUpInfo = "后续建议：" + getFollowUpSuggestionName(closeReqVO.getFollowUpSuggestion());
 
         // 组合完整的评估信息
-        String closeAssessmentInfo = riskLevelInfo + "，" + problemTypesInfo + "，" + followUpInfo;
+        String closeAssessmentInfo = problemTypesInfo  + "，" + hasMedicalVisitInfo + "，" + riskLevelInfo;
 
         // 使用结构化方式记录结案动作
         recordEventProcessWithUsers(id, "CLOSE", closeReqVO.getSummary(),
@@ -1472,6 +1478,49 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         eventProcessMapper.updateById(updateObj);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void toggleEventClosed(Long id, Boolean closed) {
+        // 验证事件是否存在
+        CrisisInterventionDO event = validateEventExists(id);
+
+        // 更新关闭状态
+        CrisisInterventionDO updateObj = new CrisisInterventionDO();
+        updateObj.setId(id);
+        updateObj.setClosed(closed);
+        crisisInterventionMapper.updateById(updateObj);
+
+        // 获取当前操作人信息
+        Long operatorUserId = SecurityFrameworkUtils.getLoginUserId();
+        AdminUserRespDTO operator = adminUserApi.getUser(operatorUserId);
+        String operatorName = operator != null ? operator.getNickname() : "未知";
+
+        // 记录操作历史（包含操作人信息）
+        String actionType = closed ? "关闭" : "开启";
+        String action = String.format("%s %s了危机事件", operatorName, actionType);
+        recordEventProcess(id, "TOGGLE_CLOSED", action);
+
+        // 添加时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("eventId", id);
+        meta.put("operatorUserId", operatorUserId);
+        meta.put("operatorName", operatorName);
+        meta.put("closed", closed);
+        meta.put("status", closed ? "已关闭" : "已开启");
+
+        String content = String.format("危机事件(%s)已被 %s %s", event.getEventId(), operatorName, closed ? "关闭" : "开启");
+        studentTimelineService.saveTimelineWithMeta(
+            event.getStudentProfileId(),
+            TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+            "危机事件(" + event.getEventId() + ")" + (closed ? "关闭" : "开启"),
+            event.getEventId(),
+            content,
+            meta
+        );
+
+        log.info("切换危机事件关闭状态，ID: {}, closed: {}, 操作人: {}", id, closed, operatorName);
+    }
+
     /**
      * 转换评估记录为VO
      */
@@ -1503,7 +1552,12 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             vo.setCreateTime(assessment.getCreateTime());
 
             // 设置附件ID列表
-            vo.setAttachments(assessment.getAttachmentIds());
+            vo.setAttachmentIds(assessment.getAttachmentIds());
+
+            // 设置就诊用药和持续关注相关信息
+            vo.setHasMedicalVisit(assessment.getHasMedicalVisit());
+            vo.setMedicalVisitRecord(assessment.getMedicalVisitRecord());
+            vo.setObservationRecord(assessment.getObservationRecord());
 
             // 设置评估人姓名
             AdminUserRespDTO assessor = userMap.get(assessment.getAssessorUserId());
@@ -1583,7 +1637,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         if (urgencyLevel == null) {
             return "未知";
         }
-        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.CRISIS_EVENT_REPORT_SOURCE, urgencyLevel);
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.RISK_LEVEL, urgencyLevel);
         return label != null ? label : "未知";
     }
 

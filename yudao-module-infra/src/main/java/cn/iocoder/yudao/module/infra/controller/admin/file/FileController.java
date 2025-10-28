@@ -49,10 +49,15 @@ public class FileController {
         FileDO fileDO = fileService.createFileAndReturnDO(content, file.getOriginalFilename(),
                 uploadReqVO.getDirectory(), file.getContentType());
         
-        // 构建返回结果，只返回 id 和 url
+        // 构建返回结果
         FileUploadRespVO respVO = FileUploadRespVO.builder()
                 .id(fileDO.getId())
+                .name(fileDO.getName())
                 .url(fileDO.getUrl())
+                .type(fileDO.getType())
+                .path(fileDO.getPath())
+                .size(fileDO.getSize())
+                .configId(fileDO.getConfigId())
                 .build();
         return success(respVO);
     }
@@ -68,6 +73,9 @@ public class FileController {
                 .name(fileDO.getName())
                 .url(fileDO.getUrl())
                 .type(fileDO.getType())
+                .path(fileDO.getPath())
+                .size(fileDO.getSize())
+                .configId(fileDO.getConfigId())
                 .build();
         return success(respVO);
     }
