@@ -1,0 +1,51 @@
+# 参考: https://cnb.cool/examples/ecosystem/springboot-maven-ssh
+# 缓存优化文档: https://docs.cnb.cool/zh/build/pipeline-cache.html
+main:
+  push:
+    - name: Build Spring Boot Application
+      services:
+        - docker
+      env:
+        JAVA_VERSION: 17
+      # 导入环境变量配置文件（用于 SSH 部署）
+      imports: https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-backend-envs.yml
+      
+      # 使用 CNB 官方缓存机制
+      caches:
+        - path: ~/.m2/repository
+      
+      stages:
+        - name: Setup Build Environment
+          script: |
+            apt-get update -qq
+            apt-get install -y -qq openjdk-${JAVA_VERSION}-jdk maven
+            
+            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
+            
+            java -version
+            mvn -version
+
+        - name: Build with Maven
+          script: |
+            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
+            # 从根目录构建整个项目（并行构建 + 批处理模式 + 禁用传输进度）
+            mvn clean install \
+              -Dmaven.test.skip=true \
+              -Dmaven.compile.fork=true \
+              -T 1C \
+              --batch-mode \
+              --no-transfer-progress
+
+        # SSH 部署阶段
+        - name: Deploy via SSH
+          plugins:
+            - name: ssh
+              config:
+                host: ${REMOTE_HOST}
+                user: ${REMOTE_USERNAME}
+                port: ${REMOTE_PORT}
+                privateKey: ${PRIVATE_KEY}
+              script: |
+                echo "Deploying to remote server..."
