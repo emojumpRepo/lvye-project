@@ -128,7 +128,7 @@ public class StudentProfileController {
     @DataPermission(enable = false)
     public CommonResult<PageResult<StudentProfileVO>> getStudentProfilePage(@Valid StudentProfilePageReqVO pageReqVO) {
         PageResult<StudentProfileVO> pageResult = studentProfileService.getStudentProfilePage(pageReqVO);
-        return success(BeanUtils.toBean(pageResult, StudentProfileVO.class));
+        return success(pageResult);
     }
 
     @GetMapping("/simple-list")
@@ -253,7 +253,42 @@ public class StudentProfileController {
         return success(list);
     }
 
-    
+    @GetMapping("/verify-counselor")
+    @Operation(summary = "验证学生是否是心理老师负责的学生")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true)
+    @Parameter(name = "counselorUserId", description = "咨询师用户ID", required = true)
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> verifyCounselorStudent(
+            @RequestParam("studentProfileId") Long studentProfileId,
+            @RequestParam("counselorUserId") Long counselorUserId) {
+        Boolean result = studentProfileService.verifyCounselorStudent(studentProfileId, counselorUserId);
+        return success(result);
+    }
 
+    @PutMapping("/batch-graduate")
+    @Operation(summary = "年级批量毕业")
+    // @PreAuthorize("@ss.hasPermission('psychology:student-profile:graduate')")
+    @DataPermission(enable = false)
+    public CommonResult<Integer> batchGraduateStudents(@Valid @RequestBody BatchGraduateReqVO reqVO) {
+        Integer count = studentProfileService.batchGraduateStudents(reqVO);
+        return success(count);
+    }
 
+    @GetMapping("/check-abnormal-graduating-students")
+    @Operation(summary = "检查毕业年级中心理状态异常的学生")
+    @DataPermission(enable = false)
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    public CommonResult<List<StudentProfileVO>> checkAbnormalGraduatingStudents(@Valid CheckAbnormalStudentsReqVO reqVO) {
+        List<StudentProfileVO> list = studentProfileService.checkAbnormalGraduatingStudents(reqVO);
+        return success(list);
+    }
+
+    @PutMapping("/batch-transfer-class")
+    @Operation(summary = "学生换班（批量）")
+    @DataPermission(enable = false)
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:update')")
+    public CommonResult<Integer> changeClass(@Valid @RequestBody ChangeClassReqVO reqVO) {
+        Integer count = studentProfileService.changeClass(reqVO);
+        return success(count);
+    }
 }

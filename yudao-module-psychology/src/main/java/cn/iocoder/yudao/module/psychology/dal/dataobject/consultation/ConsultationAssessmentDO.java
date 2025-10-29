@@ -65,20 +65,30 @@ public class ConsultationAssessmentDO extends TenantBaseDO {
     private Integer followUpSuggestion;
 
     /**
-     * 评估方式（字典：assessment_mode）
-     * 1-自由输入、2-模板上传
-     */
-    private Integer assessmentMode;
-
-    /**
-     * 评估内容（当mode为text时）
+     * 评估内容
      */
     private String content;
 
     /**
-     * 上传的评估文件ID（当mode为file时）
+     * 是否就医
      */
-    private Long fileId;
+    private Boolean hasMedicalVisit;
+
+    /**
+     * 就医记录
+     */
+    private String medicalVisitRecord;
+
+    /**
+     * 观察记录
+     */
+    private String observationRecord;
+
+    /**
+     * 附件ID列表（JSON数组）
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<Long> attachmentIds;
 
     /**
      * 是否为草稿

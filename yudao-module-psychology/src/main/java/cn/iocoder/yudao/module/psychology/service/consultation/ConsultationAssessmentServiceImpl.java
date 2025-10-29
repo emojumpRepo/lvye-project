@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.psychology.service.consultation;
 
 import cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.dict.core.DictFrameworkUtils;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.consultation.vo.assessment.ConsultationAssessmentRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.consultation.vo.assessment.ConsultationAssessmentSaveReqVO;
@@ -10,7 +11,10 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.Consultati
 import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAppointmentMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAssessmentMapper;
+import cn.iocoder.yudao.module.psychology.enums.DictTypeConstants;
+import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
+import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import jakarta.annotation.Resource;
@@ -20,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.*;
 
@@ -44,6 +50,9 @@ public class ConsultationAssessmentServiceImpl implements ConsultationAssessment
 
     @Resource
     private AdminUserApi adminUserApi;
+
+    @Resource
+    private StudentTimelineService studentTimelineService;
 
     // TODO: 从系统配置中读取
     private static final Integer DEFAULT_OVERDUE_HOURS = 48;
@@ -138,6 +147,55 @@ public class ConsultationAssessmentServiceImpl implements ConsultationAssessment
         appointment.setStatus(3);
         appointment.setCurrentStep(3);
         appointmentMapper.updateById(appointment);
+
+        // 添加学生时间线记录
+        // 1. 获取评估人姓名
+        AdminUserRespDTO counselor = adminUserApi.getUser(assessment.getCounselorUserId());
+        String counselorName = counselor != null ? counselor.getNickname() : "未知";
+
+        // 2. 获取风险等级标签
+        String riskLevelText = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.RISK_LEVEL, assessment.getRiskLevel());
+        if (riskLevelText == null) {
+            riskLevelText = "未知";
+        }
+
+        // 3. 获取问题类型
+        String problemTypesText = assessment.getProblemTypes() != null && !assessment.getProblemTypes().isEmpty()
+            ? String.join("、", assessment.getProblemTypes())
+            : "无";
+
+        // 4. 获取就诊用药情况
+        String medicalVisitText = "";
+        if (assessment.getHasMedicalVisit() != null) {
+            medicalVisitText = assessment.getHasMedicalVisit() ? "，有就诊用药情况" : "，没有就诊用药情况";
+        }
+
+        // 5. 构建时间线内容
+        String content = String.format("%s 提交了评估报告，风险等级：%s，问题类型：%s%s",
+            counselorName, riskLevelText, problemTypesText, medicalVisitText);
+
+        // 6. 构建元数据
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("assessmentId", assessment.getId());
+        meta.put("appointmentId", assessment.getAppointmentId());
+        meta.put("riskLevel", assessment.getRiskLevel());
+        meta.put("problemTypes", assessment.getProblemTypes());
+        meta.put("followUpSuggestion", assessment.getFollowUpSuggestion());
+        meta.put("submittedAt", assessment.getSubmittedAt());
+        meta.put("counselorUserId", assessment.getCounselorUserId());
+        meta.put("hasMedicalVisit", assessment.getHasMedicalVisit());
+        if (assessment.getMedicalVisitRecord() != null) {
+            meta.put("medicalVisitRecord", assessment.getMedicalVisitRecord());
+        }
+
+        studentTimelineService.saveTimelineWithMeta(
+            assessment.getStudentProfileId(),
+            TimelineEventTypeEnum.ASSESSMENT_REPORT.getType(),
+            "提交评估报告",
+            "assessment_" + assessment.getId(),
+            content,
+            meta
+        );
 
         return assessment.getId();
     }

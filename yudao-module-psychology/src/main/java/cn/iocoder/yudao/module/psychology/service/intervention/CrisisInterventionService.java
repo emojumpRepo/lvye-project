@@ -185,6 +185,14 @@ public interface CrisisInterventionService {
     void updateProcessRecord(Long id, String content);
 
     /**
+     * 切换危机事件关闭状态
+     *
+     * @param id 事件ID
+     * @param closed 是否关闭
+     */
+    void toggleEventClosed(Long id, Boolean closed);
+
+    /**
      * 获取危机事件分配设置
      */
     InterventionAssignmentSettingVO getAssignmentSettings();
@@ -193,4 +201,20 @@ public interface CrisisInterventionService {
      * 设置危机事件分配设置
      */
     void setAssignmentSettings(InterventionAssignmentSettingVO settingVO);
+
+    /**
+     * 获取学生的所有危机事件
+     *
+     * @param studentProfileId 学生档案ID
+     * @return 危机事件列表
+     */
+    List<CrisisEventRespVO> getStudentCrisisEvents(Long studentProfileId);
+
+    /**
+     * 获取学生的所有评估记录
+     *
+     * @param studentProfileId 学生档案ID
+     * @return 评估记录列表（按创建时间倒序）
+     */
+    List<CrisisEventRespVO.AssessmentRecordVO> getStudentAssessments(Long studentProfileId);
 }

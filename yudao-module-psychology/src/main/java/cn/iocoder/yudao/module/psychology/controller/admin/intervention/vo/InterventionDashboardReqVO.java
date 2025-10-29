@@ -41,4 +41,7 @@ public class InterventionDashboardReqVO extends PageParam {
 
     @Schema(description = "排序方式", example = "desc")
     private String sortOrder;
+
+    @Schema(description = "排除的危机事件状态（用于待评等级查询，排除指定状态的危机事件）", example = "5")
+    private Integer excludeCrisisStatus;
 }

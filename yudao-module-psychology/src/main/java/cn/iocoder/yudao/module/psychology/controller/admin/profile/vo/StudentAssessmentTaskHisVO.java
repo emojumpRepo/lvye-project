@@ -75,5 +75,11 @@ public class StudentAssessmentTaskHisVO {
     @Schema(description = "截止时间")
     private Date deadline;
 
+    /**
+     * 测评结果ID
+     */
+    @Schema(description = "测评结果ID")
+    private Long taskResultId;
+
 
 }

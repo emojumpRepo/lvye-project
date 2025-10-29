@@ -69,7 +69,23 @@ public class CrisisEventAssessmentDO extends TenantBaseDO {
     private String content;
 
     /**
-     * 文件ID
+     * 是否有就诊用药情况
      */
-    private Long fileId;
+    private Boolean hasMedicalVisit;
+
+    /**
+     * 就诊记录
+     */
+    private String medicalVisitRecord;
+
+    /**
+     * 持续关注记录
+     */
+    private String observationRecord;
+
+    /**
+     * 附件ID列表（JSON数组）
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<Long> attachmentIds;
 }

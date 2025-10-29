@@ -164,4 +164,41 @@ public interface StudentProfileService {
      */
     List<StudentProfileSimpleVO> searchSimpleStudentProfilesByStudentNoAndName(String studentNo, String name);
 
+    /**
+     * 验证该学生是否是心理老师负责的学生
+     * 检查学生班级及其所有父级部门，咨询师关联了任意一个部门即返回true
+     *
+     * @param studentProfileId 学生档案ID
+     * @param counselorUserId 咨询师用户ID
+     * @return true-是负责的学生，false-不是负责的学生
+     */
+    Boolean verifyCounselorStudent(Long studentProfileId, Long counselorUserId);
+
+    /**
+     * 年级批量毕业
+     * 根据年级部门ID和入学年份查找学生，设置毕业状态并记录时间线
+     *
+     * @param reqVO 批量毕业请求参数
+     * @return 成功处理的学生数量
+     */
+    Integer batchGraduateStudents(BatchGraduateReqVO reqVO);
+
+    /**
+     * 检查毕业年级中心理状态异常的学生
+     * 根据年级部门ID和入学年份查找心理状态异常（psychological_status = 1）的学生
+     *
+     * @param reqVO 检查请求参数
+     * @return 心理状态异常的学生列表
+     */
+    List<StudentProfileVO> checkAbnormalGraduatingStudents(CheckAbnormalStudentsReqVO reqVO);
+
+    /**
+     * 学生换班（批量）
+     * 更新学生的年级和班级信息，并记录时间线
+     *
+     * @param reqVO 换班请求参数
+     * @return 成功处理的学生数量
+     */
+    Integer changeClass(ChangeClassReqVO reqVO);
+
 }

@@ -85,6 +85,9 @@ public class CrisisEventRespVO {
     @Schema(description = "是否自动分配", example = "false")
     private Boolean autoAssigned;
 
+    @Schema(description = "是否关闭", example = "false")
+    private Boolean closed;
+
     @Schema(description = "处理时间")
     private LocalDateTime handleAt;
 
@@ -136,7 +139,7 @@ public class CrisisEventRespVO {
         private String reason;
 
         @Schema(description = "附件ID列表")
-        private List<Long> attachments;
+        private List<Long> attachmentIds;
 
         @Schema(description = "评估记录ID")
         private Long assessmentId;
@@ -192,8 +195,17 @@ public class CrisisEventRespVO {
         @Schema(description = "评估详细内容")
         private String content;
 
+        @Schema(description = "是否有就诊用药情况")
+        private Boolean hasMedicalVisit;
+
+        @Schema(description = "就诊记录")
+        private String medicalVisitRecord;
+
+        @Schema(description = "持续关注记录")
+        private String observationRecord;
+
         @Schema(description = "附件ID列表")
-        private List<Long> attachments;
+        private List<Long> attachmentIds;
 
         @Schema(description = "创建时间")
         private LocalDateTime createTime;

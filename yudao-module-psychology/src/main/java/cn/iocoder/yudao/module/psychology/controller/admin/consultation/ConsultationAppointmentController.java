@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - 心理咨询预约")
@@ -150,5 +152,14 @@ public class ConsultationAppointmentController {
     @DataPermission(enable = false)
     public CommonResult<ConsultationAppointmentDateQueryRespVO> getAppointmentsByDate(@Valid ConsultationAppointmentDateQueryReqVO reqVO) {
         return success(appointmentService.getAppointmentsByDate(reqVO));
+    }
+
+    @GetMapping("/appointment/list-by-student")
+    @Operation(summary = "根据学生档案ID查询咨询记录列表")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true)
+    @DataPermission(enable = false)
+    public CommonResult<List<ConsultationAppointmentRespVO>> getAppointmentsByStudentProfileId(@RequestParam("studentProfileId") Long studentProfileId) {
+        List<ConsultationAppointmentRespVO> list = appointmentService.getAppointmentsByStudentProfileId(studentProfileId);
+        return success(list);
     }
 }

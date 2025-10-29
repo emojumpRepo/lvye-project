@@ -43,14 +43,20 @@ public class ConsultationAssessmentRespVO {
     @Schema(description = "后续处理建议", example = "1")
     private Integer followUpSuggestion;
 
-    @Schema(description = "评估方式", example = "1")
-    private Integer assessmentMode;
-
     @Schema(description = "评估内容")
     private String content;
 
-    @Schema(description = "文件ID", example = "1")
-    private Long fileId;
+    @Schema(description = "是否就医")
+    private Boolean hasMedicalVisit;
+
+    @Schema(description = "就医记录")
+    private String medicalVisitRecord;
+
+    @Schema(description = "观察记录")
+    private String observationRecord;
+
+    @Schema(description = "附件ID列表")
+    private List<Long> attachmentIds;
 
     @Schema(description = "是否为草稿", example = "false")
     private Boolean draft;

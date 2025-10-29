@@ -92,12 +92,26 @@ public interface ConsultationAppointmentMapper extends BaseMapperX<ConsultationA
     }
 
     /**
-     * 统计逾期的咨询数(结束时间超过30分钟后且未完成)
+     * 统计逾期的咨询数
+     * 包含两种情况：
+     * 1. 状态为1（已预约）且预约结束时间超过30分钟
+     * 2. 状态为2（已完成）且预约结束时间超过配置的小时数
+     *
+     * @param now 当前时间
+     * @param reportExpireHours 报告逾期时间（小时数），用于判断状态2的逾期
+     * @return 逾期咨询数量
      */
-    default long countOverdueConsultations(LocalDateTime now) {
+    default long countOverdueConsultations(LocalDateTime now, int reportExpireHours) {
         return selectCount(new LambdaQueryWrapperX<ConsultationAppointmentDO>()
-                .eq(ConsultationAppointmentDO::getStatus, 1)
-                .lt(ConsultationAppointmentDO::getAppointmentEndTime, now.minusMinutes(30)));
+                .and(wrapper -> wrapper
+                        // 情况1：状态为1（已预约）且预约结束时间 < 当前时间 - 30分钟
+                        .or(w -> w.eq(ConsultationAppointmentDO::getStatus, 1)
+                                .lt(ConsultationAppointmentDO::getAppointmentEndTime, now.minusMinutes(30)))
+                        // 情况2：状态为2（已完成）且预约结束时间 < 当前时间 - 配置的小时数
+                        .or(w -> w.eq(ConsultationAppointmentDO::getStatus, 2)
+                                .lt(ConsultationAppointmentDO::getAppointmentEndTime, now.minusHours(reportExpireHours)))
+                )
+        );
     }
 
     /**
@@ -136,5 +150,18 @@ public interface ConsultationAppointmentMapper extends BaseMapperX<ConsultationA
         wrapper.orderByAsc(ConsultationAppointmentDO::getAppointmentStartTime);
 
         return selectList(wrapper);
+    }
+
+    /**
+     * 根据学生档案ID查询咨询记录（排除已取消的）
+     *
+     * @param studentProfileId 学生档案ID
+     * @return 咨询记录列表
+     */
+    default List<ConsultationAppointmentDO> selectListByStudentProfileId(Long studentProfileId) {
+        return selectList(new LambdaQueryWrapperX<ConsultationAppointmentDO>()
+                .eq(ConsultationAppointmentDO::getStudentProfileId, studentProfileId)
+                .ne(ConsultationAppointmentDO::getStatus, 4) // 排除已取消的
+                .orderByDesc(ConsultationAppointmentDO::getAppointmentStartTime));
     }
 }

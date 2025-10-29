@@ -52,6 +52,8 @@ public interface CrisisInterventionMapper extends BaseMapperX<CrisisIntervention
                 .eqIfPresent(CrisisInterventionDO::getPriority, reqVO.getPriority())
                 .eqIfPresent(CrisisInterventionDO::getProcessStatus, reqVO.getProcessStatus())
                 .eqIfPresent(CrisisInterventionDO::getHandlerUserId, reqVO.getCounselorUserId())
+                .eqIfPresent(CrisisInterventionDO::getSourceType, reqVO.getSourceType())
+                .eqIfPresent(CrisisInterventionDO::getStatus, reqVO.getStatus())
                 .orderByDesc(CrisisInterventionDO::getCreateTime));
     }
 

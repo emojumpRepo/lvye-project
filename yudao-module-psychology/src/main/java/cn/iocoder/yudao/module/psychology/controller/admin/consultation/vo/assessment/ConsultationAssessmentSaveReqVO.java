@@ -21,19 +21,23 @@ public class ConsultationAssessmentSaveReqVO {
     @Schema(description = "问题类型识别")
     private List<String> problemTypes;
 
-    @Schema(description = "后续处理建议", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "后续处理建议不能为空")
+    @Schema(description = "后续处理建议")
     private Integer followUpSuggestion;
-
-    @Schema(description = "评估方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "评估方式不能为空")
-    private Integer assessmentMode;
 
     @Schema(description = "评估内容")
     private String content;
 
-    @Schema(description = "文件ID", example = "1")
-    private Long fileId;
+    @Schema(description = "是否就医")
+    private Boolean hasMedicalVisit;
+
+    @Schema(description = "就医记录")
+    private String medicalVisitRecord;
+
+    @Schema(description = "观察记录")
+    private String observationRecord;
+
+    @Schema(description = "附件ID列表")
+    private List<Long> attachmentIds;
 
     @Schema(description = "是否为草稿", example = "false")
     private Boolean draft = false;

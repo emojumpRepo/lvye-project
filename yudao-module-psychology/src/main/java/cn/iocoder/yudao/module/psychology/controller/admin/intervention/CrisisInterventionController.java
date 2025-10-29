@@ -177,6 +177,17 @@ public class CrisisInterventionController {
         return success(true);
     }
 
+    @PutMapping("/event/{id}/toggle-closed")
+    @Operation(summary = "切换危机事件关闭状态")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> toggleEventClosed(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody CrisisEventToggleClosedReqVO toggleReqVO) {
+        interventionService.toggleEventClosed(id, toggleReqVO.getClosed());
+        return success(true);
+    }
+
     @PostMapping("/event/{id}/stage-assessment")
     @Operation(summary = "提交阶段性评估")
     @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
@@ -204,6 +215,24 @@ public class CrisisInterventionController {
     @DataPermission(enable = false)
     public CommonResult<Boolean> checkDuplicateEvent(@RequestParam("studentProfileId") Long studentProfileId) {
         return success(interventionService.checkDuplicateEvent(studentProfileId));
+    }
+
+    @GetMapping("/event/student/{studentProfileId}")
+    @Operation(summary = "获取学生的所有危机事件")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<CrisisEventRespVO>> getStudentCrisisEvents(@PathVariable("studentProfileId") Long studentProfileId) {
+        return success(interventionService.getStudentCrisisEvents(studentProfileId));
+    }
+
+    @GetMapping("/assessments/student/{studentProfileId}")
+    @Operation(summary = "获取学生的所有评估记录")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<CrisisEventRespVO.AssessmentRecordVO>> getStudentAssessments(@PathVariable("studentProfileId") Long studentProfileId) {
+        return success(interventionService.getStudentAssessments(studentProfileId));
     }
 
     // ========== 系统设置 ==========

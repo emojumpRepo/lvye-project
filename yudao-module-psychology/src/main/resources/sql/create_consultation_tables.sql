@@ -42,9 +42,11 @@ CREATE TABLE `lvye_consultation_assessment` (
   `risk_level` TINYINT NOT NULL COMMENT '风险等级(字典：risk_level)',
   `problem_types` JSON COMMENT '问题类型识别(JSON数组)',
   `follow_up_suggestion` TINYINT NOT NULL COMMENT '后续处理建议(字典：follow_up_suggestion)',
-  `assessment_mode` TINYINT NOT NULL COMMENT '评估方式(字典：assessment_mode) 1-自由输入/2-模板上传',
   `content` MEDIUMTEXT COMMENT '评估内容',
-  `file_id` BIGINT COMMENT '上传的评估文件ID',
+  `has_medical_visit` BOOLEAN COMMENT '是否就医',
+  `medical_visit_record` MEDIUMTEXT COMMENT '就医记录',
+  `observation_record` MEDIUMTEXT COMMENT '观察记录',
+  `attachment_ids` JSON COMMENT '附件ID列表(JSON数组)',
   `draft` BOOLEAN DEFAULT TRUE COMMENT '是否为草稿',
   `submitted_at` DATETIME COMMENT '评估报告最终提交时间',
   `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
@@ -192,9 +194,6 @@ CREATE TABLE `lvye_intervention_level_history` (
 
 -- 后续建议字典
 -- follow_up_suggestion: 1-继续咨询, 2-继续量表测评, 3-持续观察, 4-问题基本解决, 5-转介专业治疗
-
--- 评估方式字典
--- assessment_mode: 1-自由输入, 2-模板上传
 
 -- 优先级字典
 -- priority_level: 1-高, 2-中, 3-低

@@ -50,7 +50,7 @@ public class CrisisEventProcessHistoryVO {
     private String originalUserName;
 
     @Schema(description = "附件ID列表")
-    private List<Long> attachments;
+    private List<Long> attachmentIds;
 
     @Schema(description = "操作时间")
     private LocalDateTime createTime;

@@ -132,16 +132,21 @@
         a.task_no,
         b.task_name,
         b.target_audience,
-        b.status,
+        a.status,
         a.risk_level,
         a.evaluate,
         a.suggestions,
         b.startline,
-        b.deadline
+        b.deadline,
+        ar.id as task_result_id
         from lvye_assessment_user_task a
-        left join lvye_assessment_task b on a.task_no  = b.task_no and b.deleted = 0
-        left join lvye_student_profile c on c.user_id  = a.user_id
+        left join lvye_assessment_task b on a.task_no = b.task_no and b.deleted = 0
+        left join lvye_student_profile c on c.user_id = a.user_id
+        left join lvye_assessment_result ar on ar.participant_id = c.id
+            and ar.task_no COLLATE utf8mb4_unicode_ci = a.task_no COLLATE utf8mb4_unicode_ci
+            and ar.dimension_code = 'total'
         where c.id = #{studentProfileId} and a.deleted = 0
+        order by b.create_time desc
     </select>
 
     <select id="selectStudentAssessmentTaskDetail"
