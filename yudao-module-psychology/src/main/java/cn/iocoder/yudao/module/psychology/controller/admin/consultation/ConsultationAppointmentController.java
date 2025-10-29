@@ -162,4 +162,14 @@ public class ConsultationAppointmentController {
         List<ConsultationAppointmentRespVO> list = appointmentService.getAppointmentsByStudentProfileId(studentProfileId);
         return success(list);
     }
+
+    @PutMapping("/appointment/{id}/save-summary")
+    @Operation(summary = "保存咨询纪要")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> saveSummary(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody ConsultationAppointmentSaveSummaryReqVO reqVO) {
+        appointmentService.saveSummary(id, reqVO);
+        return success(true);
+    }
 }

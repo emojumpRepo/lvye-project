@@ -77,4 +77,10 @@ public class ConsultationAppointmentRespVO {
 
     @Schema(description = "是否已评估", example = "false")
     private Boolean hasAssessment;
+
+    @Schema(description = "咨询纪要")
+    private String summary;
+
+    @Schema(description = "附件ID列表")
+    private java.util.List<Long> attachmentIds;
 }
