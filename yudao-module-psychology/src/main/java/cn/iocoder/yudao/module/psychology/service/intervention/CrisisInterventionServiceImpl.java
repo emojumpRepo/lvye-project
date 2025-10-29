@@ -1550,6 +1550,65 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         log.info("切换危机事件关闭状态，ID: {}, closed: {}, 操作人: {}", id, closed, operatorName);
     }
 
+    @Override
+    public List<CrisisEventRespVO> getStudentCrisisEvents(Long studentProfileId) {
+        // 查询学生的所有危机事件
+        List<CrisisInterventionDO> events = crisisInterventionMapper.selectListByStudentId(studentProfileId);
+
+        if (CollUtil.isEmpty(events)) {
+            return new ArrayList<>();
+        }
+
+        // 转换为响应VO（会自动填充学生信息、处理人信息等）
+        return convertToRespVOList(events);
+    }
+
+    @Override
+    public List<CrisisEventRespVO.AssessmentRecordVO> getStudentAssessments(Long studentProfileId) {
+        // 1. 查询学生的所有危机事件
+        List<CrisisInterventionDO> events = crisisInterventionMapper.selectListByStudentId(studentProfileId);
+
+        if (CollUtil.isEmpty(events)) {
+            return new ArrayList<>();
+        }
+
+        // 2. 收集所有危机事件的ID
+        List<Long> eventIds = events.stream()
+                .map(CrisisInterventionDO::getId)
+                .collect(Collectors.toList());
+
+        // 3. 查询所有评估记录
+        List<CrisisEventAssessmentDO> allAssessments = new ArrayList<>();
+        for (Long eventId : eventIds) {
+            List<CrisisEventAssessmentDO> assessments = eventAssessmentMapper.selectListByEventIdOrder(eventId);
+            if (CollUtil.isNotEmpty(assessments)) {
+                allAssessments.addAll(assessments);
+            }
+        }
+
+        // 4. 如果没有评估记录，返回空列表
+        if (CollUtil.isEmpty(allAssessments)) {
+            return new ArrayList<>();
+        }
+
+        // 5. 按创建时间倒序排序（最新的在前）
+        allAssessments.sort((a1, a2) -> {
+            if (a1.getCreateTime() == null && a2.getCreateTime() == null) {
+                return 0;
+            }
+            if (a1.getCreateTime() == null) {
+                return 1;
+            }
+            if (a2.getCreateTime() == null) {
+                return -1;
+            }
+            return a2.getCreateTime().compareTo(a1.getCreateTime());
+        });
+
+        // 6. 转换为VO并返回
+        return convertAssessmentRecords(allAssessments);
+    }
+
     /**
      * 转换评估记录为VO
      */

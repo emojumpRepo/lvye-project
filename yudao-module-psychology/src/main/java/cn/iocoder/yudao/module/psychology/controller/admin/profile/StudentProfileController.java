@@ -128,7 +128,7 @@ public class StudentProfileController {
     @DataPermission(enable = false)
     public CommonResult<PageResult<StudentProfileVO>> getStudentProfilePage(@Valid StudentProfilePageReqVO pageReqVO) {
         PageResult<StudentProfileVO> pageResult = studentProfileService.getStudentProfilePage(pageReqVO);
-        return success(BeanUtils.toBean(pageResult, StudentProfileVO.class));
+        return success(pageResult);
     }
 
     @GetMapping("/simple-list")

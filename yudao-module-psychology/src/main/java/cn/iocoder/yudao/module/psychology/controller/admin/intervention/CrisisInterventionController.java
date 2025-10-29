@@ -217,6 +217,24 @@ public class CrisisInterventionController {
         return success(interventionService.checkDuplicateEvent(studentProfileId));
     }
 
+    @GetMapping("/event/student/{studentProfileId}")
+    @Operation(summary = "获取学生的所有危机事件")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<CrisisEventRespVO>> getStudentCrisisEvents(@PathVariable("studentProfileId") Long studentProfileId) {
+        return success(interventionService.getStudentCrisisEvents(studentProfileId));
+    }
+
+    @GetMapping("/assessments/student/{studentProfileId}")
+    @Operation(summary = "获取学生的所有评估记录")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<CrisisEventRespVO.AssessmentRecordVO>> getStudentAssessments(@PathVariable("studentProfileId") Long studentProfileId) {
+        return success(interventionService.getStudentAssessments(studentProfileId));
+    }
+
     // ========== 系统设置 ==========
 
     @GetMapping("/admin/get-assignment-settings")

@@ -30,6 +30,7 @@ import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.UserDeptMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
 import cn.iocoder.yudao.module.system.enums.common.SexEnum;
+import cn.iocoder.yudao.module.system.enums.permission.RoleCodeEnum;
 import cn.iocoder.yudao.module.system.service.permission.PermissionService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -275,12 +276,21 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     @Override
     public PageResult<StudentProfileVO> getStudentProfilePage(StudentProfilePageReqVO pageReqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
 
-        // 计算可见部门ID集合
-        java.util.Collection<Long> deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
-                ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
-        Long selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
+        // 检查是否是超级管理员，如果是则返回所有数据
+        java.util.Collection<Long> deptIds;
+        Long selfUserId;
+        if (permissionApi.hasAnyRoles(userId, RoleCodeEnum.SUPER_ADMIN.getCode())) {
+            // 超级管理员：跳过数据权限过滤
+            deptIds = java.util.Collections.emptyList();
+            selfUserId = null;
+        } else {
+            // 非超级管理员：应用部门数据权限
+            DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
+            deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
+                    ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
+            selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
+        }
 
         IPage<StudentProfileVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
         studentProfileMapper.selectPageList(page, pageReqVO, deptIds, selfUserId);
@@ -290,10 +300,21 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     @Override
     public List<StudentProfileVO> getStudentProfileList(StudentProfilePageReqVO reqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
-        java.util.Collection<Long> deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
-                ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
-        Long selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
+
+        // 检查是否是超级管理员，如果是则返回所有数据
+        java.util.Collection<Long> deptIds;
+        Long selfUserId;
+        if (permissionApi.hasAnyRoles(userId, RoleCodeEnum.SUPER_ADMIN.getCode())) {
+            // 超级管理员：跳过数据权限过滤
+            deptIds = java.util.Collections.emptyList();
+            selfUserId = null;
+        } else {
+            // 非超级管理员：应用部门数据权限
+            DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
+            deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
+                    ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
+            selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
+        }
 
         // 设置不分页，获取所有数据
         IPage<StudentProfileVO> page = new Page<>(1, Integer.MAX_VALUE);
@@ -492,13 +513,22 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     @Override
     public List<StudentProfileSimpleVO> searchSimpleStudentProfilesByStudentNoAndName(String studentNo, String name) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
-        
-        // 计算可见部门ID集合
-        java.util.Collection<Long> deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
-                ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
-        Long selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
-        
+
+        // 检查是否是超级管理员，如果是则返回所有数据
+        java.util.Collection<Long> deptIds;
+        Long selfUserId;
+        if (permissionApi.hasAnyRoles(userId, RoleCodeEnum.SUPER_ADMIN.getCode())) {
+            // 超级管理员：跳过数据权限过滤
+            deptIds = java.util.Collections.emptyList();
+            selfUserId = null;
+        } else {
+            // 非超级管理员：应用部门数据权限
+            DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
+            deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
+                    ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
+            selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
+        }
+
         return studentProfileMapper.searchSimpleByStudentNoAndName(studentNo, name, deptIds, selfUserId);
     }
 
