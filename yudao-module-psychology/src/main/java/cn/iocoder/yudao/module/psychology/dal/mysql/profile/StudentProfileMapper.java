@@ -77,6 +77,28 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
                                                                @Param("deptIds") Collection<Long> deptIds,
                                                                @Param("selfUserId") Long selfUserId);
 
+    /**
+     * 根据年级部门ID和入学年份查询学生列表（用于批量毕业）
+     *
+     * @param gradeDeptId 年级部门ID
+     * @param enrollmentYear 入学年份
+     * @param excludeIds 需要排除的学生ID列表
+     * @return 学生列表
+     */
+    List<StudentProfileDO> selectByGradeDeptIdAndEnrollmentYear(@Param("gradeDeptId") Long gradeDeptId,
+                                                                 @Param("enrollmentYear") Integer enrollmentYear,
+                                                                 @Param("excludeIds") Collection<Long> excludeIds);
+
+    /**
+     * 根据年级部门ID和入学年份查询心理状态异常的学生列表
+     *
+     * @param gradeDeptId 年级部门ID
+     * @param enrollmentYear 入学年份
+     * @return 心理状态异常的学生列表（包含年级、班级等关联信息）
+     */
+    List<StudentProfileVO> selectAbnormalStudentsByGradeDeptIdAndEnrollmentYear(@Param("gradeDeptId") Long gradeDeptId,
+                                                                                  @Param("enrollmentYear") Integer enrollmentYear);
+
 }
 
 

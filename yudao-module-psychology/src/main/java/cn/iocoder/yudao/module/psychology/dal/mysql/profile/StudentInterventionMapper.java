@@ -61,7 +61,14 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='reqVO.counselorUserId != null'> " +
             "  AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_counselor WHERE ci_counselor.student_profile_id = sp.id AND ci_counselor.handler_user_id = #{reqVO.counselorUserId} AND ci_counselor.deleted = 0 AND ci_counselor.status IN (2, 3, 4, 5)) " +
             "</if>" +
-            "AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status5 WHERE ci_status5.student_profile_id = sp.id AND ci_status5.status = 5 AND ci_status5.deleted = 0) " +
+            "<choose>" +
+            "  <when test='reqVO.excludeCrisisStatus != null'>" +
+            "    AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status WHERE ci_status.student_profile_id = sp.id AND ci_status.status != #{reqVO.excludeCrisisStatus} AND ci_status.deleted = 0) " +
+            "  </when>" +
+            "  <otherwise>" +
+            "    AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status5 WHERE ci_status5.student_profile_id = sp.id AND ci_status5.status = 5 AND ci_status5.deleted = 0) " +
+            "  </otherwise>" +
+            "</choose>" +
             "GROUP BY sp.id, sp.name, sp.student_no, sp.sex, sp.risk_level, sp.graduation_status, sp.update_time, d1.name, latest_ci.handler_user_id, su.nickname " +
             "<if test='reqVO.sortField != null and reqVO.sortField == \"riskLevel\"'>" +
             "  ORDER BY sp.risk_level " +
@@ -94,7 +101,14 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='reqVO.counselorUserId != null'> " +
             "  AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_counselor WHERE ci_counselor.student_profile_id = sp.id AND ci_counselor.handler_user_id = #{reqVO.counselorUserId} AND ci_counselor.deleted = 0 AND ci_counselor.status IN (2, 3, 4, 5)) " +
             "</if>" +
-            "AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status5 WHERE ci_status5.student_profile_id = sp.id AND ci_status5.status = 5 AND ci_status5.deleted = 0) " +
+            "<choose>" +
+            "  <when test='reqVO.excludeCrisisStatus != null'>" +
+            "    AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status WHERE ci_status.student_profile_id = sp.id AND ci_status.status != #{reqVO.excludeCrisisStatus} AND ci_status.deleted = 0) " +
+            "  </when>" +
+            "  <otherwise>" +
+            "    AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status5 WHERE ci_status5.student_profile_id = sp.id AND ci_status5.status = 5 AND ci_status5.deleted = 0) " +
+            "  </otherwise>" +
+            "</choose>" +
             "</script>")
     Long countInterventionStudent(@Param("reqVO") InterventionDashboardReqVO reqVO);
 

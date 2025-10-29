@@ -24,8 +24,10 @@ import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
 import cn.iocoder.yudao.module.system.dal.dataobject.permission.RoleDO;
+import cn.iocoder.yudao.module.system.dal.dataobject.permission.UserDeptDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.dal.mysql.permission.RoleMapper;
+import cn.iocoder.yudao.module.system.dal.mysql.permission.UserDeptMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.user.AdminUserMapper;
 import cn.iocoder.yudao.module.system.enums.common.SexEnum;
 import cn.iocoder.yudao.module.system.service.permission.PermissionService;
@@ -104,6 +106,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
 
     @Resource
     private DataImportService dataImportService;
+
+    @Resource
+    private UserDeptMapper userDeptMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -553,6 +558,258 @@ public class StudentProfileServiceImpl implements StudentProfileService {
      */
     private String encodePassword(String password) {
         return passwordEncoder.encode(password);
+    }
+
+    @Override
+    public Boolean verifyCounselorStudent(Long studentProfileId, Long counselorUserId) {
+        // 参数校验
+        if (studentProfileId == null || counselorUserId == null) {
+            return false;
+        }
+
+        // 1. 根据studentProfileId查询学生档案，获取班级ID
+        StudentProfileDO studentProfile = studentProfileMapper.selectById(studentProfileId);
+        if (studentProfile == null || studentProfile.getClassDeptId() == null) {
+            return false;
+        }
+
+        // 2. 构建部门ID链（从班级到顶级部门）
+        List<Long> deptIdChain = new ArrayList<>();
+        Long currentDeptId = studentProfile.getClassDeptId();
+
+        // 添加班级自己的ID
+        deptIdChain.add(currentDeptId);
+
+        // 向上追溯父级部门，直到顶级（parentId = 0）
+        while (currentDeptId != null && currentDeptId != 0L) {
+            DeptRespDTO dept = deptApi.getDept(currentDeptId);
+            if (dept == null || dept.getParentId() == null) {
+                break;
+            }
+
+            Long parentId = dept.getParentId();
+            // parentId = 0 表示已经到顶级部门
+            if (parentId == 0L) {
+                break;
+            }
+
+            deptIdChain.add(parentId);
+            currentDeptId = parentId;
+        }
+
+        // 3. 查询咨询师是否关联了这些部门中的任意一个
+        List<UserDeptDO> userDeptList = userDeptMapper.selectByUserIdAndDeptIds(counselorUserId, deptIdChain);
+
+        // 4. 如果有关联记录，返回true；否则返回false
+        return CollUtil.isNotEmpty(userDeptList);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer batchGraduateStudents(BatchGraduateReqVO reqVO) {
+        // 1. 根据gradeDeptId和enrollmentYear查询学生列表，排除extraIds中的学生
+        List<StudentProfileDO> studentList = studentProfileMapper.selectByGradeDeptIdAndEnrollmentYear(
+                reqVO.getGradeDeptId(),
+                reqVO.getEnrollmentYear(),
+                reqVO.getExtraIds()
+        );
+
+        if (CollUtil.isEmpty(studentList)) {
+            logger.warn("未找到符合条件的学生，gradeDeptId={}, enrollmentYear={}",
+                    reqVO.getGradeDeptId(), reqVO.getEnrollmentYear());
+            return 0;
+        }
+
+        // 2. 批量更新学生的毕业状态和毕业年份
+        int successCount = 0;
+        for (StudentProfileDO student : studentList) {
+            try {
+                // 更新毕业状态和毕业年份
+                StudentProfileDO updateObj = new StudentProfileDO();
+                updateObj.setId(student.getId());
+                updateObj.setGraduationStatus(1); // 1-已毕业
+                updateObj.setGraduationYear(reqVO.getGraduationYear());
+                studentProfileMapper.updateById(updateObj);
+
+                // 3. 记录时间线
+                Map<String, Object> meta = new HashMap<>();
+                meta.put("profileId", student.getId());
+                meta.put("studentNo", student.getStudentNo());
+                meta.put("studentName", student.getName());
+                meta.put("gradeDeptId", reqVO.getGradeDeptId());
+                meta.put("enrollmentYear", reqVO.getEnrollmentYear());
+                meta.put("graduationYear", reqVO.getGraduationYear());
+                meta.put("operatorId", SecurityFrameworkUtils.getLoginUserId());
+
+                String content = String.format("学生毕业：%s届毕业，毕业年份%d年",
+                        reqVO.getEnrollmentYear(), reqVO.getGraduationYear());
+
+                studentTimelineService.saveTimelineWithMeta(
+                        student.getId(),
+                        TimelineEventTypeEnum.GRADUATION.getType(),
+                        TimelineEventTypeEnum.GRADUATION.getName(),
+                        "graduation_" + reqVO.getGraduationYear() + "_" + student.getId(),
+                        content,
+                        meta
+                );
+
+                successCount++;
+            } catch (Exception e) {
+                logger.error("学生毕业处理失败，studentId={}, studentNo={}, error={}",
+                        student.getId(), student.getStudentNo(), e.getMessage(), e);
+            }
+        }
+
+        logger.info("批量毕业处理完成，总数={}, 成功={}", studentList.size(), successCount);
+        return successCount;
+    }
+
+    @Override
+    public List<StudentProfileVO> checkAbnormalGraduatingStudents(CheckAbnormalStudentsReqVO reqVO) {
+        // 参数校验
+        if (reqVO.getGradeDeptId() == null || reqVO.getEnrollmentYear() == null) {
+            logger.warn("检查异常学生参数为空，gradeDeptId={}, enrollmentYear={}",
+                    reqVO.getGradeDeptId(), reqVO.getEnrollmentYear());
+            return Collections.emptyList();
+        }
+
+        // 查询心理状态异常的学生列表
+        List<StudentProfileVO> abnormalStudents = studentProfileMapper
+                .selectAbnormalStudentsByGradeDeptIdAndEnrollmentYear(
+                        reqVO.getGradeDeptId(),
+                        reqVO.getEnrollmentYear()
+                );
+
+        logger.info("检查异常学生完成，gradeDeptId={}, enrollmentYear={}, 异常学生数={}",
+                reqVO.getGradeDeptId(), reqVO.getEnrollmentYear(),
+                abnormalStudents != null ? abnormalStudents.size() : 0);
+
+        return abnormalStudents != null ? abnormalStudents : Collections.emptyList();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer changeClass(ChangeClassReqVO reqVO) {
+        // 参数校验
+        if (CollUtil.isEmpty(reqVO.getStudentProfileIds())) {
+            logger.warn("批量换班参数为空，studentProfileIds为空");
+            return 0;
+        }
+
+        // 获取新年级和新班级名称（提前查询，避免重复查询）
+        String newGradeName = "";
+        String newClassName = "";
+        if (reqVO.getGradeDeptId() != null) {
+            DeptRespDTO newGradeDept = deptApi.getDept(reqVO.getGradeDeptId());
+            if (newGradeDept != null) {
+                newGradeName = newGradeDept.getName();
+            }
+        }
+        if (reqVO.getClassDeptId() != null) {
+            DeptRespDTO newClassDept = deptApi.getDept(reqVO.getClassDeptId());
+            if (newClassDept != null) {
+                newClassName = newClassDept.getName();
+            }
+        }
+
+        String schoolYear = configApi.getConfigValueByKey(SCHOOL_YEAR);
+        Long operatorId = SecurityFrameworkUtils.getLoginUserId();
+
+        int successCount = 0;
+
+        // 循环处理每个学生
+        for (Long studentProfileId : reqVO.getStudentProfileIds()) {
+            try {
+                // 1. 校验学生档案存在性
+                StudentProfileDO studentProfile = studentProfileMapper.selectById(studentProfileId);
+                if (studentProfile == null) {
+                    logger.warn("学生档案不存在，跳过换班，studentProfileId={}", studentProfileId);
+                    continue;
+                }
+
+                // 2. 获取原始年级和班级信息（用于时间线记录）
+                Long oldGradeDeptId = studentProfile.getGradeDeptId();
+                Long oldClassDeptId = studentProfile.getClassDeptId();
+
+                // 获取原年级和原班级名称
+                String oldGradeName = "";
+                String oldClassName = "";
+                if (oldGradeDeptId != null) {
+                    DeptRespDTO oldGradeDept = deptApi.getDept(oldGradeDeptId);
+                    if (oldGradeDept != null) {
+                        oldGradeName = oldGradeDept.getName();
+                    }
+                }
+                if (oldClassDeptId != null) {
+                    DeptRespDTO oldClassDept = deptApi.getDept(oldClassDeptId);
+                    if (oldClassDept != null) {
+                        oldClassName = oldClassDept.getName();
+                    }
+                }
+
+                // 3. 更新学生档案的gradeDeptId和classDeptId
+                StudentProfileDO updateObj = new StudentProfileDO();
+                updateObj.setId(studentProfileId);
+                updateObj.setGradeDeptId(reqVO.getGradeDeptId());
+                updateObj.setClassDeptId(reqVO.getClassDeptId());
+                studentProfileMapper.updateById(updateObj);
+
+                // 4. 更新用户表的deptId（设置为新班级部门ID）
+                AdminUserDO adminUserDO = new AdminUserDO();
+                adminUserDO.setId(studentProfile.getUserId());
+                adminUserDO.setDeptId(reqVO.getClassDeptId());
+                adminUserMapper.updateById(adminUserDO);
+
+                // 5. 插入学生历史记录表
+                StudentProfileRecordDO studentProfileRecordDO = new StudentProfileRecordDO();
+                studentProfileRecordDO.setStudentNo(studentProfile.getStudentNo());
+                studentProfileRecordDO.setStudyYear(schoolYear);
+                studentProfileRecordDO.setGradeDeptId(reqVO.getGradeDeptId());
+                studentProfileRecordDO.setClassDeptId(reqVO.getClassDeptId());
+                studentProfileRecordMapper.insert(studentProfileRecordDO);
+
+                // 6. 记录时间线
+                Map<String, Object> meta = new HashMap<>();
+                meta.put("profileId", studentProfile.getId());
+                meta.put("studentNo", studentProfile.getStudentNo());
+                meta.put("studentName", studentProfile.getName());
+                meta.put("oldGradeDeptId", oldGradeDeptId);
+                meta.put("oldClassDeptId", oldClassDeptId);
+                meta.put("oldGradeName", oldGradeName);
+                meta.put("oldClassName", oldClassName);
+                meta.put("newGradeDeptId", reqVO.getGradeDeptId());
+                meta.put("newClassDeptId", reqVO.getClassDeptId());
+                meta.put("newGradeName", newGradeName);
+                meta.put("newClassName", newClassName);
+                meta.put("reason", reqVO.getReason());
+                meta.put("operatorId", operatorId);
+                meta.put("schoolYear", schoolYear);
+
+                String content = String.format("换班调整：从%s %s调整到%s %s，原因：%s",
+                        oldGradeName, oldClassName, newGradeName, newClassName, reqVO.getReason());
+
+                studentTimelineService.saveTimelineWithMeta(
+                        studentProfile.getId(),
+                        TimelineEventTypeEnum.STUDENT_PROFILE_ADJUSTMENT.getType(),
+                        TimelineEventTypeEnum.STUDENT_PROFILE_ADJUSTMENT.getName(),
+                        "class_change_" + System.currentTimeMillis() + "_" + studentProfile.getId(),
+                        content,
+                        meta
+                );
+
+                logger.info("学生换班成功，studentId={}, studentNo={}, oldClass={}, newClass={}",
+                        studentProfile.getId(), studentProfile.getStudentNo(),
+                        oldClassName, newClassName);
+
+                successCount++;
+            } catch (Exception e) {
+                logger.error("学生换班失败，studentProfileId={}, error={}",
+                        studentProfileId, e.getMessage(), e);
+            }
+        }
+
+        logger.info("批量换班处理完成，总数={}, 成功={}", reqVO.getStudentProfileIds().size(), successCount);
+        return successCount;
     }
 
 }

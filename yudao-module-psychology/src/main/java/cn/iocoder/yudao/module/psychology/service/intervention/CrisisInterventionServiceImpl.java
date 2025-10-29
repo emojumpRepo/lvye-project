@@ -127,27 +127,28 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
     @Override
     public InterventionDashboardSummaryVO getDashboardSummaryWithPage(InterventionDashboardReqVO reqVO) {
         InterventionDashboardSummaryVO summary = new InterventionDashboardSummaryVO();
-        
+
         // 如果是只看我负责的
         if (Boolean.TRUE.equals(reqVO.getOnlyMine())) {
             reqVO.setCounselorUserId(SecurityFrameworkUtils.getLoginUserId());
         }
-        
+
         // 获取统计数据（这里需要根据查询条件过滤）
         // 字典类型：crisis_level (1:待评, 2:持续观察, 3:一般, 4:严重, 5:重大)
-        summary.setPendingAssessmentCount(getCountByRiskLevelWithFilter(1, reqVO)); // 待评
+        // 待评等级需要特殊处理：排除status=5的危机事件
+        summary.setPendingAssessmentCount(getCountForPendingLevel(reqVO)); // 待评
         summary.setObservationCount(getCountByRiskLevelWithFilter(2, reqVO));      // 持续观察
         summary.setGeneralCount(getCountByRiskLevelWithFilter(3, reqVO));          // 一般
         summary.setSevereCount(getCountByRiskLevelWithFilter(4, reqVO));           // 严重
         summary.setMajorCount(getCountByRiskLevelWithFilter(5, reqVO));            // 重大
         summary.setNormalCount(0); // 不再使用正常状态
-        
+
         // 计算总数
-        int total = summary.getPendingAssessmentCount() + summary.getObservationCount() + 
-                   summary.getGeneralCount() + summary.getSevereCount() + 
+        int total = summary.getPendingAssessmentCount() + summary.getObservationCount() +
+                   summary.getGeneralCount() + summary.getSevereCount() +
                    summary.getMajorCount();
         summary.setTotalCount(total);
-        
+
         // 构建详细统计
         Map<String, InterventionDashboardSummaryVO.LevelDetail> details = new HashMap<>();
         addLevelDetail(details, "pending", summary.getPendingAssessmentCount(), total); // 待评
@@ -156,14 +157,33 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         addLevelDetail(details, "severe", summary.getSevereCount(), total);             // 严重
         addLevelDetail(details, "major", summary.getMajorCount(), total);               // 重大
         summary.setLevelDetails(details);
-        
+
         // 根据是否指定风险等级来获取学生列表
         // 如果指定了风险等级，只返回该等级的学生（用于分页点击）
         // 如果没有指定，返回所有学生（用于首次加载）
+        // 待评等级（riskLevel=1）需要排除status=5的危机事件
+        if (reqVO.getRiskLevel() != null && reqVO.getRiskLevel() == 1) {
+            reqVO.setExcludeCrisisStatus(5);
+        }
         PageResult<InterventionStudentRespVO> studentPage = getStudentPageByFilter(reqVO);
         summary.setStudentPage(studentPage);
-        
+
         return summary;
+    }
+
+    /**
+     * 获取待评等级的学生数量（排除status=5的危机事件）
+     */
+    private Integer getCountForPendingLevel(InterventionDashboardReqVO reqVO) {
+        InterventionDashboardReqVO countReqVO = new InterventionDashboardReqVO();
+        countReqVO.setRiskLevel(1);
+        countReqVO.setClassId(reqVO.getClassId());
+        countReqVO.setGradeId(reqVO.getGradeId());
+        countReqVO.setCounselorUserId(reqVO.getCounselorUserId());
+        countReqVO.setExcludeCrisisStatus(5); // 排除status=5的危机事件
+
+        Long count = studentInterventionMapper.countInterventionStudent(countReqVO);
+        return count != null ? count.intValue() : 0;
     }
 
     private Integer getCountByRiskLevelWithFilter(Integer riskLevel, InterventionDashboardReqVO reqVO) {
@@ -259,24 +279,24 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         reqVO.setCounselorUserId(counselorUserId);
         reqVO.setPageNo(1);
         reqVO.setPageSize(1000); // 返回所有数据，不分页
-        
+
         InterventionDashboardSummaryVO summary = new InterventionDashboardSummaryVO();
-        
+
         // 获取统计数据
-        // 字典类型：crisis_level (1:一般, 2:严重, 3:重大, 4:持续观察, 5:待评)
-        summary.setGeneralCount(getCountByRiskLevelWithFilter(1, reqVO));      // 一般
-        summary.setSevereCount(getCountByRiskLevelWithFilter(2, reqVO));       // 严重
-        summary.setMajorCount(getCountByRiskLevelWithFilter(3, reqVO));        // 重大
-        summary.setObservationCount(getCountByRiskLevelWithFilter(4, reqVO));  // 持续观察
-        summary.setPendingAssessmentCount(getCountByRiskLevelWithFilter(5, reqVO)); // 待评
+        // 字典类型：crisis_level (1:待评, 2:持续观察, 3:一般, 4:严重, 5:重大)
+        summary.setPendingAssessmentCount(getCountForPendingLevel(reqVO)); // 待评
+        summary.setObservationCount(getCountByRiskLevelWithFilter(2, reqVO));  // 持续观察
+        summary.setGeneralCount(getCountByRiskLevelWithFilter(3, reqVO));      // 一般
+        summary.setSevereCount(getCountByRiskLevelWithFilter(4, reqVO));       // 严重
+        summary.setMajorCount(getCountByRiskLevelWithFilter(5, reqVO));        // 重大
         summary.setNormalCount(0); // 不再使用正常状态
-        
+
         // 计算总数
-        int total = summary.getPendingAssessmentCount() + summary.getObservationCount() + 
-                   summary.getGeneralCount() + summary.getSevereCount() + 
+        int total = summary.getPendingAssessmentCount() + summary.getObservationCount() +
+                   summary.getGeneralCount() + summary.getSevereCount() +
                    summary.getMajorCount();
         summary.setTotalCount(total);
-        
+
         // 构建详细统计
         Map<String, InterventionDashboardSummaryVO.LevelDetail> details = new HashMap<>();
         addLevelDetail(details, "pending", summary.getPendingAssessmentCount(), total); // 待评
@@ -285,14 +305,16 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         addLevelDetail(details, "severe", summary.getSevereCount(), total);             // 严重
         addLevelDetail(details, "major", summary.getMajorCount(), total);               // 重大
         summary.setLevelDetails(details);
-        
+
         // 获取所有等级的学生列表（不分页，返回完整数据）
         Map<String, PageResult<InterventionStudentRespVO>> allLevelStudents = new HashMap<>();
-        
+
         // 获取每个风险等级的学生列表
         if (summary.getPendingAssessmentCount() > 0) {
             reqVO.setRiskLevel(1);
+            reqVO.setExcludeCrisisStatus(5); // 待评等级：排除status=5的危机事件
             allLevelStudents.put("pending", getStudentPageByFilter(reqVO));
+            reqVO.setExcludeCrisisStatus(null); // 清空，避免影响后续查询
         }
         if (summary.getObservationCount() > 0) {
             reqVO.setRiskLevel(2);
@@ -365,7 +387,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         pending.setPercentage(total > 0 ? Math.round(pendingCount * 100.0 / total * 100.0) / 100.0 : 0.0);
         if (pendingCount > 0) {
             reqVO.setRiskLevel(1);
+            reqVO.setExcludeCrisisStatus(5); // 待评等级查询：排除status=5的危机事件
             pending.setStudentPage(getStudentPageByFilter(reqVO));
+            reqVO.setExcludeCrisisStatus(null); // 清空，避免影响后续查询
         } else {
             pending.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
         }
@@ -451,7 +475,12 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         reqVO.setCounselorUserId(counselorUserId);
         reqVO.setPageNo(pageNo);
         reqVO.setPageSize(pageSize);
-        
+
+        // 待评等级（riskLevel=1）需要排除status=5的危机事件
+        if (riskLevel != null && riskLevel == 1) {
+            reqVO.setExcludeCrisisStatus(5);
+        }
+
         // 复用现有的分页查询方法
         return getStudentPageByFilter(reqVO);
     }
@@ -554,7 +583,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         List<Long> attachments = createReqVO.getAttachments();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String eventTimeStr = createReqVO.getEventTime() != null ? createReqVO.getEventTime().format(formatter) : "";
-        String content = String.format("事件标题：%s，发生时间：%s，发生地点：%s，紧急程度：%s", createReqVO.getTitle(), eventTimeStr, createReqVO.getLocation(), getPriorityLevelName(createReqVO.getPriority()));
+        String content = String.format("事件标题：%s，发生地点：%s，紧急程度：%s", createReqVO.getTitle(), createReqVO.getLocation(), getPriorityLevelName(createReqVO.getPriority()));
         recordEventProcessWithUsers(event.getId(), "REPORT", createReqVO.getDescription(),
             content,
             null, null, CollUtil.isNotEmpty(attachments) ? attachments : null, null);

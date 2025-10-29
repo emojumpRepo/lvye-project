@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.consultation.vo.appoi
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.ConsultationAppointmentDO;
 
 import jakarta.validation.Valid;
+import java.util.List;
 
 /**
  * 咨询预约 Service 接口
@@ -128,4 +129,12 @@ public interface ConsultationAppointmentService {
      * @return 咨询预约数据
      */
     ConsultationAppointmentDateQueryRespVO getAppointmentsByDate(ConsultationAppointmentDateQueryReqVO reqVO);
+
+    /**
+     * 根据学生档案ID查询咨询记录列表
+     *
+     * @param studentProfileId 学生档案ID
+     * @return 咨询记录列表
+     */
+    List<ConsultationAppointmentRespVO> getAppointmentsByStudentProfileId(Long studentProfileId);
 }

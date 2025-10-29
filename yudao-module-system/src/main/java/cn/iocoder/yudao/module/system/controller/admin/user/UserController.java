@@ -28,6 +28,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import cn.iocoder.yudao.framework.datapermission.core.annotation.DataPermission;
 
 import java.io.IOException;
 import java.util.*;
@@ -168,9 +169,10 @@ public class UserController {
     }
 
     @GetMapping("/list-teachers")
-    @Operation(summary = "获取老师列表（角色：psychology_teacher、teacher）")
+    @Operation(summary = "获取老师列表（角色：psychology_teacher、head_teacher）")
     @Parameter(name = "role", description = "角色类型", required = false, example = "psychology_teacher")
     @PreAuthorize("@ss.hasPermission('system:user:query')")
+    @DataPermission(enable = false)
     public CommonResult<List<UserSimpleRespVO>> getTeacherList(
             @RequestParam(value = "role", required = false) String role) {
         List<AdminUserDO> users;
@@ -184,17 +186,19 @@ public class UserController {
             list1.forEach(u -> userMap.put(u.getId(), u));
             list2.forEach(u -> userMap.put(u.getId(), u));
             users = new java.util.ArrayList<>(userMap.values());
-        } else if ("teacher".equals(role)) {
+        } else if ("head_teacher".equals(role)) {
             // 仅查询普通老师
-            users = userService.getUserListByRoleCode("teacher");
+            users = userService.getUserListByRoleCode("head_teacher");
         } else {
-            // 没有传参或参数不匹配时，查询两个角色的用户并去重
+            // 没有传参或参数不匹配时，查询三个角色的用户并去重
             List<AdminUserDO> list1 = userService.getUserListByRoleCode("psychology_teacher");
-            List<AdminUserDO> list2 = userService.getUserListByRoleCode("teacher");
+            List<AdminUserDO> list2 = userService.getUserListByRoleCode("default_psychology_teacher");
+            List<AdminUserDO> list3 = userService.getUserListByRoleCode("head_teacher");
             // 使用用户ID去重并保持顺序
             Map<Long, AdminUserDO> userMap = new java.util.LinkedHashMap<>();
             list1.forEach(u -> userMap.put(u.getId(), u));
             list2.forEach(u -> userMap.put(u.getId(), u));
+            list3.forEach(u -> userMap.put(u.getId(), u));
             users = new java.util.ArrayList<>(userMap.values());
         }
 

@@ -15,6 +15,7 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.ConsultationAss
 import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
+import cn.iocoder.yudao.module.infra.api.config.ConfigApi;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
 import jakarta.annotation.Resource;
@@ -58,6 +59,9 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
 
     @Resource
     private StudentTimelineService studentTimelineService;
+
+    @Resource
+    private ConfigApi configApi;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -314,8 +318,19 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         // 统计待完成数(状态为1或2且未逾期)
         result.setPendingCount((int) appointmentMapper.countPendingConsultations(now));
 
-        // 统计逾期数(结束时间小于当前时间且未完成)
-        result.setOverdueCount((int) appointmentMapper.countOverdueConsultations(now));
+        // 获取报告逾期时间配置（小时数），默认24小时
+        int reportExpireHours = 24;
+        try {
+            String configValue = configApi.getConfigValueByKey("intervention.reportExpireTime");
+            if (configValue != null && !configValue.trim().isEmpty()) {
+                reportExpireHours = Integer.parseInt(configValue);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Failed to parse intervention.reportExpireTime config, using default value: 24 hours", e);
+        }
+
+        // 统计逾期数(状态为1且超过30分钟，或状态为2且超过配置的小时数)
+        result.setOverdueCount((int) appointmentMapper.countOverdueConsultations(now, reportExpireHours));
 
         return result;
     }
@@ -336,7 +351,41 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         appointment.setCurrentStep(2);
         appointment.setActualTime(LocalDateTime.now());
         appointmentMapper.updateById(appointment);
-        
+
+        // 添加学生时间线记录
+        // 1. 获取当前操作人信息
+        Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
+        AdminUserRespDTO currentUser = adminUserApi.getUser(currentUserId);
+        String operatorName = currentUser != null ? currentUser.getNickname() : "未知";
+
+        // 2. 格式化预约时间
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String startTime = appointment.getAppointmentStartTime().format(formatter);
+        String endTime = appointment.getAppointmentEndTime().format(formatter);
+
+        // 3. 构建时间线内容
+        String content = String.format("%s 完成了 %s 至 %s 的心理咨询预约", operatorName, startTime, endTime);
+
+        // 4. 构建元数据
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("appointmentId", appointment.getId());
+        meta.put("actualTime", appointment.getActualTime());
+        meta.put("appointmentStartTime", appointment.getAppointmentStartTime());
+        meta.put("appointmentEndTime", appointment.getAppointmentEndTime());
+        meta.put("fillAssessmentNow", fillAssessmentNow);
+        meta.put("counselorUserId", appointment.getCounselorUserId());
+        meta.put("operatorUserId", currentUserId);
+
+        // 5. 保存时间线
+        studentTimelineService.saveTimelineWithMeta(
+            appointment.getStudentProfileId(),
+            TimelineEventTypeEnum.CONSULTATION_RECORD.getType(),
+            "完成心理咨询预约",
+            "appointment_" + appointment.getId(),
+            content,
+            meta
+        );
+
         // 如果不立即填写评估，可以记录一个待办事项
         if (!Boolean.TRUE.equals(fillAssessmentNow)) {
             // TODO: 创建待办事项提醒填写评估
@@ -348,36 +397,77 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
     public void adjustAppointmentTime(Long id, ConsultationAppointmentAdjustTimeReqVO adjustReqVO) {
         // 校验存在
         ConsultationAppointmentDO appointment = validateAppointmentExists(id);
-        
+
         // 校验状态（只有已预约状态可以调整时间）
         if (appointment.getStatus() != 1) {
             throw ServiceExceptionUtil.exception(CONSULTATION_STATUS_ERROR);
         }
-        
+
         // 验证时间逻辑：结束时间必须晚于开始时间
         if (adjustReqVO.getNewAppointmentEndTime().isBefore(adjustReqVO.getNewAppointmentStartTime()) ||
             adjustReqVO.getNewAppointmentEndTime().isEqual(adjustReqVO.getNewAppointmentStartTime())) {
             throw ServiceExceptionUtil.exception(CONSULTATION_TIME_INVALID);
         }
-        
+
         // 检查时间冲突
-        if (appointmentMapper.hasTimeConflict(appointment.getCounselorUserId(), 
+        if (appointmentMapper.hasTimeConflict(appointment.getCounselorUserId(),
             adjustReqVO.getNewAppointmentStartTime(), adjustReqVO.getNewAppointmentEndTime(), id)) {
             throw ServiceExceptionUtil.exception(CONSULTATION_TIME_CONFLICT);
         }
-        
+
+        // 保存原始时间（用于时间线记录）
+        LocalDateTime oldStartTime = appointment.getAppointmentStartTime();
+        LocalDateTime oldEndTime = appointment.getAppointmentEndTime();
+
         // 计算新的时长
         long newDurationMinutes = java.time.Duration.between(
-            adjustReqVO.getNewAppointmentStartTime(), 
+            adjustReqVO.getNewAppointmentStartTime(),
             adjustReqVO.getNewAppointmentEndTime()
         ).toMinutes();
-        
+
         // 更新开始时间、结束时间和时长
         appointment.setAppointmentStartTime(adjustReqVO.getNewAppointmentStartTime());
         appointment.setAppointmentEndTime(adjustReqVO.getNewAppointmentEndTime());
         appointment.setDurationMinutes((int) newDurationMinutes);
         appointmentMapper.updateById(appointment);
-        
+
+        // 添加学生时间线记录
+        // 1. 获取当前操作人信息
+        Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
+        AdminUserRespDTO currentUser = adminUserApi.getUser(currentUserId);
+        String operatorName = currentUser != null ? currentUser.getNickname() : "未知";
+
+        // 2. 格式化时间
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String oldStartTimeStr = oldStartTime.format(formatter);
+        String oldEndTimeStr = oldEndTime.format(formatter);
+        String newStartTimeStr = adjustReqVO.getNewAppointmentStartTime().format(formatter);
+        String newEndTimeStr = adjustReqVO.getNewAppointmentEndTime().format(formatter);
+
+        // 3. 构建时间线内容
+        String content = String.format("%s 将心理咨询预约时间从 %s 至 %s 调整为 %s 至 %s",
+            operatorName, oldStartTimeStr, oldEndTimeStr, newStartTimeStr, newEndTimeStr);
+
+        // 4. 构建元数据
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("appointmentId", appointment.getId());
+        meta.put("oldStartTime", oldStartTime);
+        meta.put("oldEndTime", oldEndTime);
+        meta.put("newStartTime", adjustReqVO.getNewAppointmentStartTime());
+        meta.put("newEndTime", adjustReqVO.getNewAppointmentEndTime());
+        meta.put("operatorUserId", currentUserId);
+        meta.put("counselorUserId", appointment.getCounselorUserId());
+
+        // 5. 保存时间线
+        studentTimelineService.saveTimelineWithMeta(
+            appointment.getStudentProfileId(),
+            TimelineEventTypeEnum.CONSULTATION_RECORD.getType(),
+            "调整心理咨询预约时间",
+            "appointment_adjust_" + appointment.getId(),
+            content,
+            meta
+        );
+
         // TODO: 发送通知给学生
         if (appointment.getNotifyStudent()) {
             sendNotificationToStudent(id, appointment.getStudentProfileId());
@@ -403,7 +493,42 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         }
         appointment.setCancellationReason(cancellationReason);
         appointmentMapper.updateById(appointment);
-        
+
+        // 添加学生时间线记录
+        // 1. 获取当前操作人信息
+        Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
+        AdminUserRespDTO currentUser = adminUserApi.getUser(currentUserId);
+        String operatorName = currentUser != null ? currentUser.getNickname() : "未知";
+
+        // 2. 格式化预约时间
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String startTime = appointment.getAppointmentStartTime().format(formatter);
+        String endTime = appointment.getAppointmentEndTime().format(formatter);
+
+        // 3. 构建时间线内容
+        String content = String.format("%s 取消了 %s 至 %s 的心理咨询预约，原因：%s",
+            operatorName, startTime, endTime, cancellationReason);
+
+        // 4. 构建元数据
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("appointmentId", appointment.getId());
+        meta.put("appointmentStartTime", appointment.getAppointmentStartTime());
+        meta.put("appointmentEndTime", appointment.getAppointmentEndTime());
+        meta.put("cancellationReason", cancellationReason);
+        meta.put("cancelledAt", LocalDateTime.now());
+        meta.put("operatorUserId", currentUserId);
+        meta.put("counselorUserId", appointment.getCounselorUserId());
+
+        // 5. 保存时间线
+        studentTimelineService.saveTimelineWithMeta(
+            appointment.getStudentProfileId(),
+            TimelineEventTypeEnum.CONSULTATION_RECORD.getType(),
+            "取消心理咨询预约",
+            "appointment_cancel_" + appointment.getId(),
+            content,
+            meta
+        );
+
         // TODO: 发送通知给学生
         if (appointment.getNotifyStudent()) {
             sendNotificationToStudent(id, appointment.getStudentProfileId());
@@ -690,6 +815,15 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         result.setAppointments(appointmentVOs);
 
         return result;
+    }
+
+    @Override
+    public List<ConsultationAppointmentRespVO> getAppointmentsByStudentProfileId(Long studentProfileId) {
+        // 1. 查询学生的咨询记录（自动排除已取消的，按预约时间倒序）
+        List<ConsultationAppointmentDO> appointments = appointmentMapper.selectListByStudentProfileId(studentProfileId);
+
+        // 2. 转换为RespVO（包含学生、咨询师等关联信息）
+        return convertToRespVOList(appointments);
     }
 
     private ConsultationAppointmentDO validateAppointmentExists(Long id) {

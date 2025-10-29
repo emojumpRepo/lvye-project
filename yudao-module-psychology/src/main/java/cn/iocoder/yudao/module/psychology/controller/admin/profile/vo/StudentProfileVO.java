@@ -54,6 +54,9 @@ public class StudentProfileVO {
     @Schema(description = "届别（入学年份）", example = "2024")
     private Integer enrollmentYear;
 
+    @Schema(description = "毕业年份", example = "2025")
+    private Integer graduationYear;
+
     @Schema(description = "年级部门编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "年级部门编号不能为空")
     private Long gradeDeptId;
@@ -94,5 +97,8 @@ public class StudentProfileVO {
 
     @Schema(description = "更新者")
     private String updater;
+
+    @Schema(description = "评估风险等级", example = "2")
+    private Integer assessmentRiskLevel;
 
 }

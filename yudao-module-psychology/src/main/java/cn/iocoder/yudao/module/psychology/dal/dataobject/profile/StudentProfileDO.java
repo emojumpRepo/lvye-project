@@ -123,6 +123,11 @@ public class StudentProfileDO extends TenantBaseDO {
     private Integer enrollmentYear;
 
     /**
+     * 毕业年份
+     */
+    private Integer graduationYear;
+
+    /**
      * 备注
      */
     private String remark;
