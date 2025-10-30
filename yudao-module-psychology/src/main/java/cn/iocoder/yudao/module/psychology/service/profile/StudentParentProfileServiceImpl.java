@@ -38,6 +38,8 @@ public class StudentParentProfileServiceImpl implements StudentParentProfileServ
             parentContactDO.setMobile(parentContactVO.getMobile());
             parentContactDO.setRelation(parentContactVO.getRelation());
             parentContactDO.setRemark(parentContactVO.getRemark());
+            parentContactDO.setWork(parentContactVO.getWork());
+            parentContactDO.setMaritalStatus(parentContactVO.getMaritalStatus());
             list.add(parentContactDO);
         }
         parentContactMapper.insertBatch(list);
@@ -55,6 +57,8 @@ public class StudentParentProfileServiceImpl implements StudentParentProfileServ
             parentContactDO.setMobile(parentContactVO.getMobile());
             parentContactDO.setRelation(parentContactVO.getRelation());
             parentContactDO.setRemark(parentContactVO.getRemark());
+            parentContactDO.setWork(parentContactVO.getWork());
+            parentContactDO.setMaritalStatus(parentContactVO.getMaritalStatus());
             if (parentContactVO.getId() == null) {
                 parentContactMapper.insert(parentContactDO);
             } else {

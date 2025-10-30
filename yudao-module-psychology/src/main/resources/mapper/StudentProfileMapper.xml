@@ -169,7 +169,7 @@
         ORDER BY id ASC
     </select>
 
-    <!-- 根据年级部门ID和入学年份查询心理状态异常的学生列表 -->
+    <!-- 根据年级部门ID和入学年份查询风险等级异常的学生列表（风险等级不为1） -->
     <select id="selectAbnormalStudentsByGradeDeptIdAndEnrollmentYear"
             resultType="cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO">
         SELECT a.id, a.user_id, a.student_no, a.name,
@@ -187,7 +187,7 @@
             a.deleted = 0
             AND a.grade_dept_id = #{gradeDeptId}
             AND a.enrollment_year = #{enrollmentYear}
-            AND (a.psychological_status IS NULL OR a.psychological_status != 1)
+            AND (a.risk_level IS NULL OR a.risk_level != 1)
         </where>
         ORDER BY a.id ASC
     </select>

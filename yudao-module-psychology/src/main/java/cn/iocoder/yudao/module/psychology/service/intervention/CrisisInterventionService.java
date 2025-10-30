@@ -151,6 +151,13 @@ public interface CrisisInterventionService {
     void submitStageAssessment(Long id, CrisisEventAssessmentReqVO assessmentReqVO);
 
     /**
+     * 提交学生独立评估（不绑定危机事件）
+     *
+     * @param submitReqVO 评估信息
+     */
+    void submitStudentAssessment(StudentAssessmentSubmitReqVO submitReqVO);
+
+    /**
      * 获取事件处理历史
      *
      * @param id 事件ID

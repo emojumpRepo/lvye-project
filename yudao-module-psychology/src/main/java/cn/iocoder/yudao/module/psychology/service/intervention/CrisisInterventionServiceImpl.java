@@ -957,6 +957,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 保存最终评估
         CrisisEventAssessmentDO assessment = new CrisisEventAssessmentDO();
         assessment.setEventId(id);
+        assessment.setStudentProfileId(event.getStudentProfileId()); // 设置学生档案ID
         assessment.setAssessorUserId(SecurityFrameworkUtils.getLoginUserId());
         assessment.setAssessmentType(2); // 最终评估
         assessment.setRiskLevel(closeReqVO.getRiskLevel());
@@ -1041,6 +1042,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 保存阶段性评估
         CrisisEventAssessmentDO assessment = BeanUtils.toBean(assessmentReqVO, CrisisEventAssessmentDO.class);
         assessment.setEventId(id);
+        assessment.setStudentProfileId(event.getStudentProfileId()); // 设置学生档案ID
         assessment.setAssessorUserId(SecurityFrameworkUtils.getLoginUserId());
         assessment.setAssessmentType(1); // 阶段性评估
         // 设置新字段
@@ -1049,7 +1051,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         assessment.setObservationRecord(assessmentReqVO.getObservationRecord());
         assessment.setAttachmentIds(assessmentReqVO.getAttachmentIds());
         eventAssessmentMapper.insert(assessment);
-        
+
         // 获取评估记录ID
         Long assessmentId = assessment.getId();
 
@@ -1086,6 +1088,72 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             event.setStatus(4); // 可以考虑结案
             crisisInterventionMapper.updateById(event);
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void submitStudentAssessment(StudentAssessmentSubmitReqVO submitReqVO) {
+        // 验证学生档案是否存在
+        StudentProfileVO student = studentProfileService.getStudentProfile(submitReqVO.getStudentProfileId());
+        if (student == null) {
+            throw ServiceExceptionUtil.exception(STUDENT_PROFILE_NOT_EXISTS);
+        }
+
+        // 保存独立评估记录
+        CrisisEventAssessmentDO assessment = new CrisisEventAssessmentDO();
+        assessment.setEventId(null); // 不绑定危机事件
+        assessment.setStudentProfileId(submitReqVO.getStudentProfileId()); // 设置学生档案ID
+        assessment.setAssessorUserId(SecurityFrameworkUtils.getLoginUserId());
+        assessment.setAssessmentType(3); // 独立评估
+        assessment.setRiskLevel(submitReqVO.getRiskLevel());
+        assessment.setProblemTypes(submitReqVO.getProblemTypes());
+        assessment.setFollowUpSuggestion(submitReqVO.getFollowUpSuggestion());
+        assessment.setContent(submitReqVO.getContent());
+        assessment.setHasMedicalVisit(submitReqVO.getHasMedicalVisit());
+        assessment.setMedicalVisitRecord(submitReqVO.getMedicalVisitRecord());
+        assessment.setObservationRecord(submitReqVO.getObservationRecord());
+        assessment.setAttachmentIds(submitReqVO.getAttachmentIds());
+        eventAssessmentMapper.insert(assessment);
+
+        // 更新学生档案的风险等级
+        if (submitReqVO.getRiskLevel() != null) {
+            studentProfileService.updateStudentRiskLevel(submitReqVO.getStudentProfileId(), submitReqVO.getRiskLevel());
+        }
+
+        // 更新学生档案的问题类型到特殊标记字段
+        if (submitReqVO.getProblemTypes() != null && !submitReqVO.getProblemTypes().isEmpty()) {
+            String specialMarks = String.join(",", submitReqVO.getProblemTypes());
+            studentProfileService.updateStudentSpecialMarks(submitReqVO.getStudentProfileId(), specialMarks);
+        }
+
+        // 添加时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("assessmentId", assessment.getId());
+        meta.put("riskLevel", submitReqVO.getRiskLevel());
+        meta.put("riskLevelName", getRiskLevelName(submitReqVO.getRiskLevel()));
+        meta.put("problemTypes", submitReqVO.getProblemTypes());
+        meta.put("followUpSuggestion", submitReqVO.getFollowUpSuggestion());
+        meta.put("followUpSuggestionName", getFollowUpSuggestionName(submitReqVO.getFollowUpSuggestion()));
+
+        // 构建时间线内容
+        String content = String.format("提交独立评估，风险等级：%s", getRiskLevelName(submitReqVO.getRiskLevel()));
+        if (CollUtil.isNotEmpty(submitReqVO.getProblemTypes())) {
+            content += "，问题类型：" + String.join("、", submitReqVO.getProblemTypes());
+        }
+
+        studentTimelineService.saveTimelineWithMeta(
+            submitReqVO.getStudentProfileId(),
+            TimelineEventTypeEnum.ASSESSMENT_REPORT.getType(),
+            "提交独立评估",
+            null, // 没有关联ID
+            content,
+            meta
+        );
+
+        log.info("用户 {} 为学生 {} 提交独立评估，风险等级：{}",
+                SecurityFrameworkUtils.getLoginUserId(),
+                submitReqVO.getStudentProfileId(),
+                getRiskLevelName(submitReqVO.getRiskLevel()));
     }
 
     @Override
@@ -1565,48 +1633,16 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     @Override
     public List<CrisisEventRespVO.AssessmentRecordVO> getStudentAssessments(Long studentProfileId) {
-        // 1. 查询学生的所有危机事件
-        List<CrisisInterventionDO> events = crisisInterventionMapper.selectListByStudentId(studentProfileId);
+        // 直接通过 studentProfileId 查询所有评估记录（包括危机事件评估和独立评估）
+        List<CrisisEventAssessmentDO> assessments =
+            eventAssessmentMapper.selectListByStudentProfileId(studentProfileId);
 
-        if (CollUtil.isEmpty(events)) {
+        if (CollUtil.isEmpty(assessments)) {
             return new ArrayList<>();
         }
 
-        // 2. 收集所有危机事件的ID
-        List<Long> eventIds = events.stream()
-                .map(CrisisInterventionDO::getId)
-                .collect(Collectors.toList());
-
-        // 3. 查询所有评估记录
-        List<CrisisEventAssessmentDO> allAssessments = new ArrayList<>();
-        for (Long eventId : eventIds) {
-            List<CrisisEventAssessmentDO> assessments = eventAssessmentMapper.selectListByEventIdOrder(eventId);
-            if (CollUtil.isNotEmpty(assessments)) {
-                allAssessments.addAll(assessments);
-            }
-        }
-
-        // 4. 如果没有评估记录，返回空列表
-        if (CollUtil.isEmpty(allAssessments)) {
-            return new ArrayList<>();
-        }
-
-        // 5. 按创建时间倒序排序（最新的在前）
-        allAssessments.sort((a1, a2) -> {
-            if (a1.getCreateTime() == null && a2.getCreateTime() == null) {
-                return 0;
-            }
-            if (a1.getCreateTime() == null) {
-                return 1;
-            }
-            if (a2.getCreateTime() == null) {
-                return -1;
-            }
-            return a2.getCreateTime().compareTo(a1.getCreateTime());
-        });
-
-        // 6. 转换为VO并返回
-        return convertAssessmentRecords(allAssessments);
+        // 转换为VO并返回
+        return convertAssessmentRecords(assessments);
     }
 
     @Override
@@ -1740,7 +1776,7 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         if (urgencyLevel == null) {
             return "未知";
         }
-        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.RISK_LEVEL, urgencyLevel);
+        String label = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.URGENCY_LEVEL, urgencyLevel);
         return label != null ? label : "未知";
     }
 

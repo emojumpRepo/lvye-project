@@ -19,7 +19,7 @@ public interface DictTypeConstants {
     String GRADUATION_STATUS = "graduation_status"; // 毕业状态
     String TIMELINE_EVENT_TYPE = "timeline_event_type"; // 时间线事件类型
     String CRISIS_SOURCE_TYPE = "crisis_event_report_source"; // 危机来源类型
-    String URGENCY_LEVEL = "urgency_level"; // 紧急程度
+    String URGENCY_LEVEL = "crisis_event_priority"; // 紧急程度
     String QUESTIONNAIRE_ASSESSMENT_DIMENSION = "questionnaire_assessment_dimension"; // 问卷测评维度
     String INTERVENTION_PROCESS_METHOD = "intervention_process_method"; // 危机事件处理方式
     String FOLLOW_UP_SUGGESTION = "follow_up_suggestion"; // 评估后续建议

@@ -90,11 +90,11 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
                                                                  @Param("excludeIds") Collection<Long> excludeIds);
 
     /**
-     * 根据年级部门ID和入学年份查询心理状态异常的学生列表
+     * 根据年级部门ID和入学年份查询风险等级异常的学生列表（风险等级不为1）
      *
      * @param gradeDeptId 年级部门ID
      * @param enrollmentYear 入学年份
-     * @return 心理状态异常的学生列表（包含年级、班级等关联信息）
+     * @return 风险等级异常的学生列表（包含年级、班级等关联信息）
      */
     List<StudentProfileVO> selectAbnormalStudentsByGradeDeptIdAndEnrollmentYear(@Param("gradeDeptId") Long gradeDeptId,
                                                                                   @Param("enrollmentYear") Integer enrollmentYear);

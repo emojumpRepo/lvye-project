@@ -5,10 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * 检查毕业年级心理状态异常学生 Request VO
+ * 检查毕业年级风险等级异常学生 Request VO
  */
 @Data
-@Schema(description = "管理后台 - 检查毕业年级心理状态异常学生 Request VO")
+@Schema(description = "管理后台 - 检查毕业年级风险等级异常学生 Request VO")
 public class CheckAbnormalStudentsReqVO {
 
     @Schema(description = "年级部门ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")

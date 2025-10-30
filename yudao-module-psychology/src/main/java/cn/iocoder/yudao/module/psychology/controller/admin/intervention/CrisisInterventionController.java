@@ -207,6 +207,16 @@ public class CrisisInterventionController {
         return success(true);
     }
 
+    @PostMapping("/assessment/submit")
+    @Operation(summary = "提交学生独立评估", description = "提交不绑定危机事件的独立评估")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:update')")
+    @DataPermission(enable = false)
+    public CommonResult<Boolean> submitStudentAssessment(
+            @Valid @RequestBody StudentAssessmentSubmitReqVO submitReqVO) {
+        interventionService.submitStudentAssessment(submitReqVO);
+        return success(true);
+    }
+
     @GetMapping("/event/{id}/process-history")
     @Operation(summary = "获取事件处理历史")
     @DataPermission(enable = false)

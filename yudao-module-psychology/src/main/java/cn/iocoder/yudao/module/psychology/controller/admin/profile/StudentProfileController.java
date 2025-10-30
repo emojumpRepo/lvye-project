@@ -275,7 +275,7 @@ public class StudentProfileController {
     }
 
     @GetMapping("/check-abnormal-graduating-students")
-    @Operation(summary = "检查毕业年级中心理状态异常的学生")
+    @Operation(summary = "检查毕业年级中风险等级异常的学生")
     @DataPermission(enable = false)
 //    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
     public CommonResult<List<StudentProfileVO>> checkAbnormalGraduatingStudents(@Valid CheckAbnormalStudentsReqVO reqVO) {
