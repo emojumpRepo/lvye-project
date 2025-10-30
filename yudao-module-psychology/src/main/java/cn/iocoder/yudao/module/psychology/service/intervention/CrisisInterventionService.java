@@ -151,6 +151,13 @@ public interface CrisisInterventionService {
     void submitStageAssessment(Long id, CrisisEventAssessmentReqVO assessmentReqVO);
 
     /**
+     * 提交学生独立评估（不绑定危机事件）
+     *
+     * @param submitReqVO 评估信息
+     */
+    void submitStudentAssessment(StudentAssessmentSubmitReqVO submitReqVO);
+
+    /**
      * 获取事件处理历史
      *
      * @param id 事件ID
@@ -217,4 +224,12 @@ public interface CrisisInterventionService {
      * @return 评估记录列表（按创建时间倒序）
      */
     List<CrisisEventRespVO.AssessmentRecordVO> getStudentAssessments(Long studentProfileId);
+
+    /**
+     * 获取正在进行的危机事件分页（status != 5）
+     *
+     * @param pageParam 分页参数
+     * @return 事件分页
+     */
+    PageResult<CrisisEventRespVO> getOngoingCrisisEventPage(cn.iocoder.yudao.framework.common.pojo.PageParam pageParam);
 }

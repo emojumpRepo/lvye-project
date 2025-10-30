@@ -35,6 +35,11 @@ public class CrisisEventAssessmentDO extends TenantBaseDO {
     private Long eventId;
 
     /**
+     * 学生档案ID
+     */
+    private Long studentProfileId;
+
+    /**
      * 评估人管理员编号
      */
     private Long assessorUserId;

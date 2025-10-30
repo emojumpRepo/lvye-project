@@ -826,6 +826,75 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         return convertToRespVOList(appointments);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveSummary(Long id, ConsultationAppointmentSaveSummaryReqVO reqVO) {
+        // 1. 校验预约记录是否存在
+        ConsultationAppointmentDO appointment = validateAppointmentExists(id);
+
+        // 2. 更新咨询纪要和附件ID列表
+        appointment.setSummary(reqVO.getSummary());
+        appointment.setAttachmentIds(reqVO.getAttachmentIds());
+
+        // 3. 更新状态为3（已闭环）
+        appointment.setStatus(3);
+        appointment.setCurrentStep(3);
+
+        // 4. 执行更新
+        appointmentMapper.updateById(appointment);
+
+        // 5. 添加学生时间线记录
+        Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
+        AdminUserRespDTO currentUser = adminUserApi.getUser(currentUserId);
+        String operatorName = currentUser != null ? currentUser.getNickname() : "未知";
+
+        // 格式化预约时间
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String startTime = appointment.getAppointmentStartTime().format(formatter);
+        String endTime = appointment.getAppointmentEndTime().format(formatter);
+
+        // 构建时间线内容
+        String content = String.format("%s 保存了 %s 至 %s 的咨询纪要，咨询已闭环", operatorName, startTime, endTime);
+
+        // 构建元数据
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("appointmentId", appointment.getId());
+        meta.put("appointmentStartTime", appointment.getAppointmentStartTime());
+        meta.put("appointmentEndTime", appointment.getAppointmentEndTime());
+        meta.put("operatorUserId", currentUserId);
+        meta.put("counselorUserId", appointment.getCounselorUserId());
+        meta.put("operationType", "save_summary");
+        if (reqVO.getAttachmentIds() != null && !reqVO.getAttachmentIds().isEmpty()) {
+            meta.put("attachmentIds", reqVO.getAttachmentIds());
+            meta.put("attachmentCount", reqVO.getAttachmentIds().size());
+        }
+
+        // 保存时间线
+        studentTimelineService.saveTimelineWithMeta(
+            appointment.getStudentProfileId(),
+            TimelineEventTypeEnum.CONSULTATION_RECORD.getType(),
+            "保存咨询纪要",
+            "appointment_summary_" + appointment.getId(),
+            content,
+            meta
+        );
+    }
+
+    @Override
+    public PageResult<ConsultationAppointmentRespVO> getTodayAppointmentPage(ConsultationAppointmentTodayPageReqVO pageReqVO) {
+        // 查询今日分页数据
+        PageResult<ConsultationAppointmentDO> pageResult = appointmentMapper.selectTodayPage(pageReqVO);
+
+        if (CollUtil.isEmpty(pageResult.getList())) {
+            return PageResult.empty();
+        }
+
+        // 转换为VO并填充关联信息
+        List<ConsultationAppointmentRespVO> voList = convertToRespVOList(pageResult.getList());
+
+        return new PageResult<>(voList, pageResult.getTotal());
+    }
+
     private ConsultationAppointmentDO validateAppointmentExists(Long id) {
         ConsultationAppointmentDO appointment = appointmentMapper.selectById(id);
         if (appointment == null) {

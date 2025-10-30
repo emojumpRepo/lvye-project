@@ -51,6 +51,17 @@ public interface AssessmentTaskMapper extends BaseMapperX<AssessmentTaskDO> {
 
     List<WebAssessmentTaskVO> selectListByUserId(@Param("userId") Long userId, @Param("isParent")Integer isParent);
 
+    /**
+     * 分页查询正在进行的测评任务及其进度
+     *
+     * @param page 分页对象
+     * @param pageReqVO 分页查询条件
+     * @return 正在进行的任务分页列表
+     */
+    IPage<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.OngoingTaskRespVO> selectOngoingTasksPage(
+            IPage<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.OngoingTaskRespVO> page,
+            @Param("pageReqVO") cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.OngoingTaskPageReqVO pageReqVO);
+
 }
 
 

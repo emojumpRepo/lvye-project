@@ -703,7 +703,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
             return Collections.emptyList();
         }
 
-        // 查询心理状态异常的学生列表
+        // 查询风险等级异常的学生列表（风险等级不为1）
         List<StudentProfileVO> abnormalStudents = studentProfileMapper
                 .selectAbnormalStudentsByGradeDeptIdAndEnrollmentYear(
                         reqVO.getGradeDeptId(),

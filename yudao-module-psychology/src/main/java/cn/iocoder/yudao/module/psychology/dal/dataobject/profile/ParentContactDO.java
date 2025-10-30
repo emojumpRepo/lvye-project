@@ -41,6 +41,16 @@ public class ParentContactDO extends TenantBaseDO {
      * 备注
      */
     private String remark;
+
+    /**
+     * 职业
+     */
+    private String work;
+
+    /**
+     * 婚姻状态
+     */
+    private Integer maritalStatus;
 }
 
 

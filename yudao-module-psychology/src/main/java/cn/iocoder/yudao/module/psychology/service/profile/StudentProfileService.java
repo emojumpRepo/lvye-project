@@ -184,11 +184,11 @@ public interface StudentProfileService {
     Integer batchGraduateStudents(BatchGraduateReqVO reqVO);
 
     /**
-     * 检查毕业年级中心理状态异常的学生
-     * 根据年级部门ID和入学年份查找心理状态异常（psychological_status = 1）的学生
+     * 检查毕业年级中风险等级异常的学生
+     * 根据年级部门ID和入学年份查找风险等级异常（risk_level != 1）的学生
      *
      * @param reqVO 检查请求参数
-     * @return 心理状态异常的学生列表
+     * @return 风险等级异常的学生列表
      */
     List<StudentProfileVO> checkAbnormalGraduatingStudents(CheckAbnormalStudentsReqVO reqVO);
 

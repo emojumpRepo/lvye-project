@@ -32,4 +32,16 @@ public interface CrisisEventAssessmentMapper extends BaseMapperX<CrisisEventAsse
                 .orderByDesc(CrisisEventAssessmentDO::getId)
                 .last("LIMIT 1"));
     }
+
+    /**
+     * 根据学生档案ID查询所有评估记录（按创建时间倒序）
+     *
+     * @param studentProfileId 学生档案ID
+     * @return 评估记录列表
+     */
+    default List<CrisisEventAssessmentDO> selectListByStudentProfileId(Long studentProfileId) {
+        return selectList(new LambdaQueryWrapperX<CrisisEventAssessmentDO>()
+                .eq(CrisisEventAssessmentDO::getStudentProfileId, studentProfileId)
+                .orderByDesc(CrisisEventAssessmentDO::getCreateTime));
+    }
 }

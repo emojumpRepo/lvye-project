@@ -108,4 +108,15 @@ public class ConsultationAppointmentDO extends TenantBaseDO {
      * 当前进度
      */
     private Integer currentStep;
+
+    /**
+     * 咨询纪要
+     */
+    private String summary;
+
+    /**
+     * 附件ID列表
+     */
+    @com.baomidou.mybatisplus.annotation.TableField(typeHandler = com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler.class)
+    private java.util.List<Long> attachmentIds;
 }

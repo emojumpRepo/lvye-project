@@ -79,6 +79,18 @@ public interface CrisisInterventionMapper extends BaseMapperX<CrisisIntervention
 
     @Select("SELECT COUNT(1) FROM lvye_crisis_intervention WHERE process_status = #{processStatus} AND deleted = 0")
     Long countByProcessStatus(@Param("processStatus") Integer processStatus);
+
+    /**
+     * 查询正在进行的危机事件（status != 5）分页列表
+     *
+     * @param pageParam 分页参数
+     * @return 分页结果
+     */
+    default PageResult<CrisisInterventionDO> selectOngoingPage(cn.iocoder.yudao.framework.common.pojo.PageParam pageParam) {
+        return selectPage(pageParam, new LambdaQueryWrapperX<CrisisInterventionDO>()
+                .ne(CrisisInterventionDO::getStatus, 5)
+                .orderByDesc(CrisisInterventionDO::getCreateTime));
+    }
 }
 
 

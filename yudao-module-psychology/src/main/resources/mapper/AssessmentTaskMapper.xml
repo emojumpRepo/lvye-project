@@ -61,6 +61,40 @@
         group by a.id, a.task_no, a.task_name, a.status, a.scenario_id, a.startline, a.deadline, b.nickname
     </select>
 
-    <!-- 可根据需求扩展查询任务关联的问卷ID列表 -->
+    <!-- 分页查询正在进行的测评任务及其进度 -->
+    <select id="selectOngoingTasksPage"
+            resultType="cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.OngoingTaskRespVO">
+        SELECT
+            a.task_no AS taskNo,
+            a.task_name AS taskName,
+            a.description,
+            a.startline,
+            a.deadline,
+            a.publish_user_id AS publishUserId,
+            b.nickname AS publishUser,
+            a.status AS status,
+            (SELECT COUNT(*)
+             FROM lvye_assessment_user_task c
+             WHERE a.task_no = c.task_no
+               AND c.status = 2
+               AND c.deleted = 0) AS completedCount,
+            (SELECT COUNT(*)
+             FROM lvye_assessment_user_task c
+             WHERE a.task_no = c.task_no
+               AND c.deleted = 0) AS totalCount
+        FROM lvye_assessment_task a
+        LEFT JOIN system_users b ON a.publish_user_id = b.id
+        <where>
+            a.status IN (0, 1)
+            AND a.deleted = 0
+            <if test="pageReqVO.taskName != null and pageReqVO.taskName != ''">
+                AND a.task_name LIKE CONCAT('%', #{pageReqVO.taskName}, '%')
+            </if>
+            <if test="pageReqVO.publishUser != null and pageReqVO.publishUser != ''">
+                AND b.nickname LIKE CONCAT('%', #{pageReqVO.publishUser}, '%')
+            </if>
+        </where>
+        ORDER BY a.create_time DESC
+    </select>
 
 </mapper>

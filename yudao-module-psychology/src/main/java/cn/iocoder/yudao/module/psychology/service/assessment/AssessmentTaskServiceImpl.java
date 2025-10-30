@@ -1160,4 +1160,52 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         crisisEventProcessMapper.insert(process);
     }
 
+    @Override
+    public PageResult<OngoingTaskRespVO> getOngoingTasksPage(OngoingTaskPageReqVO pageReqVO) {
+        // 1. 创建分页对象
+        IPage<OngoingTaskRespVO> page = new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize());
+
+        // 2. 执行分页查询
+        IPage<OngoingTaskRespVO> resultPage = assessmentTaskMapper.selectOngoingTasksPage(page, pageReqVO);
+
+        // 3. 获取租户ID
+        Long tenantId = TenantContextHolder.getTenantId();
+
+        // 4. 为每个任务查询并填充问卷信息
+        List<OngoingTaskRespVO> tasks = resultPage.getRecords();
+        if (CollUtil.isNotEmpty(tasks)) {
+            for (OngoingTaskRespVO task : tasks) {
+                // 查询任务关联的问卷ID列表
+                List<Long> questionnaireIds = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(
+                        task.getTaskNo(), tenantId);
+
+                if (CollUtil.isNotEmpty(questionnaireIds)) {
+                    // 查询问卷详细信息
+                    List<OngoingTaskRespVO.QuestionnaireSimpleInfo> questionnaires = new ArrayList<>();
+                    for (Long questionnaireId : questionnaireIds) {
+                        try {
+                            var questionnaire = questionnaireService.getQuestionnaire(questionnaireId);
+                            if (questionnaire != null) {
+                                OngoingTaskRespVO.QuestionnaireSimpleInfo info =
+                                    new OngoingTaskRespVO.QuestionnaireSimpleInfo();
+                                info.setId(questionnaire.getId());
+                                info.setTitle(questionnaire.getTitle());
+                                questionnaires.add(info);
+                            }
+                        } catch (Exception e) {
+                            log.warn("查询问卷信息失败，questionnaireId: {}", questionnaireId, e);
+                        }
+                    }
+                    task.setQuestionnaires(questionnaires);
+                }
+
+                // 5. 计算完成率
+                task.calculateCompletionRate();
+            }
+        }
+
+        // 6. 转换为 PageResult
+        return new PageResult<>(tasks, resultPage.getTotal());
+    }
+
 }

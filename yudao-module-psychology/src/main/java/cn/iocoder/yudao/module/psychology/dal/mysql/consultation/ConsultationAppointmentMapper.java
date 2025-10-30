@@ -164,4 +164,24 @@ public interface ConsultationAppointmentMapper extends BaseMapperX<ConsultationA
                 .ne(ConsultationAppointmentDO::getStatus, 4) // 排除已取消的
                 .orderByDesc(ConsultationAppointmentDO::getAppointmentStartTime));
     }
+
+    /**
+     * 获取今日咨询预约分页
+     *
+     * @param reqVO 分页查询请求
+     * @return 今日咨询预约分页结果
+     */
+    default PageResult<ConsultationAppointmentDO> selectTodayPage(cn.iocoder.yudao.module.psychology.controller.admin.consultation.vo.appointment.ConsultationAppointmentTodayPageReqVO reqVO) {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = LocalDate.now().atTime(23, 59, 59);
+
+        LambdaQueryWrapperX<ConsultationAppointmentDO> wrapper = new LambdaQueryWrapperX<>();
+        wrapper.between(ConsultationAppointmentDO::getAppointmentStartTime, startOfDay, endOfDay);
+        wrapper.ne(ConsultationAppointmentDO::getStatus, 4); // 排除已取消的
+        wrapper.eqIfPresent(ConsultationAppointmentDO::getCounselorUserId, reqVO.getCounselorUserId());
+        wrapper.eqIfPresent(ConsultationAppointmentDO::getStatus, reqVO.getStatus());
+        wrapper.orderByAsc(ConsultationAppointmentDO::getAppointmentStartTime);
+
+        return selectPage(reqVO, wrapper);
+    }
 }

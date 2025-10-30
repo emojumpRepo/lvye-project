@@ -36,4 +36,11 @@ public class ParentContactVO {
     @Schema(description = "备注", example = "备注信息")
     private String remark;
 
+    @Schema(description = "职业", example = "教师")
+    @Length(max = 50, message = "职业不能超过 50 个字符")
+    private String work;
+
+    @Schema(description = "婚姻状态", example = "1")
+    private Integer maritalStatus;
+
 }

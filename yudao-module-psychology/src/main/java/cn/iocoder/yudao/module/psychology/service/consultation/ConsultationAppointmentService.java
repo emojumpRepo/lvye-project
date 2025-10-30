@@ -137,4 +137,20 @@ public interface ConsultationAppointmentService {
      * @return 咨询记录列表
      */
     List<ConsultationAppointmentRespVO> getAppointmentsByStudentProfileId(Long studentProfileId);
+
+    /**
+     * 保存咨询纪要
+     *
+     * @param id 预约ID
+     * @param reqVO 咨询纪要信息
+     */
+    void saveSummary(Long id, ConsultationAppointmentSaveSummaryReqVO reqVO);
+
+    /**
+     * 获取今日咨询预约分页
+     *
+     * @param pageReqVO 分页查询
+     * @return 今日咨询预约分页
+     */
+    PageResult<ConsultationAppointmentRespVO> getTodayAppointmentPage(ConsultationAppointmentTodayPageReqVO pageReqVO);
 }
