@@ -22,7 +22,13 @@ public class QuestionnaireUserVO {
     private Long studentProfileId;
 
     /**
-     * 任务编号（唯一）
+     * 用户ID
+     */
+    @Schema(description = "用户ID")
+    private Long userId;
+
+    /**
+     * 任务编号(唯一)
      */
     @Schema(description = "任务编号")
     private String taskNo;

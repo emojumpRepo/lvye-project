@@ -54,4 +54,16 @@ public class AssessmentTaskRespVO extends AssessmentTaskBaseVO {
     @Schema(description = "场景信息")
     private ScenarioInfoVO scenario;
 
+    /**
+     * 场景编号
+     */
+    @Schema(description = "场景编号")
+    private String scenarioCode;
+
+    /**
+     * 场景名称
+     */
+    @Schema(description = "场景名称")
+    private String scenarioName;
+
 }

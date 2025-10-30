@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.psychology.controller.admin.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.AssessmentResultDetailRespVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.MtuiUniversityResultRespVO;
 import cn.iocoder.yudao.module.psychology.service.assessment.AssessmentResultService;
 
 import jakarta.validation.constraints.NotNull;
@@ -104,6 +105,30 @@ public class AssessmentResultController {
             return success(null);
         } catch (Exception e) {
             log.error("重新计算测评任务结果时发生异常，taskNo={}, userIds={}", taskNo, userIds, e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/mtui-university-results")
+    @Operation(summary = "获取MTUI大学测评结果")
+    // @PreAuthorize("@ss.hasPermission('psychology:assessment:query')")
+    public CommonResult<MtuiUniversityResultRespVO> getMtuiUniversityResults(
+            @Parameter(description = "测评任务编号", required = true)
+            @RequestParam @NotBlank(message = "测评任务编号不能为空") String assessmentTaskNo,
+            @Parameter(description = "用户ID", required = true)
+            @RequestParam @NotNull(message = "用户ID不能为空") Long userId) {
+
+        log.info("开始获取MTUI大学测评结果，assessmentTaskNo={}, userId={}", assessmentTaskNo, userId);
+
+        try {
+            MtuiUniversityResultRespVO result = assessmentResultService.getMtuiUniversityResults(assessmentTaskNo, userId);
+
+            log.info("获取MTUI大学测评结果成功，assessmentTaskNo={}, userId={}, 问卷数={}",
+                    assessmentTaskNo, userId, result != null && result.getQuestionnaireResults() != null ? result.getQuestionnaireResults().size() : 0);
+
+            return success(result);
+        } catch (Exception e) {
+            log.error("获取MTUI大学测评结果时发生异常，assessmentTaskNo={}, userId={}", assessmentTaskNo, userId, e);
             throw e;
         }
     }

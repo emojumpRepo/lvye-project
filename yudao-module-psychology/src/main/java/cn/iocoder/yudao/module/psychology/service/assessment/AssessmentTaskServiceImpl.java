@@ -103,6 +103,9 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
     private AssessmentScenarioService scenarioService;
 
     @Resource
+    private cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentScenarioMapper assessmentScenarioMapper;
+
+    @Resource
     private PermissionApi permissionApi;
 
     @Resource
@@ -391,6 +394,24 @@ public class AssessmentTaskServiceImpl implements AssessmentTaskService {
         // 填充关联问卷 ID 列表
         List<Long> qids = taskQuestionnaireMapper.selectQuestionnaireIdsByTaskNo(taskNo, TenantContextHolder.getTenantId());
         assessmentTaskDO.setQuestionnaireIds(qids);
+
+        // 查询并填充场景编号
+        if (assessmentTaskDO.getScenarioId() != null) {
+            try {
+                cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO scenario =
+                    assessmentScenarioMapper.selectById(assessmentTaskDO.getScenarioId());
+                if (scenario != null) {
+                    // 将场景编号和名称设置到DO的非持久化字段中
+                    assessmentTaskDO.setScenarioCode(scenario.getCode());
+                    assessmentTaskDO.setScenarioName(scenario.getName());
+                    log.info("测评任务关联场景信息: taskNo={}, scenarioId={}, scenarioCode={}, scenarioName={}",
+                            taskNo, assessmentTaskDO.getScenarioId(), scenario.getCode(), scenario.getName());
+                }
+            } catch (Exception e) {
+                log.error("查询场景信息失败, taskNo={}, scenarioId={}", taskNo, assessmentTaskDO.getScenarioId(), e);
+            }
+        }
+
         return assessmentTaskDO;
     }
 

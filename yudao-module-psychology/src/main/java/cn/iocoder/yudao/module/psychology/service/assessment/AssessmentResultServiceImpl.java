@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.common.util.spring.SpringUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.AssessmentResultDetailRespVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.MtuiUniversityResultRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.result.RiskLevelInterventionVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentResultDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentUserTaskDO;
@@ -12,6 +13,7 @@ import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentTa
 import cn.iocoder.yudao.module.psychology.dal.dataobject.assessment.AssessmentScenarioDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.questionnaire.MtuiDimensionResultQueryDTO;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentResultMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentUserTaskMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.assessment.AssessmentTaskMapper;
@@ -43,6 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -366,15 +369,16 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         respVO.setCreateTime(assessmentResult.getCreateTime());
         respVO.setUpdateTime(assessmentResult.getUpdateTime());
 
-        // 查询并设置场景名称
+        // 查询并设置场景信息(场景名称和场景编号)
         if (assessmentResult.getTaskNo() != null) {
             AssessmentTaskDO assessmentTask = assessmentTaskMapper.selectByTaskNo(assessmentResult.getTaskNo());
             if (assessmentTask != null && assessmentTask.getScenarioId() != null) {
                 AssessmentScenarioDO scenario = assessmentScenarioMapper.selectById(assessmentTask.getScenarioId());
                 if (scenario != null) {
                     respVO.setScenarioName(scenario.getName());
-                    log.info("获取场景名称成功, taskNo={}, scenarioId={}, scenarioName={}",
-                        assessmentResult.getTaskNo(), assessmentTask.getScenarioId(), scenario.getName());
+                    respVO.setScenarioCode(scenario.getCode());
+                    log.info("获取场景信息成功, taskNo={}, scenarioId={}, scenarioName={}, scenarioCode={}",
+                        assessmentResult.getTaskNo(), assessmentTask.getScenarioId(), scenario.getName(), scenario.getCode());
                 }
             }
         }
@@ -840,6 +844,131 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
 
         log.info("问卷结果更新完成, questionnaireResultId={}, 聚合风险等级={}",
             originalResult.getId(), maxRiskLevel);
+    }
+
+    @Override
+    public MtuiUniversityResultRespVO getMtuiUniversityResults(String assessmentTaskNo, Long userId) {
+        log.info("开始获取MTUI大学结果, assessmentTaskNo={}, userId={}", assessmentTaskNo, userId);
+
+        // 0. 查询学生档案ID
+        StudentProfileDO studentProfile = studentProfileMapper.selectOne(
+            new LambdaQueryWrapperX<StudentProfileDO>()
+                .eq(StudentProfileDO::getUserId, userId)
+                .orderByDesc(StudentProfileDO::getCreateTime)
+                .last("LIMIT 1")
+        );
+
+        if (studentProfile == null) {
+            log.warn("未找到用户的学生档案, userId={}", userId);
+            return null;
+        }
+
+        Long studentProfileId = studentProfile.getId();
+
+        // 1. 使用优化的SQL查询获取所有维度结果(一次性JOIN查询)
+        List<MtuiDimensionResultQueryDTO> queryResults = dimensionResultMapper
+                .selectMtuiDimensionResultsByTaskAndUser(assessmentTaskNo, userId);
+
+        if (CollUtil.isEmpty(queryResults)) {
+            log.warn("未找到MTUI大学结果, assessmentTaskNo={}, userId={}", assessmentTaskNo, userId);
+            return null;
+        }
+
+        log.info("查询到{}条维度结果记录", queryResults.size());
+
+        // 2. 查询测评结果
+        AssessmentResultDO assessmentResult = assessmentResultMapper.selectOne(
+            new LambdaQueryWrapperX<AssessmentResultDO>()
+                .eq(AssessmentResultDO::getTaskNo, assessmentTaskNo)
+                .eq(AssessmentResultDO::getParticipantId, studentProfileId)
+                .eq(AssessmentResultDO::getDimensionCode, "total")
+        );
+
+        // 3. 构建整体测评结果信息
+        MtuiUniversityResultRespVO.AssessmentResultInfo assessmentResultInfo = null;
+        if (assessmentResult != null) {
+            assessmentResultInfo = new MtuiUniversityResultRespVO.AssessmentResultInfo();
+            assessmentResultInfo.setAssessmentResultId(assessmentResult.getId());
+            assessmentResultInfo.setCombinedRiskLevel(assessmentResult.getCombinedRiskLevel());
+            assessmentResultInfo.setRiskLevelDescription(
+                getRiskLevelDescription(assessmentResult.getCombinedRiskLevel()));
+            assessmentResultInfo.setScore(assessmentResult.getScore());
+            assessmentResultInfo.setSuggestion(assessmentResult.getSuggestion());
+            assessmentResultInfo.setRiskFactors(assessmentResult.getRiskFactors());
+            assessmentResultInfo.setInterventionSuggestions(assessmentResult.getInterventionSuggestions());
+            assessmentResultInfo.setGenerationConfigVersion(assessmentResult.getGenerationConfigVersion());
+        }
+
+        // 4. 按问卷结果ID分组
+        Map<Long, List<MtuiDimensionResultQueryDTO>> groupByQuestionnaire = queryResults.stream()
+                .collect(Collectors.groupingBy(MtuiDimensionResultQueryDTO::getQuestionnaireResultId));
+
+        // 5. 转换为问卷结果列表
+        List<MtuiUniversityResultRespVO.QuestionnaireResultVO> questionnaireResultList = new ArrayList<>();
+
+        for (Map.Entry<Long, List<MtuiDimensionResultQueryDTO>> entry : groupByQuestionnaire.entrySet()) {
+            List<MtuiDimensionResultQueryDTO> dimensions = entry.getValue();
+            if (dimensions.isEmpty()) {
+                continue;
+            }
+
+            // 取第一条记录获取问卷信息(同一问卷结果下问卷信息相同)
+            MtuiDimensionResultQueryDTO first = dimensions.get(0);
+
+            MtuiUniversityResultRespVO.QuestionnaireResultVO questionnaireResultVO =
+                new MtuiUniversityResultRespVO.QuestionnaireResultVO();
+            questionnaireResultVO.setQuestionnaireResultId(first.getQuestionnaireResultId());
+            questionnaireResultVO.setQuestionnaireId(first.getQuestionnaireId());
+            questionnaireResultVO.setQuestionnaireName(first.getQuestionnaireName());
+            questionnaireResultVO.setQuestionnaireDescription(first.getQuestionnaireDescription());
+            questionnaireResultVO.setQuestionnaireType(first.getQuestionnaireType());
+            questionnaireResultVO.setUserId(first.getUserId());
+            questionnaireResultVO.setAssessmentTaskNo(first.getAssessmentTaskNo());
+            questionnaireResultVO.setAnswers(first.getAnswers()); // 设置答题数据
+            questionnaireResultVO.setCompletedTime(first.getCompletedTime()); // 设置完成时间
+
+            // 转换维度结果列表(过滤掉没有维度ID的记录,即没有维度定义的问卷)
+            List<MtuiUniversityResultRespVO.MtuiDimensionResultVO> dimensionVOList = dimensions.stream()
+                    .filter(dto -> dto.getDimensionId() != null) // 过滤掉没有维度的记录
+                    .map(dto -> {
+                        MtuiUniversityResultRespVO.MtuiDimensionResultVO dimensionVO =
+                                new MtuiUniversityResultRespVO.MtuiDimensionResultVO();
+                        dimensionVO.setDimensionResultId(dto.getDimensionResultId());
+                        dimensionVO.setDimensionId(dto.getDimensionId());
+                        dimensionVO.setDimensionName(dto.getDimensionName());
+                        dimensionVO.setDimensionCode(dto.getDimensionCode());
+                        dimensionVO.setDimensionDescription(dto.getDimensionDescription());
+                        dimensionVO.setScore(dto.getScore());
+                        dimensionVO.setIsAbnormal(dto.getIsAbnormal());
+                        dimensionVO.setRiskLevel(dto.getRiskLevel());
+                        dimensionVO.setLevel(dto.getLevel());
+                        dimensionVO.setTeacherComment(dto.getTeacherComment());
+                        dimensionVO.setStudentComment(dto.getStudentComment());
+                        dimensionVO.setSortOrder(dto.getSortOrder());
+                        dimensionVO.setParticipateModuleCalc(dto.getParticipateModuleCalc());
+                        dimensionVO.setParticipateAssessmentCalc(dto.getParticipateAssessmentCalc());
+                        dimensionVO.setParticipateRanking(dto.getParticipateRanking());
+                        return dimensionVO;
+                    })
+                    .sorted(Comparator.comparing(MtuiUniversityResultRespVO.MtuiDimensionResultVO::getSortOrder,
+                            Comparator.nullsLast(Comparator.naturalOrder())))
+                    .collect(Collectors.toList());
+
+            questionnaireResultVO.setDimensionResults(dimensionVOList);
+            questionnaireResultList.add(questionnaireResultVO);
+
+            log.info("问卷结果转换完成: questionnaireId={}, questionnaireName={}, 维度数={}",
+                    first.getQuestionnaireId(), first.getQuestionnaireName(), dimensionVOList.size());
+        }
+
+        // 6. 构建最终响应VO
+        MtuiUniversityResultRespVO responseVO = new MtuiUniversityResultRespVO();
+        responseVO.setAssessmentResult(assessmentResultInfo);
+        responseVO.setQuestionnaireResults(questionnaireResultList);
+
+        log.info("MTUI大学结果获取完成, 共{}个问卷结果, 测评结果ID={}",
+            questionnaireResultList.size(), assessmentResult != null ? assessmentResult.getId() : "无");
+        return responseVO;
     }
 
 }
