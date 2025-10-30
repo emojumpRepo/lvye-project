@@ -880,6 +880,21 @@ public class ConsultationAppointmentServiceImpl implements ConsultationAppointme
         );
     }
 
+    @Override
+    public PageResult<ConsultationAppointmentRespVO> getTodayAppointmentPage(ConsultationAppointmentTodayPageReqVO pageReqVO) {
+        // 查询今日分页数据
+        PageResult<ConsultationAppointmentDO> pageResult = appointmentMapper.selectTodayPage(pageReqVO);
+
+        if (CollUtil.isEmpty(pageResult.getList())) {
+            return PageResult.empty();
+        }
+
+        // 转换为VO并填充关联信息
+        List<ConsultationAppointmentRespVO> voList = convertToRespVOList(pageResult.getList());
+
+        return new PageResult<>(voList, pageResult.getTotal());
+    }
+
     private ConsultationAppointmentDO validateAppointmentExists(Long id) {
         ConsultationAppointmentDO appointment = appointmentMapper.selectById(id);
         if (appointment == null) {

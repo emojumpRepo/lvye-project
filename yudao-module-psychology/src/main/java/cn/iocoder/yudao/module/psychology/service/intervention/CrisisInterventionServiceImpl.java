@@ -1609,6 +1609,21 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         return convertAssessmentRecords(allAssessments);
     }
 
+    @Override
+    public PageResult<CrisisEventRespVO> getOngoingCrisisEventPage(cn.iocoder.yudao.framework.common.pojo.PageParam pageParam) {
+        // 查询 status != 5 的分页数据
+        PageResult<CrisisInterventionDO> pageResult = crisisInterventionMapper.selectOngoingPage(pageParam);
+
+        if (CollUtil.isEmpty(pageResult.getList())) {
+            return PageResult.empty();
+        }
+
+        // 转换为VO并填充关联信息
+        List<CrisisEventRespVO> voList = convertToRespVOList(pageResult.getList());
+
+        return new PageResult<>(voList, pageResult.getTotal());
+    }
+
     /**
      * 转换评估记录为VO
      */

@@ -335,4 +335,12 @@ public class AssessmentTaskController {
         return success(assessmentTaskService.getTaskRiskStatistics(taskNo));
     }
 
+    @GetMapping("/get-ongoing-tasks-page")
+    @Operation(summary = "分页查询正在进行的测评任务及进度")
+    @DataPermission(enable = false)
+    public CommonResult<PageResult<OngoingTaskRespVO>> getOngoingTasksPage(@Valid OngoingTaskPageReqVO pageReqVO) {
+        PageResult<OngoingTaskRespVO> pageResult = assessmentTaskService.getOngoingTasksPage(pageReqVO);
+        return success(pageResult);
+    }
+
 }

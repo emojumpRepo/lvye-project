@@ -172,4 +172,13 @@ public interface AssessmentTaskService {
 
     AssessmentTaskRiskLevelStatisticsVO getTaskRiskStatistics(String taskNo);
 
+    /**
+     * 分页查询正在进行的测评任务及其进度
+     *
+     * @param pageReqVO 分页查询条件
+     * @return 正在进行的任务分页列表（包含问卷信息和进度统计）
+     */
+    PageResult<cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.OngoingTaskRespVO> getOngoingTasksPage(
+            cn.iocoder.yudao.module.psychology.controller.admin.assessment.vo.OngoingTaskPageReqVO pageReqVO);
+
 }

@@ -145,4 +145,12 @@ public interface ConsultationAppointmentService {
      * @param reqVO 咨询纪要信息
      */
     void saveSummary(Long id, ConsultationAppointmentSaveSummaryReqVO reqVO);
+
+    /**
+     * 获取今日咨询预约分页
+     *
+     * @param pageReqVO 分页查询
+     * @return 今日咨询预约分页
+     */
+    PageResult<ConsultationAppointmentRespVO> getTodayAppointmentPage(ConsultationAppointmentTodayPageReqVO pageReqVO);
 }

@@ -172,4 +172,12 @@ public class ConsultationAppointmentController {
         appointmentService.saveSummary(id, reqVO);
         return success(true);
     }
+
+    @GetMapping("/appointment/today-consultation")
+    @Operation(summary = "获取今日咨询预约分页")
+    @DataPermission(enable = false)
+    public CommonResult<PageResult<ConsultationAppointmentRespVO>> getTodayAppointmentPage(@Valid ConsultationAppointmentTodayPageReqVO pageVO) {
+        PageResult<ConsultationAppointmentRespVO> pageResult = appointmentService.getTodayAppointmentPage(pageVO);
+        return success(pageResult);
+    }
 }

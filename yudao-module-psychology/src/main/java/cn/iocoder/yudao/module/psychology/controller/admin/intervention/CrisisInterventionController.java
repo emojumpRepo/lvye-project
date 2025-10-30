@@ -108,6 +108,14 @@ public class CrisisInterventionController {
         return success(interventionService.getCrisisEventPage(pageReqVO));
     }
 
+    @GetMapping("/event/ongoing")
+    @Operation(summary = "获取正在进行的危机事件分页（status != 5）")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
+    @DataPermission(enable = false)
+    public CommonResult<PageResult<CrisisEventRespVO>> getOngoingCrisisEventPage(@Valid cn.iocoder.yudao.framework.common.pojo.PageParam pageParam) {
+        return success(interventionService.getOngoingCrisisEventPage(pageParam));
+    }
+
     @GetMapping("/event/statistics")
     @Operation(summary = "获取危机事件统计")
     @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")

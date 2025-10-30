@@ -217,4 +217,12 @@ public interface CrisisInterventionService {
      * @return 评估记录列表（按创建时间倒序）
      */
     List<CrisisEventRespVO.AssessmentRecordVO> getStudentAssessments(Long studentProfileId);
+
+    /**
+     * 获取正在进行的危机事件分页（status != 5）
+     *
+     * @param pageParam 分页参数
+     * @return 事件分页
+     */
+    PageResult<CrisisEventRespVO> getOngoingCrisisEventPage(cn.iocoder.yudao.framework.common.pojo.PageParam pageParam);
 }
