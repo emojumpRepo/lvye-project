@@ -16,20 +16,30 @@
 develop-web:
   push:
     - name: 构建 Spring Boot 应用
-      docker:
-        # 使用官方 Maven 镜像
-        image: maven:3.9-openjdk-17
-        # 声明构建缓存
-        volumes:
-          - /root/.m2:copy-on-write
-
+      services:
+        - docker
+      env:
+        JAVA_VERSION: 17
       # 导入环境变量配置文件（用于 SSH 部署）
       imports:
         - https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-backend-envs.yml
 
       stages:
+        - name: 设置构建环境
+          script: |
+            apt-get update -qq
+            apt-get install -y -qq openjdk-${JAVA_VERSION}-jdk maven
+
+            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
+
+            java -version
+            mvn -version
+
         - name: Maven 构建
           script: |
+            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
             # 从根目录构建整个项目（并行构建 + 批处理模式 + 禁用传输进度）
             mvn clean install \
               -Dmaven.test.skip=true \
