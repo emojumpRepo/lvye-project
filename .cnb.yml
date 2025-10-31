@@ -22,7 +22,7 @@ develop-web:
         JAVA_VERSION: 17
       # 导入环境变量配置文件（用于 SSH 部署）
       imports:
-        - https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-backend-envs.yml
+        - https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-dev-envs.yml
 
       stages:
         - name: 设置构建环境
@@ -52,31 +52,33 @@ develop-web:
         - name: 调试环境变量
           script: |
             echo "🔍 检查环境变量..."
-            echo "DEV_SSH_HOST: ${DEV_SSH_HOST:-<未设置>}"
-            echo "DEV_SSH_USERNAME: ${DEV_SSH_USERNAME:-<未设置>}"
-            echo "DEV_SSH_PORT: ${DEV_SSH_PORT:-<未设置>}"
-            echo "DEV_SSH_PRIVATE_KEY: ${DEV_SSH_PRIVATE_KEY:+<已设置>-长度$(echo ${DEV_SSH_PRIVATE_KEY} | wc -c)}"
+            echo "REMOTE_HOST: ${REMOTE_HOST:-<未设置>}"
+            echo "REMOTE_USERNAME: ${REMOTE_USERNAME:-<未设置>}"
+            echo "REMOTE_PORT: ${REMOTE_PORT:-<未设置>}"
+            echo "PRIVATE_KEY: ${PRIVATE_KEY:+<已设置>-长度$(echo ${PRIVATE_KEY} | wc -c)}"
             echo ""
             echo "🔍 检查其他环境变量..."
-            env | grep DEV_ | sort
+            env | grep -E "(REMOTE|DEPLOY|APP)" | sort
 
         # 使用 rsync 上传 JAR 文件并重启容器
         - name: 部署后端服务
           script: |
             echo "🚀 开始部署后端服务..."
             echo "📦 项目: RuoYi-Vue-Pro Backend"
-            echo "🖥️ 服务器: ${DEV_SSH_HOST:-<未设置>}"
-            echo "👤 用户名: ${DEV_SSH_USERNAME:-<未设置>}"
-            echo "🔌 端口: ${DEV_SSH_PORT:-22}"
+            echo "🖥️ 服务器: ${REMOTE_HOST:-<未设置>}"
+            echo "👤 用户名: ${REMOTE_USERNAME:-<未设置>}"
+            echo "🔌 端口: ${REMOTE_PORT:-22}"
+            echo "📂 部署路径: ${DEPLOY_PATH:-/opt/apps}"
+            echo "🏷️ 应用名称: ${APP_NAME:-yudao-server}"
             echo "⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')"
             echo ""
 
             # 检查必需的环境变量
-            if [ -z "${DEV_SSH_HOST}" ] || [ -z "${DEV_SSH_USERNAME}" ] || [ -z "${DEV_SSH_PRIVATE_KEY}" ]; then
+            if [ -z "${REMOTE_HOST}" ] || [ -z "${REMOTE_USERNAME}" ] || [ -z "${PRIVATE_KEY}" ]; then
               echo "❌ 错误：缺少必需的环境变量"
-              echo "   DEV_SSH_HOST: ${DEV_SSH_HOST:-<未设置>}"
-              echo "   DEV_SSH_USERNAME: ${DEV_SSH_USERNAME:-<未设置>}"
-              echo "   DEV_SSH_PRIVATE_KEY: ${DEV_SSH_PRIVATE_KEY:+<未设置>}"
+              echo "   REMOTE_HOST: ${REMOTE_HOST:-<未设置>}"
+              echo "   REMOTE_USERNAME: ${REMOTE_USERNAME:-<未设置>}"
+              echo "   PRIVATE_KEY: ${PRIVATE_KEY:+<未设置>}"
               exit 1
             fi
 
@@ -86,15 +88,15 @@ develop-web:
 
             # 配置 SSH 私钥
             mkdir -p ~/.ssh
-            echo "$DEV_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+            echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
 
             # 配置 SSH 选项
-            SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa -p ${DEV_SSH_PORT:-22}"
+            SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa -p ${REMOTE_PORT:-22}"
 
             # 测试 SSH 连接
             echo "🔌 测试 SSH 连接..."
-            if ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "echo 'SSH connection test successful'" 2>/dev/null; then
+            if ssh $SSH_OPTS $REMOTE_USERNAME@$REMOTE_HOST "echo 'SSH connection test successful'" 2>/dev/null; then
               echo "  ✓ SSH 连接验证成功"
             else
               echo "  ✗ SSH 连接失败"
@@ -108,20 +110,26 @@ develop-web:
               exit 1
             fi
 
+            # 设置部署路径
+            DEPLOY_DIR="${DEPLOY_PATH:-/opt/apps}"
+            APP_DIR="$DEPLOY_DIR/${APP_NAME:-yudao-server}"
+            TARGET_JAR="$APP_DIR/yudao-server.jar"
+
             echo "📋 部署信息:"
             echo "  本地文件: $JAR_FILE"
             echo "  文件大小: $(stat -c%s "$JAR_FILE" | awk '{printf "%.1f MB", $1/1024/1024}')"
-            echo "  目标服务器: ${DEV_SSH_USERNAME}@${DEV_SSH_HOST}:${DEV_SSH_PORT:-22}"
-            echo "  目标路径: /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
+            echo "  目标服务器: ${REMOTE_USERNAME}@${REMOTE_HOST}:${REMOTE_PORT:-22}"
+            echo "  目标路径: $TARGET_JAR"
             echo ""
 
-            # 设置远程脚本变量
-            SERVER_PATH="/root/mindfront/work/project/mindtrip_server"
-            TARGET_JAR="$SERVER_PATH/yudao-server.jar"
+            # 远程准备：创建目录并备份当前 JAR 文件
+            echo "🔧 远程准备..."
+            ssh $SSH_OPTS $REMOTE_USERNAME@$REMOTE_HOST "
+              # 创建部署目录
+              mkdir -p $APP_DIR
+              echo \"  ✓ 创建目录: $APP_DIR\"
 
-            # 远程准备：备份当前 JAR 文件
-            echo "💾 备份当前 JAR 文件..."
-            ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "
+              # 备份当前 JAR 文件
               if [ -f \"$TARGET_JAR\" ]; then
                 cp \"$TARGET_JAR\" \"$TARGET_JAR.backup.$(date +%Y%m%d_%H%M%S)\"
                 echo \"  ✓ 备份创建成功\"
@@ -135,7 +143,7 @@ develop-web:
             rsync -avz --progress \
               -e "ssh $SSH_OPTS" \
               "$JAR_FILE" \
-              $DEV_SSH_USERNAME@$DEV_SSH_HOST:$TARGET_JAR
+              $REMOTE_USERNAME@$REMOTE_HOST:$TARGET_JAR
 
             if [ $? -eq 0 ]; then
               echo "✅ JAR 文件上传成功"
@@ -146,7 +154,7 @@ develop-web:
 
             # 验证上传的文件并重启容器
             echo "🔍 验证上传文件并重启服务..."
-            ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "
+            ssh $SSH_OPTS $REMOTE_USERNAME@$REMOTE_HOST "
               # 验证文件
               if [ -f \"$TARGET_JAR\" ]; then
                 echo \"✅ 文件验证成功\"
@@ -170,14 +178,14 @@ develop-web:
 
               # 清理旧备份（保留最近 5 个）
               echo \"🧹 清理旧备份文件...\"
-              cd \"$SERVER_PATH\" && ls -t yudao-server.jar.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f
+              cd \"$APP_DIR\" && ls -t yudao-server.jar.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f
 
               echo \"\"
               echo \"==========================================\"
               echo \"🎉 测试环境后端服务部署完成\"
               echo \"==========================================\"
               echo \"📦 项目: RuoYi-Vue-Pro Backend\"
-              echo \"🖥️ 服务器: ${DEV_SSH_HOST}\"
+              echo \"🖥️ 服务器: ${REMOTE_HOST}\"
               echo \"🐳 容器: mindtrip\"
               echo \"📂 路径: $TARGET_JAR\"
               echo \"⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')\"
