@@ -11,7 +11,7 @@ COPY ./target/yudao-server.jar app.jar
 ## 设置 TZ 时区
 ENV TZ=Asia/Shanghai
 ## 设置 JAVA_OPTS 环境变量，可通过 docker run -e "JAVA_OPTS=" 进行覆盖
-ENV JAVA_OPTS="-Xms512m -Xmx512m -Djava.security.egd=file:/dev/./urandom"
+ENV JAVA_OPTS="-Xms512m -Xmx512m -Duser.timezone=Asia/Shanghai -Djava.security.egd=file:/dev/./urandom"
 
 ## 应用参数
 ENV ARGS=""
