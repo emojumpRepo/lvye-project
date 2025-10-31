@@ -52,13 +52,13 @@ develop-web:
         - name: 使用 rsync 上传 JAR 文件
           image: tencentcom/rsync
           settings:
-            hosts:
-              - ${DEV_SSH_HOST}
             user: ${DEV_SSH_USERNAME}
             key: ${DEV_SSH_PRIVATE_KEY}
+            hosts:
+              - ${DEV_SSH_HOST}
             port: ${DEV_SSH_PORT:-22}
+            source: ./yudao-server/target/yudao-server.jar
             target: /root/mindfront/work/project/mindtrip_server/yudao-server.jar
-            source: ./yudao-server/yudao-server/target/yudao-server-*.jar
 
         # 通过 SSH 执行命令
         - name: 通过 SSH 重启容器
@@ -89,14 +89,8 @@ develop-web:
                 echo "ℹ️ 没有现有 JAR 文件需要备份"
               fi
 
-              # rsync 会自动上传，这里我们只需要重命名文件
-              echo "🔄 重命名上传的文件..."
-              find ./yudao-server/yudao-server/target -name "yudao-server-*.jar" -exec basename {} \; | head -1 | while read jar_name; do
-                if [ -f "./yudao-server/yudao-server/target/$jar_name" ]; then
-                  mv "./yudao-server/yudao-server/target/$jar_name" "$TARGET_JAR"
-                  echo "✅ 文件重命名完成: $jar_name -> yudao-server.jar"
-                fi
-              done
+              # rsync 已经直接上传到目标位置，无需重命名
+              echo "✅ JAR 文件已通过 rsync 上传到目标位置"
 
               # 验证文件
               echo "🔍 验证上传的文件..."
