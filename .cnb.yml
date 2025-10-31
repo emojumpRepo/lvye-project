@@ -16,34 +16,20 @@
 develop-web:
   push:
     - name: 构建 Spring Boot 应用
-      services:
-        - docker
-      env:
-        JAVA_VERSION: 17
+      docker:
+        # 使用官方 Maven 镜像
+        image: maven:3.9-openjdk-17
+        # 声明构建缓存
+        volumes:
+          - /root/.m2:copy-on-write
+
       # 导入环境变量配置文件（用于 SSH 部署）
       imports:
         - https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-backend-envs.yml
 
-      # 使用 CNB 官方缓存机制
-      caches:
-        - path: ~/.m2/repository
-
       stages:
-        - name: 设置构建环境
-          script: |
-            apt-get update -qq
-            apt-get install -y -qq openjdk-${JAVA_VERSION}-jdk maven
-
-            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
-            export PATH=$JAVA_HOME/bin:$PATH
-
-            java -version
-            mvn -version
-
         - name: Maven 构建
           script: |
-            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
-            export PATH=$JAVA_HOME/bin:$PATH
             # 从根目录构建整个项目（并行构建 + 批处理模式 + 禁用传输进度）
             mvn clean install \
               -Dmaven.test.skip=true \
@@ -52,100 +38,115 @@ develop-web:
               --batch-mode \
               --no-transfer-progress
 
-        # SSH 部署阶段
-        - name: SSH 部署
-          plugins:
-            - name: ssh
-              config:
-                host: ${DEV_SSH_HOST}
-                user: ${DEV_SSH_USERNAME}
-                port: ${DEV_SSH_PORT:-22}
-                privateKey: ${DEV_SSH_PRIVATE_KEY}
-              script: |
-                echo "🚀 Deploying to remote server..."
-                echo "📦 Project: RuoYi-Vue-Pro Backend"
-                echo "🖥️ Server: ${DEV_SSH_HOST}"
-                echo "⏰ Time: $(date '+%Y-%m-%d %H:%M:%S')"
+        # 使用 rsync 复制文件
+        - name: 使用 rsync 上传 JAR 文件
+          image: tencentcom/rsync
+          settings:
+            hosts:
+              - ${DEV_SSH_HOST}
+            user: ${DEV_SSH_USERNAME}
+            key: ${DEV_SSH_PRIVATE_KEY}
+            port: ${DEV_SSH_PORT:-22}
+            target: /root/mindfront/work/project/mindtrip_server/yudao-server.jar
+            source: ./yudao-server/yudao-server/target/yudao-server-*.jar
 
-                # 设置目标路径
-                SERVER_PATH="/root/mindfront/work/project/mindtrip_server"
-                TARGET_JAR="$SERVER_PATH/yudao-server.jar"
+        # 通过 SSH 执行命令
+        - name: 通过 SSH 重启容器
+          image: tencentcom/ssh
+          settings:
+            host:
+              - ${DEV_SSH_HOST}
+            username: ${DEV_SSH_USERNAME}
+            key: ${DEV_SSH_PRIVATE_KEY}
+            port: ${DEV_SSH_PORT:-22}
+            command_timeout: 5m
+            script: |
+              echo "🚀 部署到远程服务器..."
+              echo "📦 项目: RuoYi-Vue-Pro Backend"
+              echo "🖥️ 服务器: ${DEV_SSH_HOST}"
+              echo "⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')"
 
-                # 查找构建的 JAR 文件
-                JAR_FILE=$(find . -name "yudao-server-*.jar" -type f | head -1)
+              # 设置目标路径
+              SERVER_PATH="/root/mindfront/work/project/mindtrip_server"
+              TARGET_JAR="$SERVER_PATH/yudao-server.jar"
 
-                if [ -z "$JAR_FILE" ]; then
-                  echo "❌ Error: JAR file not found!"
-                  exit 1
+              # 备份当前 JAR 文件
+              echo "💾 备份当前 JAR 文件..."
+              if [ -f "$TARGET_JAR" ]; then
+                cp "$TARGET_JAR" "$TARGET_JAR.backup.$(date +%Y%m%d_%H%M%S)"
+                echo "✅ 备份创建成功"
+              else
+                echo "ℹ️ 没有现有 JAR 文件需要备份"
+              fi
+
+              # rsync 会自动上传，这里我们只需要重命名文件
+              echo "🔄 重命名上传的文件..."
+              find ./yudao-server/yudao-server/target -name "yudao-server-*.jar" -exec basename {} \; | head -1 | while read jar_name; do
+                if [ -f "./yudao-server/yudao-server/target/$jar_name" ]; then
+                  mv "./yudao-server/yudao-server/target/$jar_name" "$TARGET_JAR"
+                  echo "✅ 文件重命名完成: $jar_name -> yudao-server.jar"
                 fi
+              done
 
-                echo "📤 Found JAR file: $(basename "$JAR_FILE")"
-
-                # 备份当前 JAR 文件
-                echo "💾 Backing up current JAR file..."
-                if [ -f "$TARGET_JAR" ]; then
-                  cp "$TARGET_JAR" "$TARGET_JAR.backup.$(date +%Y%m%d_%H%M%S)"
-                  echo "✅ Backup created"
-                else
-                  echo "ℹ️ No existing JAR file to backup"
-                fi
-
-                # 上传新的 JAR 文件
-                echo "📤 Uploading new JAR file..."
-                cp "$JAR_FILE" "$TARGET_JAR"
-
-                # 验证上传
-                echo "🔍 Verifying uploaded file..."
+              # 验证文件
+              echo "🔍 验证上传的文件..."
+              if [ -f "$TARGET_JAR" ]; then
                 ls -lh "$TARGET_JAR"
+                echo "✅ 文件验证成功"
+              else
+                echo "❌ 文件验证失败"
+                exit 1
+              fi
 
-                # 重启 Docker 容器
-                echo "🔄 Restarting Docker container..."
-                docker restart mindtrip
+              # 重启 Docker 容器
+              echo "🔄 重启 Docker 容器..."
+              docker restart mindtrip
 
-                # 等待容器启动
-                echo "⏳ Waiting for container to start..."
-                sleep 15
+              # 等待容器启动
+              echo "⏳ 等待容器启动..."
+              sleep 15
 
-                # 检查容器状态
-                echo "🔍 Checking container status..."
-                docker ps --filter "name=mindtrip" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+              # 检查容器状态
+              echo "🔍 检查容器状态..."
+              docker ps --filter "name=mindtrip" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-                # 清理旧备份（保留最近 5 个）
-                echo "🧹 Cleaning up old backups..."
-                cd "$SERVER_PATH" && ls -t yudao-server.jar.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f
+              # 清理旧备份（保留最近 5 个）
+              echo "🧹 清理旧备份文件..."
+              cd "$SERVER_PATH" && ls -t yudao-server.jar.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f
 
-                echo ""
-                echo "=========================================="
-                echo "🎉 测试环境后端服务部署完成"
-                echo "=========================================="
-                echo "📦 项目: RuoYi-Vue-Pro Backend"
-                echo "🖥️ 服务器: ${DEV_SSH_HOST}"
-                echo "🐳 容器: mindtrip"
-                echo "📂 路径: $TARGET_JAR"
-                echo "⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')"
-                echo "=========================================="
-                echo ""
-                echo "📋 部署方式："
-                echo "  1. 构建 JAR 文件"
-                echo "  2. 备份当前 JAR 文件"
-                echo "  3. 直接替换 /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
-                echo "  4. 重启 Docker 容器: docker restart mindtrip"
-                echo ""
-                echo "🔧 应用信息："
-                echo "  应用类型: Spring Boot Java 应用"
-                echo "  容器名称: mindtrip"
-                echo "  镜像: bitnamilegacy/java:17"
-                echo "  端口: 48080"
-                echo "  挂载目录: /root/mindfront/work/project/mindtrip_server -> /app"
-                echo "  配置文件: application-dev.yaml"
-                echo ""
-                echo "📋 管理命令："
-                echo "  查看状态: docker ps | grep mindtrip"
-                echo "  查看日志: docker logs mindtrip"
-                echo "  重启服务: docker restart mindtrip"
-                echo "  查看 JAR 文件: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
-                echo "  查看备份: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar.backup.*"
-                echo "=========================================="
+              echo ""
+              echo "=========================================="
+              echo "🎉 测试环境后端服务部署完成"
+              echo "=========================================="
+              echo "📦 项目: RuoYi-Vue-Pro Backend"
+              echo "🖥️ 服务器: ${DEV_SSH_HOST}"
+              echo "🐳 容器: mindtrip"
+              echo "📂 路径: $TARGET_JAR"
+              echo "⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')"
+              echo "=========================================="
+              echo ""
+              echo "📋 部署方式："
+              echo "  1. 构建 JAR 文件"
+              echo "  2. 使用 rsync 上传 JAR 文件"
+              echo "  3. 备份当前 JAR 文件"
+              echo "  4. 重命名并替换 JAR 文件"
+              echo "  5. 重启 Docker 容器: docker restart mindtrip"
+              echo ""
+              echo "🔧 应用信息："
+              echo "  应用类型: Spring Boot Java 应用"
+              echo "  容器名称: mindtrip"
+              echo "  镜像: bitnamilegacy/java:17"
+              echo "  端口: 48080"
+              echo "  挂载目录: /root/mindfront/work/project/mindtrip_server -> /app"
+              echo "  配置文件: application-dev.yaml"
+              echo ""
+              echo "📋 管理命令："
+              echo "  查看状态: docker ps | grep mindtrip"
+              echo "  查看日志: docker logs mindtrip"
+              echo "  重启服务: docker restart mindtrip"
+              echo "  查看 JAR 文件: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
+              echo "  查看备份: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar.backup.*"
+              echo "=========================================="
 
 # ==================== 生产环境说明 ====================
 # 注意：生产环境部署在独立服务器上，不使用此 CI/CD 配置
