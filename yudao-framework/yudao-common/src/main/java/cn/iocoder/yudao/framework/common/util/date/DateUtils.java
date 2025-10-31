@@ -15,9 +15,9 @@ import java.util.Date;
 public class DateUtils {
 
     /**
-     * 时区 - 默认
+     * 时区 - 默认（使用 Asia/Shanghai 而不是 GMT+8，更标准且考虑夏令时等因素）
      */
-    public static final String TIME_ZONE_DEFAULT = "GMT+8";
+    public static final String TIME_ZONE_DEFAULT = "Asia/Shanghai";
 
     /**
      * 秒转换成毫秒
