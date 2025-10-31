@@ -15,11 +15,11 @@
 # ==================== 测试环境 - 后端服务 (SSH 部署) ====================
 develop-web:
   push:
-    - docker:
-        image: maven:3.9-openjdk-17
-        # Maven 缓存策略
-        volumes:
-          - /root/.m2:cow
+    - name: 构建 Spring Boot 应用
+      services:
+        - docker
+      env:
+        JAVA_VERSION: 17
       # 导入环境变量配置文件（用于 SSH 部署）
       imports:
         - https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-dev-envs.yml
