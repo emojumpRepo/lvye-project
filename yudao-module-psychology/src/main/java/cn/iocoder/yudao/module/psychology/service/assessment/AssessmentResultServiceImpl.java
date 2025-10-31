@@ -948,6 +948,7 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                         dimensionVO.setParticipateModuleCalc(dto.getParticipateModuleCalc());
                         dimensionVO.setParticipateAssessmentCalc(dto.getParticipateAssessmentCalc());
                         dimensionVO.setParticipateRanking(dto.getParticipateRanking());
+                        dimensionVO.setShowScore(dto.getShowScore());
                         return dimensionVO;
                     })
                     .sorted(Comparator.comparing(MtuiUniversityResultRespVO.MtuiDimensionResultVO::getSortOrder,

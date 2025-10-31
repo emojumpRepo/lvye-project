@@ -20,6 +20,7 @@ public interface QuestionnaireDimensionConvert {
     @Mapping(target = "participateModuleCalc", expression = "java(integerToBoolean(bean.getParticipateModuleCalc()))")
     @Mapping(target = "participateAssessmentCalc", expression = "java(integerToBoolean(bean.getParticipateAssessmentCalc()))")
     @Mapping(target = "participateRanking", expression = "java(integerToBoolean(bean.getParticipateRanking()))")
+    @Mapping(target = "showScore", expression = "java(integerToBoolean(bean.getShowScore()))")
     QuestionnaireDimensionRespVO convert(QuestionnaireDimensionDO bean);
 
     List<QuestionnaireDimensionRespVO> convertList(List<QuestionnaireDimensionDO> list);

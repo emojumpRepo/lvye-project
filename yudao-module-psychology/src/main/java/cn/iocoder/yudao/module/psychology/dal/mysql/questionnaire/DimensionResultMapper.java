@@ -84,7 +84,8 @@ public interface DimensionResultMapper extends BaseMapperX<DimensionResultDO> {
             "  qd.sort_order AS sortOrder, " +
             "  qd.participate_module_calc AS participateModuleCalc, " +
             "  qd.participate_assessment_calc AS participateAssessmentCalc, " +
-            "  qd.participate_ranking AS participateRanking " +
+            "  qd.participate_ranking AS participateRanking, " +
+            "  qd.show_score AS showScore " +
             "FROM lvye_questionnaire_result qr " +
             "INNER JOIN lvye_questionnaire q ON qr.questionnaire_id = q.id AND q.deleted = 0 " +
             "LEFT JOIN lvye_questionnaire_dimension qd ON q.id = qd.questionnaire_id AND qd.deleted = 0 " +

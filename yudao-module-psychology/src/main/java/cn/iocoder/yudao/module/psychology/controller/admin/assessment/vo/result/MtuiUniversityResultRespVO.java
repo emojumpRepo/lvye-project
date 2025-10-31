@@ -149,5 +149,8 @@ public class MtuiUniversityResultRespVO {
 
         @Schema(description = "是否参与心理问题排行", example = "1")
         private Integer participateRanking;
+
+        @Schema(description = "是否展示得分", example = "1")
+        private Integer showScore;
     }
 }

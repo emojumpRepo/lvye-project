@@ -63,6 +63,11 @@ public class QuestionnaireDimensionDO extends BaseDO {
     private Integer participateRanking;
 
     /**
+     * 是否展示得分（0：否，1：是）
+     */
+    private Integer showScore;
+
+    /**
      * 排序
      */
     private Integer sortOrder;

@@ -137,4 +137,9 @@ public class MtuiDimensionResultQueryDTO {
      * 是否参与心理问题排行
      */
     private Integer participateRanking;
+
+    /**
+     * 是否展示得分
+     */
+    private Integer showScore;
 }

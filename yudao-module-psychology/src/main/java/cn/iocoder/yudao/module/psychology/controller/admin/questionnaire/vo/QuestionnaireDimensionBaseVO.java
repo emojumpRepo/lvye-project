@@ -45,6 +45,10 @@ public class QuestionnaireDimensionBaseVO {
     @NotNull(message = "是否参与心理问题排行不能为空")
     private Boolean participateRanking;
 
+    @Schema(description = "是否展示得分", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "是否展示得分不能为空")
+    private Boolean showScore;
+
     @Schema(description = "排序", example = "1")
     @Min(value = 0, message = "排序最小值为0")
     @Max(value = 999, message = "排序最大值为999")
