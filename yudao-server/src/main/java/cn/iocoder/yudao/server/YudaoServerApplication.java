@@ -5,6 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.io.IOException;
+import java.util.TimeZone;
 
 /**
  * 项目的启动类
@@ -20,6 +21,9 @@ import java.io.IOException;
 public class YudaoServerApplication {
 
     public static void main(String[] args) {
+        // 设置 JVM 默认时区为中国标准时间，确保无论服务器部署在哪个地区都使用统一时区
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Shanghai"));
+
         // 如果你碰到启动的问题，请认真阅读 https://doc.iocoder.cn/quick-start/ 文章
         // 如果你碰到启动的问题，请认真阅读 https://doc.iocoder.cn/quick-start/ 文章
         // 如果你碰到启动的问题，请认真阅读 https://doc.iocoder.cn/quick-start/ 文章
