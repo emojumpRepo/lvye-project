@@ -7,18 +7,20 @@
 #   - yudao-framework*: 框架扩展
 #
 # 分支策略：
-#   - main: 生产环境构建和部署
 #   - develop-web: 测试环境构建和部署
 #
-# 部署方式：1Panel Java 运行环境
-# 文档：https://docs.cnb.cool
+# 参考: https://cnb.cool/examples/ecosystem/springboot-maven-ssh
+# 缓存优化文档: https://docs.cnb.cool/zh/build/pipeline-cache.html
 
-# ==================== 测试环境 - 后端服务 (1Panel 部署) ====================
+# ==================== 测试环境 - 后端服务 (SSH 部署) ====================
 develop-web:
   push:
-    - docker:
-        image: maven:3.9-openjdk-17
-      # 导入环境变量配置文件（用于 1Panel API 调用）
+    - name: 构建 Spring Boot 应用
+      services:
+        - docker
+      env:
+        JAVA_VERSION: 17
+      # 导入环境变量配置文件（用于 SSH 部署）
       imports:
         - https://cnb.cool/mindfront/psychology/deploy-credentials/-/blob/main/mindtrip-psychology-backend-envs.yml
 
@@ -27,36 +29,22 @@ develop-web:
         - path: ~/.m2/repository
 
       stages:
-        # ===== Stage 1: 环境准备和验证 =====
-        - name: 环境准备
+        - name: 设置构建环境
           script: |
-            echo "🔧 Setting up 1Panel build environment..."
-
-            # 验证 Java 环境
-            java -version
-            echo "✅ Java version verified"
-
-            # 验证 Maven 环境
-            mvn -version
-            echo "✅ Maven version verified"
-
-            # 安装必要工具（用于 1Panel API 调用）
             apt-get update -qq
-            apt-get install -y -qq curl jq
+            apt-get install -y -qq openjdk-${JAVA_VERSION}-jdk maven
 
-            # 显示项目信息
-            echo "📋 Project Information:"
-            echo "  Working Directory: $(pwd)"
-            echo "  Java Version: $(java -version 2>&1 | head -1)"
-            echo "  Maven Version: $(mvn -version 2>&1 | head -1)"
-            echo "  1Panel API: $ONEPANEL_URL"
+            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
 
-        # ===== Stage 2: Maven 构建 =====
-        - name: 构建 Spring Boot 应用
+            java -version
+            mvn -version
+
+        - name: Maven 构建
           script: |
-            echo "🏗️ Building Spring Boot application for 1Panel deployment..."
-
-            # 清理并构建项目（并行构建 + 批处理模式 + 禁用传输进度）
+            export JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
+            # 从根目录构建整个项目（并行构建 + 批处理模式 + 禁用传输进度）
             mvn clean install \
               -Dmaven.test.skip=true \
               -Dmaven.compile.fork=true \
@@ -64,178 +52,100 @@ develop-web:
               --batch-mode \
               --no-transfer-progress
 
-            echo "✅ Maven build completed"
+        # SSH 部署阶段
+        - name: SSH 部署
+          plugins:
+            - name: ssh
+              config:
+                host: ${DEV_SSH_HOST}
+                user: ${DEV_SSH_USERNAME}
+                port: ${DEV_SSH_PORT:-22}
+                privateKey: ${DEV_SSH_PRIVATE_KEY}
+              script: |
+                echo "🚀 Deploying to remote server..."
+                echo "📦 Project: RuoYi-Vue-Pro Backend"
+                echo "🖥️ Server: ${DEV_SSH_HOST}"
+                echo "⏰ Time: $(date '+%Y-%m-%d %H:%M:%S')"
 
-        # ===== Stage 3: 验证构建产物 =====
-        - name: 验证构建产物
-          script: |
-            echo "🔍 Verifying build artifacts for 1Panel..."
+                # 设置目标路径
+                SERVER_PATH="/root/mindfront/work/project/mindtrip_server"
+                TARGET_JAR="$SERVER_PATH/yudao-server.jar"
 
-            # 查找主要的 JAR 文件
-            JAR_FILE=$(find . -name "yudao-server-*.jar" -type f | head -1)
+                # 查找构建的 JAR 文件
+                JAR_FILE=$(find . -name "yudao-server-*.jar" -type f | head -1)
 
-            if [ -z "$JAR_FILE" ]; then
-              echo "❌ Error: JAR file not found!"
-              echo "Looking for files matching pattern: yudao-server-*.jar"
-              find . -name "*.jar" -type f | head -10
-              exit 1
-            fi
+                if [ -z "$JAR_FILE" ]; then
+                  echo "❌ Error: JAR file not found!"
+                  exit 1
+                fi
 
-            echo "✅ JAR file found: $JAR_FILE"
+                echo "📤 Found JAR file: $(basename "$JAR_FILE")"
 
-            # 验证 JAR 文件
-            if [ -f "$JAR_FILE" ]; then
-              JAR_SIZE=$(stat -c%s "$JAR_FILE")
-              JAR_SIZE_MB=$(echo "scale=2; $JAR_SIZE / 1024 / 1024" | bc)
-              echo "  File size: ${JAR_SIZE_MB} MB"
+                # 备份当前 JAR 文件
+                echo "💾 Backing up current JAR file..."
+                if [ -f "$TARGET_JAR" ]; then
+                  cp "$TARGET_JAR" "$TARGET_JAR.backup.$(date +%Y%m%d_%H%M%S)"
+                  echo "✅ Backup created"
+                else
+                  echo "ℹ️ No existing JAR file to backup"
+                fi
 
-              # 检查 JAR 文件结构
-              if jar tf "$JAR_FILE" | grep -q "BOOT-INF"; then
-                echo "  ✓ Valid Spring Boot JAR structure"
-              else
-                echo "  ⚠️ Warning: Unexpected JAR structure"
-              fi
+                # 上传新的 JAR 文件
+                echo "📤 Uploading new JAR file..."
+                cp "$JAR_FILE" "$TARGET_JAR"
 
-              # 生成文件信息（用于 1Panel 上传）
-              JAR_NAME=$(basename "$JAR_FILE")
-              JAR_CHECKSUM=$(sha256sum "$JAR_FILE" | cut -d' ' -f1)
-              echo "  File name: $JAR_NAME"
-              echo "  SHA256: $JAR_CHECKSUM"
-            else
-              echo "❌ JAR file validation failed!"
-              exit 1
-            fi
+                # 验证上传
+                echo "🔍 Verifying uploaded file..."
+                ls -lh "$TARGET_JAR"
 
-        # ===== Stage 4: 上传 JAR 文件到服务器 =====
-        - name: 上传 JAR 文件到服务器
-          script: |
-            echo "📤 Uploading JAR file to server..."
+                # 重启 Docker 容器
+                echo "🔄 Restarting Docker container..."
+                docker restart mindtrip
 
-            # 查找 JAR 文件
-            JAR_FILE=$(find . -name "yudao-server-*.jar" -type f | head -1)
-            JAR_NAME=$(basename "$JAR_FILE")
+                # 等待容器启动
+                echo "⏳ Waiting for container to start..."
+                sleep 15
 
-            echo "📦 Uploading file: $JAR_NAME"
+                # 检查容器状态
+                echo "🔍 Checking container status..."
+                docker ps --filter "name=mindtrip" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-            # 安装部署工具
-            apt-get update -qq
-            apt-get install -y -qq openssh-client rsync
+                # 清理旧备份（保留最近 5 个）
+                echo "🧹 Cleaning up old backups..."
+                cd "$SERVER_PATH" && ls -t yudao-server.jar.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f
 
-            # 配置 SSH 连接
-            mkdir -p ~/.ssh
-            chmod 700 ~/.ssh
-            echo "$DEV_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-            chmod 600 ~/.ssh/id_ed25519
-            SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_ed25519"
-
-            # 目标路径（容器挂载的目录）
-            SERVER_PATH="/root/mindfront/work/project/mindtrip_server"
-            TARGET_JAR="$SERVER_PATH/yudao-server.jar"
-
-            # 备份当前 JAR 文件
-            echo "💾 Backing up current JAR file..."
-            ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "if [ -f '$TARGET_JAR' ]; then cp '$TARGET_JAR' '$TARGET_JAR.backup.$(date +%Y%m%d_%H%M%S)'; echo 'Backup created'; else echo 'No existing JAR file to backup'; fi"
-
-            # 直接上传新的 JAR 文件
-            echo "📤 Uploading new JAR file to: $TARGET_JAR"
-            rsync -avz --progress \
-              -e "ssh $SSH_OPTS" \
-              "$JAR_FILE" \
-              $DEV_SSH_USERNAME@$DEV_SSH_HOST:"$TARGET_JAR"
-
-            # 验证文件上传
-            echo "🔍 Verifying uploaded file..."
-            FILE_INFO=$(ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "ls -lh '$TARGET_JAR' 2>/dev/null || echo 'File not found'")
-            echo "  File info: $FILE_INFO"
-
-            echo "✅ JAR file uploaded and replaced successfully"
-
-        # ===== Stage 5: 重启 Docker 容器 =====
-        - name: 重启 Docker 容器
-          script: |
-            echo "🔄 Restarting Docker container..."
-
-            # 通过 SSH 执行 Docker 重启命令
-            echo "📋 Restarting mindtrip container..."
-            RESTART_RESULT=$(ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "docker restart mindtrip" 2>&1)
-
-            if echo "$RESTART_RESULT" | grep -q "mindtrip"; then
-              echo "  ✓ Container restart command executed"
-              echo "  Result: $RESTART_RESULT"
-            else
-              echo "  ❌ Container restart failed"
-              echo "  Error: $RESTART_RESULT"
-              exit 1
-            fi
-
-            # 等待容器启动
-            echo "⏳ Waiting for container to start..."
-            sleep 15
-
-            # 检查容器状态
-            echo "🔍 Checking container status..."
-            CONTAINER_STATUS=$(ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "docker ps --filter 'name=mindtrip' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'" 2>/dev/null)
-
-            if echo "$CONTAINER_STATUS" | grep -q "mindtrip.*Up"; then
-              echo "  ✅ Container is running successfully"
-              echo "  Container info:"
-              echo "$CONTAINER_STATUS"
-            else
-              echo "  ⚠️ Container status check failed"
-              echo "  Current status:"
-              ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "docker ps -a | grep mindtrip" 2>/dev/null || echo "Container not found"
-              echo ""
-              echo "🔍 Manual verification:"
-              echo "   SSH to server and run: docker ps | grep mindtrip"
-              echo "   Check logs: docker logs mindtrip"
-            fi
-
-        # ===== Stage 6: 清理备份文件 =====
-        - name: 清理备份文件
-          script: |
-            echo "🧹 Cleaning up backup files..."
-
-            # 清理服务器上的旧备份文件（保留最近 5 个）
-            echo "🗑️ Cleaning up old JAR backup files..."
-            ssh $SSH_OPTS $DEV_SSH_USERNAME@$DEV_SSH_HOST "cd /root/mindfront/work/project/mindtrip_server && ls -t yudao-server.jar.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f && echo 'Old backups cleaned up' || echo 'No old backups to clean'"
-
-            echo "✅ Cleanup completed"
-
-        # ===== Stage 7: 部署总结 =====
-        - name: 部署总结
-          script: |
-            echo ""
-            echo "=========================================="
-            echo "🎉 测试环境后端服务部署完成"
-            echo "=========================================="
-            echo "📦 项目: RuoYi-Vue-Pro Backend"
-            echo "🌍 环境: 测试环境 (Development)"
-            echo "🖥️ 服务器: $DEV_SSH_HOST"
-            echo "🐳 容器: mindtrip"
-            echo "⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')"
-            echo "=========================================="
-            echo ""
-            echo "📋 部署方式："
-            echo "  1. 构建 JAR 文件"
-            echo "  2. 备份当前 JAR 文件"
-            echo "  3. 直接替换 /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
-            echo "  4. 重启 Docker 容器: docker restart mindtrip"
-            echo ""
-            echo "🔧 应用信息："
-            echo "  应用类型: Spring Boot Java 应用"
-            echo "  容器名称: mindtrip"
-            echo "  镜像: bitnamilegacy/java:17"
-            echo "  端口: 48080"
-            echo "  挂载目录: /root/mindfront/work/project/mindtrip_server -> /app"
-            echo "  配置文件: application-dev.yaml"
-            echo ""
-            echo "📋 管理命令："
-            echo "  查看状态: docker ps | grep mindtrip"
-            echo "  查看日志: docker logs mindtrip"
-            echo "  重启服务: docker restart mindtrip"
-            echo "  查看 JAR 文件: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
-            echo "  查看备份: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar.backup.*"
-            echo "=========================================="
+                echo ""
+                echo "=========================================="
+                echo "🎉 测试环境后端服务部署完成"
+                echo "=========================================="
+                echo "📦 项目: RuoYi-Vue-Pro Backend"
+                echo "🖥️ 服务器: ${DEV_SSH_HOST}"
+                echo "🐳 容器: mindtrip"
+                echo "📂 路径: $TARGET_JAR"
+                echo "⏰ 时间: $(date '+%Y-%m-%d %H:%M:%S')"
+                echo "=========================================="
+                echo ""
+                echo "📋 部署方式："
+                echo "  1. 构建 JAR 文件"
+                echo "  2. 备份当前 JAR 文件"
+                echo "  3. 直接替换 /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
+                echo "  4. 重启 Docker 容器: docker restart mindtrip"
+                echo ""
+                echo "🔧 应用信息："
+                echo "  应用类型: Spring Boot Java 应用"
+                echo "  容器名称: mindtrip"
+                echo "  镜像: bitnamilegacy/java:17"
+                echo "  端口: 48080"
+                echo "  挂载目录: /root/mindfront/work/project/mindtrip_server -> /app"
+                echo "  配置文件: application-dev.yaml"
+                echo ""
+                echo "📋 管理命令："
+                echo "  查看状态: docker ps | grep mindtrip"
+                echo "  查看日志: docker logs mindtrip"
+                echo "  重启服务: docker restart mindtrip"
+                echo "  查看 JAR 文件: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
+                echo "  查看备份: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar.backup.*"
+                echo "=========================================="
 
 # ==================== 生产环境说明 ====================
 # 注意：生产环境部署在独立服务器上，不使用此 CI/CD 配置
