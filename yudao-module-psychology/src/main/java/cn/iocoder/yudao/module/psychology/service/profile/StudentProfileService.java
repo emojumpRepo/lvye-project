@@ -164,4 +164,12 @@ public interface StudentProfileService {
      */
     List<StudentProfileSimpleVO> searchSimpleStudentProfilesByStudentNoAndName(String studentNo, String name);
 
+    /**
+     * 根据监护人手机号获取学生档案
+     *
+     * @param mobile 监护人手机号
+     * @return 学生档案
+     */
+    StudentProfileDO getStudentProfileByMobile(String mobile);
+
 }

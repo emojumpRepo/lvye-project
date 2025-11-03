@@ -81,6 +81,10 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
         return selectList(StudentProfileDO::getGraduationStatus, 1);
     }
 
+    default StudentProfileDO selectByMobile(String mobile) {
+        return selectOne(StudentProfileDO::getGuardianMobile, mobile);
+    }
+
 }
 
 

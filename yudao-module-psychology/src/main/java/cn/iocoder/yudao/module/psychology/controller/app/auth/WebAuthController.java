@@ -7,6 +7,8 @@ import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthLoginReqVO;
 import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthLoginRespVO;
+import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthSmsLoginReqVO;
+import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthSmsSendReqVO;
 import cn.iocoder.yudao.module.psychology.service.auth.WebAuthService;
 import cn.iocoder.yudao.module.system.controller.admin.auth.vo.AuthLoginRespVO;
 import cn.iocoder.yudao.module.system.enums.logger.LoginLogTypeEnum;
@@ -41,6 +43,21 @@ public class WebAuthController {
     @PermitAll
     public CommonResult<WebAuthLoginRespVO> login(@RequestBody @Valid WebAuthLoginReqVO reqVO) {
         return success(webAuthService.login(reqVO));
+    }
+
+    @PostMapping("/sms-login")
+    @Operation(summary = "学生/家长手机验证码登录")
+    @PermitAll
+    public CommonResult<WebAuthLoginRespVO> smsLogin(@RequestBody @Valid WebAuthSmsLoginReqVO reqVO) {
+        return success(webAuthService.smsLogin(reqVO));
+    }
+
+    @PostMapping("/send-sms-code")
+    @Operation(summary = "发送手机验证码")
+    @PermitAll
+    public CommonResult<Boolean> sendSmsCode(@RequestBody @Valid WebAuthSmsSendReqVO reqVO) {
+        webAuthService.sendSmsCode(reqVO);
+        return success(true);
     }
 
     @PostMapping("/logout")

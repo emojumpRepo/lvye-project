@@ -474,13 +474,21 @@ public class StudentProfileServiceImpl implements StudentProfileService {
     public List<StudentProfileSimpleVO> searchSimpleStudentProfilesByStudentNoAndName(String studentNo, String name) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         DeptDataPermissionRespDTO dataPerm = permissionApi.getDeptDataPermission(userId);
-        
+
         // 计算可见部门ID集合
         java.util.Collection<Long> deptIds = (dataPerm != null && dataPerm.getDeptIds() != null)
                 ? dataPerm.getDeptIds() : java.util.Collections.emptyList();
         Long selfUserId = (dataPerm != null && Boolean.TRUE.equals(dataPerm.getSelf())) ? userId : null;
-        
+
         return studentProfileMapper.searchSimpleByStudentNoAndName(studentNo, name, deptIds, selfUserId);
+    }
+
+    @Override
+    public StudentProfileDO getStudentProfileByMobile(String mobile) {
+        if (mobile == null || mobile.trim().isEmpty()) {
+            return null;
+        }
+        return studentProfileMapper.selectByMobile(mobile.trim());
     }
 
     /**
