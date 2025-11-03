@@ -134,4 +134,11 @@ public interface ErrorCodeConstants {
     ErrorCode QUESTIONNAIRE_DIMENSION_CODE_DUPLICATE = new ErrorCode(1_003_017_001, "维度编码在同一问卷内重复");
     ErrorCode QUESTIONNAIRE_DIMENSION_OPERATION_TYPE_INVALID = new ErrorCode(1_003_017_002, "维度操作类型无效");
     ErrorCode QUESTIONNAIRE_DIMENSION_IN_USE = new ErrorCode(1_003_017_003, "维度正在被使用，无法删除");
+
+    // ========== 干预计划模板相关 1-003-018-000 ==========
+    ErrorCode INTERVENTION_TEMPLATE_NOT_EXISTS = new ErrorCode(1_003_018_000, "干预计划模板不存在");
+
+    // ========== 干预计划相关 1-003-019-000 ==========
+    ErrorCode INTERVENTION_EVENT_NOT_EXISTS = new ErrorCode(1_003_019_000, "干预事件不存在");
+    ErrorCode INTERVENTION_PLAN_CREATE_FAIL = new ErrorCode(1_003_019_001, "干预计划创建失败");
 }

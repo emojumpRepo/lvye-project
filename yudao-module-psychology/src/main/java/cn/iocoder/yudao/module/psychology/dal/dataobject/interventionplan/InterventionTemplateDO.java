@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.psychology.dal.dataobject.intervention;
+package cn.iocoder.yudao.module.psychology.dal.dataobject.interventionplan;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -6,18 +6,18 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 /**
- * 干预模板步骤 DO
+ * 干预模板 DO
  *
  * @author 芋道源码
  */
-@TableName(value = "lvye_intervention_template_step", autoResultMap = true)
+@TableName(value = "lvye_intervention_template", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InterventionTemplateStepDO extends TenantBaseDO {
+public class InterventionTemplateDO extends TenantBaseDO {
 
     /**
      * 主键
@@ -26,18 +26,13 @@ public class InterventionTemplateStepDO extends TenantBaseDO {
     private Long id;
 
     /**
-     * 模板ID
-     */
-    private Long templateId;
-
-    /**
-     * 排序
-     */
-    private Integer sort;
-
-    /**
-     * 步骤标题
+     * 模板标题
      */
     private String title;
+
+    /**
+     * 是否是官方模板
+     */
+    private Boolean isOfficial;
 
 }

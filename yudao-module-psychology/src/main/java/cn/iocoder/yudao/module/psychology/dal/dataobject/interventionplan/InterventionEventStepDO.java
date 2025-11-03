@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.psychology.dal.dataobject.intervention;
+package cn.iocoder.yudao.module.psychology.dal.dataobject.interventionplan;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -10,18 +10,18 @@ import lombok.*;
 import java.util.List;
 
 /**
- * 危机干预事件 DO
+ * 干预事件步骤 DO
  *
  * @author 芋道源码
  */
-@TableName(value = "lvye_intervention_event", autoResultMap = true)
+@TableName(value = "lvye_intervention_event_step", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InterventionEventDO extends TenantBaseDO {
+public class InterventionEventStepDO extends TenantBaseDO {
 
     /**
      * 主键
@@ -30,29 +30,39 @@ public class InterventionEventDO extends TenantBaseDO {
     private Long id;
 
     /**
-     * 危机干预编号
+     * 干预ID
      */
-    private String interventionId;
-
-    /**
-     * 学生档案ID
-     */
-    private Long studentProfileId;
-
-    /**
-     * 干预事件标题
-     */
-    private String title;
-
-    /**
-     * 关联事件ID列表
-     */
-    @TableField(typeHandler = JacksonTypeHandler.class)
-    private List<Long> relativeEventIds;
+    private Long interventionId;
 
     /**
      * 干预模板ID
      */
     private Long templateId;
+
+    /**
+     * 步骤标题
+     */
+    private String title;
+
+    /**
+     * 排序
+     */
+    private Integer sort;
+
+    /**
+     * 步骤状态
+     */
+    private Integer status;
+
+    /**
+     * 教师笔记
+     */
+    private String notes;
+
+    /**
+     * 附件ID列表
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<Long> attachmentIds;
 
 }

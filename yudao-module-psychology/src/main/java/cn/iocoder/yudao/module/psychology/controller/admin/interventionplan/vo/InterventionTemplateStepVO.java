@@ -14,6 +14,9 @@ import lombok.Data;
 @Data
 public class InterventionTemplateStepVO {
 
+    @Schema(description = "步骤ID", example = "1")
+    private Long id;
+
     @Schema(description = "排序", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "步骤排序不能为空")
     private Integer sort;

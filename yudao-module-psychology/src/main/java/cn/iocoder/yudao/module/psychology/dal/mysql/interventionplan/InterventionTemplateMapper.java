@@ -1,7 +1,7 @@
-package cn.iocoder.yudao.module.psychology.dal.mysql.intervention;
+package cn.iocoder.yudao.module.psychology.dal.mysql.interventionplan;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.intervention.InterventionTemplateDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.interventionplan.InterventionTemplateDO;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

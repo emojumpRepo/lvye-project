@@ -1,7 +1,7 @@
-package cn.iocoder.yudao.module.psychology.dal.mysql.intervention;
+package cn.iocoder.yudao.module.psychology.dal.mysql.interventionplan;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
-import cn.iocoder.yudao.module.psychology.dal.dataobject.intervention.InterventionTemplateStepDO;
+import cn.iocoder.yudao.module.psychology.dal.dataobject.interventionplan.InterventionTemplateStepDO;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -22,6 +22,15 @@ public interface InterventionTemplateStepMapper extends BaseMapperX<Intervention
      */
     default List<InterventionTemplateStepDO> selectListByTemplateId(Long templateId) {
         return selectList(InterventionTemplateStepDO::getTemplateId, templateId);
+    }
+
+    /**
+     * 根据模板ID删除所有步骤
+     *
+     * @param templateId 模板ID
+     */
+    default void deleteByTemplateId(Long templateId) {
+        delete(InterventionTemplateStepDO::getTemplateId, templateId);
     }
 
 }
