@@ -24,6 +24,9 @@ public class InterventionEventStepCreateReqVO {
     @Schema(description = "排序值", example = "1")
     private Integer sort;
 
+    @Schema(description = "步骤状态", example = "1")
+    private Integer status;
+
     @Schema(description = "教师笔记", example = "初步沟通情况记录")
     @Size(max = 2000, message = "教师笔记长度不能超过2000个字符")
     private String notes;

@@ -506,7 +506,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
         step.setTemplateId(event.getTemplateId()); // 继承干预事件的模板ID
         step.setTitle(createReqVO.getTitle());
         step.setSort(sort);
-        step.setStatus(1); // 默认状态：待处理
+        step.setStatus(createReqVO.getStatus() != null ? createReqVO.getStatus() : 1); // 使用传入的status，如未传入则默认为1（待处理）
         step.setNotes(createReqVO.getNotes());
         step.setAttachmentIds(createReqVO.getAttachmentIds());
 
