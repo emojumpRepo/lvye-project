@@ -1,0 +1,47 @@
+---
+globs: **/*.vue
+alwaysApply: false
+---
+# Vue.js Rules
+
+## Project conventions
+- Use `<script setup lang="ts">` for new components.
+- Use single-file components with PascalCase filenames, e.g. `UserCard.vue`.
+- Keep components focused; prefer presentational components + composables for logic.
+
+## State and reactivity
+- Prefer `ref` for primitives and `reactive` for objects; avoid deep mutation without `toRefs`.
+- Always type `props` and `emits`; export emits as a union of event names.
+- Use `defineModel` for v-model in Vue 3.4+; otherwise implement `modelValue`/`update:modelValue`.
+
+## Templates
+- Use explicit keys on `v-for` with stable ids; avoid array index keys.
+- Avoid complex expressions in templates; move logic to computed or methods.
+- Conditional blocks: prefer `v-if`/`v-else-if`/`v-else` over chaining multiple `v-if`s.
+
+## Composition API
+- Extract non-UI logic into `useXxx` composables under `src/composables/` with explicit return types.
+- Name composable state clearly (e.g., `isLoading`, `hasError`, `items`).
+- Watchers: prefer `watchEffect` for simple reactive effects; use `watch` with `{ immediate: true }` only when needed.
+
+## Routing
+- Define routes in a central module with lazy-loaded components via dynamic import.
+- Use named routes; avoid hard-coded path strings in code.
+
+## Error handling
+- Surface network errors via a global toast/snackbar, not console only.
+- Fail closed in guards: if user state is unknown, redirect to login.
+
+## Testing
+- Unit test components’ logic via composables when possible.
+- Use shallow mount for components with heavy child trees unless integration is required.
+
+## Performance
+- Use `defineOptions({ name: 'ComponentName' })` to aid devtools.
+- Memoize expensive computed values; avoid recreating objects/arrays in templates.
+- Use `v-memo`/`v-once` for static heavy subtrees where appropriate.
+
+## Accessibility
+- Ensure all interactive elements are keyboard reachable; use semantic HTML.
+- Provide `aria-*` attributes for custom components mirroring native controls.
+
