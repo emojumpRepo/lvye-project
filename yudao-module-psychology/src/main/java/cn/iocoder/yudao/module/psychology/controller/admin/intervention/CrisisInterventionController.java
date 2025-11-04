@@ -253,6 +253,15 @@ public class CrisisInterventionController {
         return success(interventionService.getStudentAssessments(studentProfileId));
     }
 
+    @GetMapping("/events/closed/group-by-source-type")
+    @Operation(summary = "按来源类型分组获取学生已结案的危机事件")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true)
+    @PreAuthorize("@ss.hasPermission('psychology:intervention:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<CrisisEventSourceTypeGroupVO>> getClosedEventsBySourceType(@RequestParam("studentProfileId") Long studentProfileId) {
+        return success(interventionService.getClosedEventsBySourceType(studentProfileId));
+    }
+
     // ========== 系统设置 ==========
 
     @GetMapping("/admin/get-assignment-settings")

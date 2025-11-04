@@ -232,4 +232,12 @@ public interface CrisisInterventionService {
      * @return 事件分页
      */
     PageResult<CrisisEventRespVO> getOngoingCrisisEventPage(cn.iocoder.yudao.framework.common.pojo.PageParam pageParam);
+
+    /**
+     * 按来源类型分组获取学生已结案的危机事件（status = 5）
+     *
+     * @param studentProfileId 学生档案ID
+     * @return 按来源类型分组的危机事件列表
+     */
+    List<CrisisEventSourceTypeGroupVO> getClosedEventsBySourceType(Long studentProfileId);
 }

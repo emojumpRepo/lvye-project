@@ -27,8 +27,11 @@ public class InterventionPlanRespVO {
     @Schema(description = "干预事件标题", requiredMode = Schema.RequiredMode.REQUIRED, example = "学生心理干预计划")
     private String title;
 
-    @Schema(description = "关联事件ID列表", example = "[1, 2, 3]")
+    @Schema(description = "关联事件ID列表（用于存储）", example = "[1, 2, 3]")
     private List<Long> relativeEventIds;
+
+    @Schema(description = "关联危机事件列表（包含ID和事件编号）")
+    private List<RelativeCrisisEventVO> relativeEvents;
 
     @Schema(description = "干预模板ID", example = "1")
     private Long templateId;

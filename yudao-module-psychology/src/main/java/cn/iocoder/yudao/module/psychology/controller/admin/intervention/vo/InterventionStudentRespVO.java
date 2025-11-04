@@ -12,6 +12,9 @@ public class InterventionStudentRespVO {
     @Schema(description = "学生档案ID", example = "1")
     private Long studentProfileId;
 
+    @Schema(description = "干预计划ID", example = "1")
+    private Long interventionPlanId;
+
     @Schema(description = "学生姓名", example = "张三")
     private String studentName;
 

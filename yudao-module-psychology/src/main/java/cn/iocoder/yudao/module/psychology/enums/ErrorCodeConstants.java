@@ -141,4 +141,7 @@ public interface ErrorCodeConstants {
     // ========== 干预计划相关 1-003-019-000 ==========
     ErrorCode INTERVENTION_EVENT_NOT_EXISTS = new ErrorCode(1_003_019_000, "干预事件不存在");
     ErrorCode INTERVENTION_PLAN_CREATE_FAIL = new ErrorCode(1_003_019_001, "干预计划创建失败");
+    ErrorCode INTERVENTION_EVENT_STEP_NOT_EXISTS = new ErrorCode(1_003_019_002, "干预事件步骤不存在");
+    ErrorCode INTERVENTION_EVENT_STEPS_NOT_COMPLETED = new ErrorCode(1_003_019_003, "干预事件步骤未全部完成");
+    ErrorCode INTERVENTION_EVENT_ALREADY_COMPLETED = new ErrorCode(1_003_019_004, "干预事件已完成");
 }

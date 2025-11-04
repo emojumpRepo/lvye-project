@@ -26,6 +26,7 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisIntervent
 import cn.iocoder.yudao.module.psychology.dal.mysql.intervention.InterventionLevelHistoryMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentInterventionMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.profile.StudentProfileMapper;
+import cn.iocoder.yudao.module.psychology.enums.CrisisSourceTypeEnum;
 import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
@@ -188,11 +189,25 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
 
     private Integer getCountByRiskLevelWithFilter(Integer riskLevel, InterventionDashboardReqVO reqVO) {
         Long count = studentInterventionMapper.countByRiskLevelWithFilter(
-            riskLevel, 
-            reqVO.getClassId(), 
-            reqVO.getGradeId(), 
+            riskLevel,
+            reqVO.getClassId(),
+            reqVO.getGradeId(),
             reqVO.getCounselorUserId()
         );
+        return count != null ? count.intValue() : 0;
+    }
+
+    /**
+     * 按干预事件状态统计学生数量
+     */
+    private Integer getCountByInterventionEventStatus(Integer status, InterventionDashboardReqVO reqVO) {
+        InterventionDashboardReqVO countReqVO = new InterventionDashboardReqVO();
+        countReqVO.setInterventionEventStatus(status);
+        countReqVO.setClassId(reqVO.getClassId());
+        countReqVO.setGradeId(reqVO.getGradeId());
+        countReqVO.setCounselorUserId(reqVO.getCounselorUserId());
+
+        Long count = studentInterventionMapper.countInterventionStudent(countReqVO);
         return count != null ? count.intValue() : 0;
     }
 
@@ -366,45 +381,42 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         
         // 获取各等级统计数据
         List<InterventionDashboardLevelVO> levels = new ArrayList<>();
-        
-        // 字典类型：crisis_level (1:待评, 2:持续观察, 3:一般, 4:严重, 5:重大)
+
+        // 字典类型：crisis_level (1:危机干预中, 2:危机干预结案, 3:一般, 4:严重, 5:重大)
         // 获取各等级学生数量
-        Integer pendingCount = getCountByRiskLevelWithFilter(1, reqVO);
-        Integer observationCount = getCountByRiskLevelWithFilter(2, reqVO);
+        Integer pendingCount = getCountByInterventionEventStatus(1, reqVO);  // 危机干预中：interventionEventStatus=1
+        Integer observationCount = getCountByInterventionEventStatus(2, reqVO);  // 危机干预结案：interventionEventStatus=2
         Integer generalCount = getCountByRiskLevelWithFilter(3, reqVO);
         Integer severeCount = getCountByRiskLevelWithFilter(4, reqVO);
         Integer majorCount = getCountByRiskLevelWithFilter(5, reqVO);
-        
-        // 计算总数
-        int total = pendingCount + observationCount + generalCount + severeCount + majorCount;
-        
-        // 创建待评等级
+
+        // 创建危机干预中等级（原待评）
         InterventionDashboardLevelVO pending = new InterventionDashboardLevelVO();
         pending.setType("pending");
-        pending.setLabel("待评");
+        pending.setLabel("危机干预中");
         pending.setDictValue(1); // 字典值：1
         pending.setCount(pendingCount);
-        pending.setPercentage(total > 0 ? Math.round(pendingCount * 100.0 / total * 100.0) / 100.0 : 0.0);
         if (pendingCount > 0) {
-            reqVO.setRiskLevel(1);
-            reqVO.setExcludeCrisisStatus(5); // 待评等级查询：排除status=5的危机事件
+            reqVO.setRiskLevel(null);  // 不按 riskLevel 查询
+            reqVO.setInterventionEventStatus(1);  // 查询 status=1 的干预事件
             pending.setStudentPage(getStudentPageByFilter(reqVO));
-            reqVO.setExcludeCrisisStatus(null); // 清空，避免影响后续查询
+            reqVO.setInterventionEventStatus(null); // 清空，避免影响后续查询
         } else {
             pending.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
         }
         levels.add(pending);
         
-        // 创建持续观察等级
+        // 创建危机干预结案等级（原持续观察）
         InterventionDashboardLevelVO observation = new InterventionDashboardLevelVO();
         observation.setType("observation");
-        observation.setLabel("持续观察");
+        observation.setLabel("危机干预结案");
         observation.setDictValue(2); // 字典值：2
         observation.setCount(observationCount);
-        observation.setPercentage(total > 0 ? Math.round(observationCount * 100.0 / total * 100.0) / 100.0 : 0.0);
         if (observationCount > 0) {
-            reqVO.setRiskLevel(2);
+            reqVO.setRiskLevel(null);  // 不按 riskLevel 查询
+            reqVO.setInterventionEventStatus(2);  // 查询 status=2 的干预事件
             observation.setStudentPage(getStudentPageByFilter(reqVO));
+            reqVO.setInterventionEventStatus(null); // 清空，避免影响后续查询
         } else {
             observation.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
         }
@@ -416,7 +428,6 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         general.setLabel("一般");
         general.setDictValue(3); // 字典值：3
         general.setCount(generalCount);
-        general.setPercentage(total > 0 ? Math.round(generalCount * 100.0 / total * 100.0) / 100.0 : 0.0);
         if (generalCount > 0) {
             reqVO.setRiskLevel(3);
             general.setStudentPage(getStudentPageByFilter(reqVO));
@@ -431,7 +442,6 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         severe.setLabel("严重");
         severe.setDictValue(4); // 字典值：4
         severe.setCount(severeCount);
-        severe.setPercentage(total > 0 ? Math.round(severeCount * 100.0 / total * 100.0) / 100.0 : 0.0);
         if (severeCount > 0) {
             reqVO.setRiskLevel(4);
             severe.setStudentPage(getStudentPageByFilter(reqVO));
@@ -446,7 +456,6 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         major.setLabel("重大");
         major.setDictValue(5); // 字典值：5
         major.setCount(majorCount);
-        major.setPercentage(total > 0 ? Math.round(majorCount * 100.0 / total * 100.0) / 100.0 : 0.0);
         if (majorCount > 0) {
             reqVO.setRiskLevel(5);
             major.setStudentPage(getStudentPageByFilter(reqVO));
@@ -1658,6 +1667,45 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         List<CrisisEventRespVO> voList = convertToRespVOList(pageResult.getList());
 
         return new PageResult<>(voList, pageResult.getTotal());
+    }
+
+    @Override
+    public List<CrisisEventSourceTypeGroupVO> getClosedEventsBySourceType(Long studentProfileId) {
+        // 查询学生所有 status = 5（已结案）的危机事件
+        List<CrisisInterventionDO> events = crisisInterventionMapper.selectList(
+            new LambdaQueryWrapperX<CrisisInterventionDO>()
+                .eq(CrisisInterventionDO::getStudentProfileId, studentProfileId)
+                .eq(CrisisInterventionDO::getStatus, 5)
+                .orderByDesc(CrisisInterventionDO::getCreateTime)
+        );
+
+        if (CollUtil.isEmpty(events)) {
+            return new ArrayList<>();
+        }
+
+        // 按 sourceType 分组
+        Map<Integer, List<CrisisInterventionDO>> groupedEvents = events.stream()
+            .collect(Collectors.groupingBy(CrisisInterventionDO::getSourceType));
+
+        // 转换为分组VO列表
+        List<CrisisEventSourceTypeGroupVO> result = new ArrayList<>();
+        for (Map.Entry<Integer, List<CrisisInterventionDO>> entry : groupedEvents.entrySet()) {
+            CrisisEventSourceTypeGroupVO groupVO = new CrisisEventSourceTypeGroupVO();
+            groupVO.setSourceType(entry.getKey());
+            groupVO.setSourceTypeName(getSourceTypeName(entry.getKey()));
+            groupVO.setCount(entry.getValue().size());
+
+            // 转换为CrisisEventRespVO列表（会自动填充学生信息、处理人信息等）
+            List<CrisisEventRespVO> eventVOList = convertToRespVOList(entry.getValue());
+            groupVO.setEvents(eventVOList);
+
+            result.add(groupVO);
+        }
+
+        // 按 sourceType 升序排序
+        result.sort(Comparator.comparing(CrisisEventSourceTypeGroupVO::getSourceType));
+
+        return result;
     }
 
     /**

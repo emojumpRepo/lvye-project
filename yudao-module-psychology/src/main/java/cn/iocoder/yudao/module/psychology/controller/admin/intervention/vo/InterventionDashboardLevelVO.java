@@ -19,10 +19,7 @@ public class InterventionDashboardLevelVO {
     
     @Schema(description = "该等级学生数", example = "10")
     private Integer count;
-    
-    @Schema(description = "占比百分比", example = "25.50")
-    private Double percentage;
-    
+
     @Schema(description = "学生列表分页数据")
     private PageResult<InterventionStudentRespVO> studentPage;
 }

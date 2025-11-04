@@ -1,8 +1,15 @@
 package cn.iocoder.yudao.module.psychology.service.interventionplan;
 
 import cn.hutool.core.util.RandomUtil;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepBatchUpdateSortReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepCreateReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepRespVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepUpdateReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanCreateReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionTemplateRespVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.RelativeCrisisEventVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.consultation.CrisisInterventionDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.interventionplan.InterventionEventDO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.interventionplan.InterventionEventStepDO;
@@ -25,11 +32,17 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERVENTION_EVENT_ALREADY_COMPLETED;
+import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERVENTION_EVENT_NOT_EXISTS;
+import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERVENTION_EVENT_STEP_NOT_EXISTS;
+import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERVENTION_EVENT_STEPS_NOT_COMPLETED;
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERVENTION_TEMPLATE_NOT_EXISTS;
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS;
 
@@ -122,6 +135,8 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
         meta.put("templateId", createReqVO.getTemplateId());
         meta.put("interventionId", event.getInterventionId());
         meta.put("stepCount", templateSteps != null ? templateSteps.size() : 0);
+        meta.put("action", "create");
+        meta.put("description", "创建危机干预计划(" + event.getInterventionId() + ")");
 
         studentTimelineService.saveTimelineWithMeta(
                 createReqVO.getStudentProfileId(),
@@ -185,6 +200,535 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
         String dateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String randomStr = RandomUtil.randomNumbers(6);
         return "IV" + dateStr + randomStr;
+    }
+
+    /**
+     * 获取步骤状态名称
+     *
+     * @param status 状态值
+     * @return 状态名称
+     */
+    private String getStepStatusName(Integer status) {
+        if (status == null) {
+            return "未知";
+        }
+        switch (status) {
+            case 1:
+                return "待处理";
+            case 2:
+                return "进行中";
+            case 3:
+                return "已完成";
+            default:
+                return "未知";
+        }
+    }
+
+    /**
+     * 记录步骤标题变化到时间线
+     */
+    private void recordTitleChange(InterventionEventDO event, InterventionEventStepDO oldStep, String newTitle) {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("stepId", oldStep.getId());
+        meta.put("oldTitle", oldStep.getTitle());
+        meta.put("newTitle", newTitle);
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("action", "update");
+        meta.put("description", "修改步骤「" + oldStep.getTitle() + "」的标题为「" + newTitle + "」");
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "修改干预计划(" + event.getInterventionId() + ")的步骤标题",
+                event.getId().toString(),
+                "步骤标题从「" + oldStep.getTitle() + "」修改为「" + newTitle + "」",
+                meta
+        );
+    }
+
+    /**
+     * 记录步骤状态变化到时间线
+     */
+    private void recordStatusChange(InterventionEventDO event, InterventionEventStepDO oldStep, Integer newStatus) {
+        String oldStatusName = getStepStatusName(oldStep.getStatus());
+        String newStatusName = getStepStatusName(newStatus);
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("stepId", oldStep.getId());
+        meta.put("stepTitle", oldStep.getTitle());
+        meta.put("oldStatus", oldStep.getStatus());
+        meta.put("newStatus", newStatus);
+        meta.put("oldStatusName", oldStatusName);
+        meta.put("newStatusName", newStatusName);
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("action", "update");
+        meta.put("description", "修改步骤「" + oldStep.getTitle() + "」的状态从「" + oldStatusName + "」变更为「" + newStatusName + "」");
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "更新干预计划(" + event.getInterventionId() + ")的步骤状态",
+                event.getId().toString(),
+                "步骤「" + oldStep.getTitle() + "」状态从「" + oldStatusName + "」变更为「" + newStatusName + "」",
+                meta
+        );
+    }
+
+    /**
+     * 记录步骤笔记变化到时间线
+     */
+    private void recordNotesChange(InterventionEventDO event, InterventionEventStepDO oldStep) {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("stepId", oldStep.getId());
+        meta.put("stepTitle", oldStep.getTitle());
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("action", "write");
+        meta.put("description", "更新了步骤「" + oldStep.getTitle() + "」的教师笔记/详情方案");
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "更新干预计划(" + event.getInterventionId() + ")的步骤笔记",
+                event.getId().toString(),
+                "更新了步骤「" + oldStep.getTitle() + "」的教师笔记/详情方案",
+                meta
+        );
+    }
+
+    /**
+     * 记录步骤附件变化到时间线
+     */
+    private void recordAttachmentsChange(InterventionEventDO event, InterventionEventStepDO oldStep, List<Long> newAttachmentIds) {
+        int newCount = newAttachmentIds != null ? newAttachmentIds.size() : 0;
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("stepId", oldStep.getId());
+        meta.put("stepTitle", oldStep.getTitle());
+        meta.put("attachmentCount", newCount);
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("action", "upload");
+        meta.put("description", "更新了步骤「" + oldStep.getTitle() + "」的附件列表(共" + newCount + "个)");
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "更新干预计划(" + event.getInterventionId() + ")的步骤附件",
+                event.getId().toString(),
+                "更新了步骤「" + oldStep.getTitle() + "」的附件列表(共" + newCount + "个)",
+                meta
+        );
+    }
+
+    @Override
+    public InterventionPlanRespVO getInterventionPlan(Long id) {
+        // 1. 查询干预事件
+        InterventionEventDO event = interventionEventMapper.selectById(id);
+        if (event == null) {
+            throw exception(INTERVENTION_EVENT_NOT_EXISTS);
+        }
+
+        // 2. 查询步骤列表
+        List<InterventionEventStepDO> steps = interventionEventStepMapper.selectListByInterventionId(id);
+
+        // 3. 转换为 VO
+        InterventionPlanRespVO respVO = BeanUtils.toBean(event, InterventionPlanRespVO.class);
+
+        // 4. 转换步骤列表并排序
+        List<InterventionEventStepRespVO> stepVOs = steps.stream()
+                .sorted(Comparator.comparing(InterventionEventStepDO::getSort))
+                .map(step -> BeanUtils.toBean(step, InterventionEventStepRespVO.class))
+                .collect(Collectors.toList());
+        respVO.setSteps(stepVOs);
+
+        // 5. 查询关联的危机干预事件详情（包含 id、eventId 和 sourceType）
+        if (event.getRelativeEventIds() != null && !event.getRelativeEventIds().isEmpty()) {
+            List<RelativeCrisisEventVO> relativeEvents = event.getRelativeEventIds().stream()
+                    .map(crisisId -> {
+                        CrisisInterventionDO crisis = crisisInterventionMapper.selectById(crisisId);
+                        if (crisis != null) {
+                            return new RelativeCrisisEventVO(crisis.getId(), crisis.getEventId(), crisis.getSourceType());
+                        }
+                        return null;
+                    })
+                    .filter(vo -> vo != null)
+                    .collect(Collectors.toList());
+            respVO.setRelativeEvents(relativeEvents);
+        }
+
+        return respVO;
+    }
+
+    @Override
+    public void updateEventTitle(Long id, String title) {
+        // 1. 校验干预事件是否存在
+        InterventionEventDO event = interventionEventMapper.selectById(id);
+        if (event == null) {
+            throw exception(INTERVENTION_EVENT_NOT_EXISTS);
+        }
+
+        // 2. 保存旧标题,用于时间线记录
+        String oldTitle = event.getTitle();
+
+        // 3. 更新标题字段
+        InterventionEventDO updateObj = new InterventionEventDO();
+        updateObj.setId(id);
+        updateObj.setTitle(title);
+        interventionEventMapper.updateById(updateObj);
+
+        // 4. 记录时间线
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("eventId", event.getId());
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("oldTitle", oldTitle);
+        meta.put("newTitle", title);
+        meta.put("action", "update");
+        meta.put("description", "更新干预事件标题从「" + oldTitle + "」变更为「" + title + "」");
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "更新危机干预计划(" + event.getInterventionId() + ")的标题",
+                event.getId().toString(),
+                "更新干预事件标题从「" + oldTitle + "」变更为「" + title + "」",
+                meta
+        );
+
+        log.info("[updateEventTitle] 更新干预事件标题成功，eventId: {}, 旧标题: {}, 新标题: {}", id, oldTitle, title);
+    }
+
+    @Override
+    public void removeRelativeEvent(Long id, Long relativeEventId) {
+        // 1. 校验干预事件是否存在
+        InterventionEventDO event = interventionEventMapper.selectById(id);
+        if (event == null) {
+            throw exception(INTERVENTION_EVENT_NOT_EXISTS);
+        }
+
+        // 2. 获取当前的关联事件ID列表
+        List<Long> relativeEventIds = event.getRelativeEventIds();
+        if (relativeEventIds == null || relativeEventIds.isEmpty()) {
+            log.warn("[removeRelativeEvent] 干预事件没有关联事件，eventId: {}", id);
+            return;
+        }
+
+        // 3. 检查要移除的ID是否存在
+        if (!relativeEventIds.contains(relativeEventId)) {
+            log.warn("[removeRelativeEvent] 关联事件ID不存在于列表中，eventId: {}, relativeEventId: {}", id, relativeEventId);
+            return;
+        }
+
+        // 4. 创建新的列表并移除指定的ID（避免不可变列表问题）
+        List<Long> newRelativeEventIds = new ArrayList<>(relativeEventIds);
+        newRelativeEventIds.remove(relativeEventId);
+
+        // 5. 更新数据库
+        InterventionEventDO updateObj = new InterventionEventDO();
+        updateObj.setId(id);
+        updateObj.setRelativeEventIds(newRelativeEventIds);
+        interventionEventMapper.updateById(updateObj);
+
+        // 6. 添加时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("removedEventId", relativeEventId);
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("action", "updateRelativeEvents");
+        meta.put("description", "移除关联事件(ID=" + relativeEventId + ")");
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "从危机干预计划(" + event.getInterventionId() + ")中移除关联事件",
+                event.getId().toString(),
+                "移除关联事件(ID=" + relativeEventId + ")",
+                meta
+        );
+
+        log.info("[removeRelativeEvent] 移除关联事件成功，eventId: {}, relativeEventId: {}", id, relativeEventId);
+    }
+
+    @Override
+    public void updateRelativeEvents(Long id, List<Long> relativeEventIds) {
+        // 1. 校验干预事件是否存在
+        InterventionEventDO event = interventionEventMapper.selectById(id);
+        if (event == null) {
+            throw exception(INTERVENTION_EVENT_NOT_EXISTS);
+        }
+
+        // 2. 更新关联事件ID列表
+        InterventionEventDO updateObj = new InterventionEventDO();
+        updateObj.setId(id);
+        updateObj.setRelativeEventIds(relativeEventIds);
+        interventionEventMapper.updateById(updateObj);
+
+        // 3. 添加时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("relativeEventIds", relativeEventIds);
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("eventCount", relativeEventIds.size());
+        meta.put("action", "updateRelativeEvents");
+        meta.put("description", "更新关联事件列表(共" + relativeEventIds.size() + "个)");
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "更新危机干预计划(" + event.getInterventionId() + ")的关联事件列表",
+                event.getId().toString(),
+                "更新关联事件列表(共" + relativeEventIds.size() + "个)",
+                meta
+        );
+
+        log.info("[updateRelativeEvents] 更新关联事件列表成功，eventId: {}, relativeEventIds: {}", id, relativeEventIds);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createEventStep(InterventionEventStepCreateReqVO createReqVO) {
+        // 1. 校验干预事件是否存在
+        InterventionEventDO event = interventionEventMapper.selectById(createReqVO.getInterventionId());
+        if (event == null) {
+            throw exception(INTERVENTION_EVENT_NOT_EXISTS);
+        }
+
+        // 2. 如果未指定排序值，自动计算为当前最大值+1
+        Integer sort = createReqVO.getSort();
+        if (sort == null) {
+            List<InterventionEventStepDO> existingSteps =
+                interventionEventStepMapper.selectListByInterventionId(createReqVO.getInterventionId());
+            sort = existingSteps.stream()
+                .map(InterventionEventStepDO::getSort)
+                .max(Integer::compareTo)
+                .orElse(0) + 1;
+        }
+
+        // 3. 构建步骤对象
+        InterventionEventStepDO step = new InterventionEventStepDO();
+        step.setInterventionId(createReqVO.getInterventionId());
+        step.setTemplateId(event.getTemplateId()); // 继承干预事件的模板ID
+        step.setTitle(createReqVO.getTitle());
+        step.setSort(sort);
+        step.setStatus(1); // 默认状态：待处理
+        step.setNotes(createReqVO.getNotes());
+        step.setAttachmentIds(createReqVO.getAttachmentIds());
+
+        // 4. 插入数据库
+        interventionEventStepMapper.insert(step);
+
+        // 5. 记录时间线
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("stepId", step.getId());
+        meta.put("stepTitle", createReqVO.getTitle());
+        meta.put("sort", sort);
+        meta.put("action", "addStep");
+        meta.put("description", "新增干预步骤「" + createReqVO.getTitle() + "」");
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "为干预计划(" + event.getInterventionId() + ")新增步骤",
+                event.getId().toString(),
+                "新增干预步骤：" + createReqVO.getTitle(),
+                meta
+        );
+
+        log.info("[createEventStep] 新增干预事件步骤成功，interventionId={}, stepId={}, title={}, sort={}",
+            createReqVO.getInterventionId(), step.getId(), createReqVO.getTitle(), sort);
+
+        return step.getId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateEventStep(InterventionEventStepUpdateReqVO updateReqVO) {
+        // 1. 校验步骤是否存在，并保存旧值
+        InterventionEventStepDO oldStep = interventionEventStepMapper.selectById(updateReqVO.getId());
+        if (oldStep == null) {
+            throw exception(INTERVENTION_EVENT_STEP_NOT_EXISTS);
+        }
+
+        // 2. 查询干预事件信息（用于时间线记录）
+        InterventionEventDO event = interventionEventMapper.selectById(oldStep.getInterventionId());
+        if (event == null) {
+            throw exception(INTERVENTION_EVENT_NOT_EXISTS);
+        }
+
+        // 3. 构建更新对象，只更新非空字段
+        InterventionEventStepDO updateObj = new InterventionEventStepDO();
+        updateObj.setId(updateReqVO.getId());
+
+        boolean hasChanges = false;
+
+        // 4. 检查并记录 title 变化
+        if (updateReqVO.getTitle() != null && !updateReqVO.getTitle().equals(oldStep.getTitle())) {
+            updateObj.setTitle(updateReqVO.getTitle());
+            recordTitleChange(event, oldStep, updateReqVO.getTitle());
+            hasChanges = true;
+        }
+
+        // 5. 检查并记录 status 变化
+        if (updateReqVO.getStatus() != null && !updateReqVO.getStatus().equals(oldStep.getStatus())) {
+            updateObj.setStatus(updateReqVO.getStatus());
+            recordStatusChange(event, oldStep, updateReqVO.getStatus());
+            hasChanges = true;
+        }
+
+        // 6. 检查并记录 notes 变化
+        if (updateReqVO.getNotes() != null && !updateReqVO.getNotes().equals(oldStep.getNotes())) {
+            updateObj.setNotes(updateReqVO.getNotes());
+            recordNotesChange(event, oldStep);
+            hasChanges = true;
+        }
+
+        // 7. 检查并记录 attachmentIds 变化
+        if (updateReqVO.getAttachmentIds() != null && !updateReqVO.getAttachmentIds().equals(oldStep.getAttachmentIds())) {
+            updateObj.setAttachmentIds(updateReqVO.getAttachmentIds());
+            recordAttachmentsChange(event, oldStep, updateReqVO.getAttachmentIds());
+            hasChanges = true;
+        }
+
+        // 8. 如果有字段变化，执行更新
+        if (hasChanges) {
+            interventionEventStepMapper.updateById(updateObj);
+            log.info("[updateEventStep] 更新干预事件步骤成功，stepId: {}, changes: title={}, status={}, notes={}, attachments={}",
+                    updateReqVO.getId(),
+                    updateReqVO.getTitle() != null && !updateReqVO.getTitle().equals(oldStep.getTitle()),
+                    updateReqVO.getStatus() != null && !updateReqVO.getStatus().equals(oldStep.getStatus()),
+                    updateReqVO.getNotes() != null && !updateReqVO.getNotes().equals(oldStep.getNotes()),
+                    updateReqVO.getAttachmentIds() != null && !updateReqVO.getAttachmentIds().equals(oldStep.getAttachmentIds()));
+        } else {
+            log.info("[updateEventStep] 干预事件步骤无变化，stepId: {}", updateReqVO.getId());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdateStepSort(Long interventionId, List<InterventionEventStepBatchUpdateSortReqVO.StepSortItem> stepSortItems) {
+        // 1. 校验干预事件是否存在
+        InterventionEventDO event = interventionEventMapper.selectById(interventionId);
+        if (event == null) {
+            throw exception(INTERVENTION_EVENT_NOT_EXISTS);
+        }
+
+        // 2. 查询该干预事件的所有现有步骤
+        List<InterventionEventStepDO> existingSteps = interventionEventStepMapper.selectListByInterventionId(interventionId);
+
+        // 3. 构建现有步骤的 id -> step 映射，用于后续查找步骤详情
+        Map<Long, InterventionEventStepDO> existingStepMap = existingSteps.stream()
+                .collect(Collectors.toMap(InterventionEventStepDO::getId, step -> step));
+
+        // 4. 找出排序发生变化的步骤，并构建更新列表
+        List<InterventionEventStepDO> updateList = new ArrayList<>();
+        List<Map<String, Object>> changedStepsInfo = new ArrayList<>();
+
+        for (InterventionEventStepBatchUpdateSortReqVO.StepSortItem item : stepSortItems) {
+            InterventionEventStepDO existingStep = existingStepMap.get(item.getId());
+
+            // 如果步骤存在且排序值发生变化
+            if (existingStep != null && !existingStep.getSort().equals(item.getSort())) {
+                // 添加到更新列表
+                InterventionEventStepDO updateObj = new InterventionEventStepDO();
+                updateObj.setId(item.getId());
+                updateObj.setSort(item.getSort());
+                updateList.add(updateObj);
+
+                // 记录变化信息，用于时间线
+                Map<String, Object> changeInfo = new HashMap<>();
+                changeInfo.put("stepId", item.getId());
+                changeInfo.put("stepTitle", existingStep.getTitle());
+                changeInfo.put("oldSort", existingStep.getSort());
+                changeInfo.put("newSort", item.getSort());
+                changedStepsInfo.add(changeInfo);
+            }
+        }
+
+        // 5. 如果没有任何步骤排序发生变化，直接返回
+        if (updateList.isEmpty()) {
+            log.info("[batchUpdateStepSort] 没有步骤排序发生变化，interventionId: {}", interventionId);
+            return;
+        }
+
+        // 6. 批量更新排序
+        interventionEventStepMapper.updateBatch(updateList);
+
+        // 7. 为每个发生变化的步骤添加时间线记录
+        for (Map<String, Object> changeInfo : changedStepsInfo) {
+            String stepTitle = (String) changeInfo.get("stepTitle");
+            Integer oldSort = (Integer) changeInfo.get("oldSort");
+            Integer newSort = (Integer) changeInfo.get("newSort");
+
+            Map<String, Object> meta = new HashMap<>();
+            meta.put("stepId", changeInfo.get("stepId"));
+            meta.put("oldSort", oldSort);
+            meta.put("newSort", newSort);
+            meta.put("interventionId", event.getInterventionId());
+            meta.put("action", "updateSort");
+            meta.put("description", "调整步骤「" + stepTitle + "」的顺序(从第" + oldSort + "位调整为第" + newSort + "位)");
+
+            studentTimelineService.saveTimelineWithMeta(
+                    event.getStudentProfileId(),
+                    TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                    "调整危机干预计划(" + event.getInterventionId() + ")的步骤顺序",
+                    event.getId().toString(),
+                    "调整步骤「" + stepTitle + "」的顺序(从第" + oldSort + "位调整为第" + newSort + "位)",
+                    meta
+            );
+        }
+
+        log.info("[batchUpdateStepSort] 批量更新步骤排序成功，interventionId: {}, 更新步骤数: {}",
+                interventionId, updateList.size());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void completeInterventionEvent(Long id) {
+        // 1. 校验干预事件是否存在
+        InterventionEventDO event = interventionEventMapper.selectById(id);
+        if (event == null) {
+            throw exception(INTERVENTION_EVENT_NOT_EXISTS);
+        }
+
+        // 2. 检查干预事件是否已完成
+        if (event.getStatus() != null && event.getStatus().equals(2)) {
+            throw exception(INTERVENTION_EVENT_ALREADY_COMPLETED);
+        }
+
+        // 3. 查询该干预事件的所有步骤
+        List<InterventionEventStepDO> steps = interventionEventStepMapper.selectListByInterventionId(id);
+
+        // 4. 检查所有步骤是否完成（status=3）
+        boolean allCompleted = steps.stream()
+                .allMatch(step -> step.getStatus() != null && step.getStatus().equals(3));
+
+        if (!allCompleted) {
+            throw exception(INTERVENTION_EVENT_STEPS_NOT_COMPLETED);
+        }
+
+        // 5. 更新干预事件状态为2（已完成）
+        InterventionEventDO updateObj = new InterventionEventDO();
+        updateObj.setId(id);
+        updateObj.setStatus(2);
+        interventionEventMapper.updateById(updateObj);
+
+        // 6. 添加时间线记录
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("interventionId", event.getInterventionId());
+        meta.put("oldStatus", 1);
+        meta.put("newStatus", 2);
+        meta.put("action", "complete");
+        meta.put("description", "干预计划(" + event.getInterventionId() + ")已完成");
+        meta.put("totalSteps", steps.size());
+
+        studentTimelineService.saveTimelineWithMeta(
+                event.getStudentProfileId(),
+                TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
+                "干预计划(" + event.getInterventionId() + ")已完成",
+                event.getId().toString(),
+                "所有干预步骤已完成，干预计划状态更新为已完成",
+                meta
+        );
+
+        log.info("[completeInterventionEvent] 完成干预事件成功，eventId: {}, interventionId: {}, totalSteps: {}",
+                id, event.getInterventionId(), steps.size());
     }
 
 }
