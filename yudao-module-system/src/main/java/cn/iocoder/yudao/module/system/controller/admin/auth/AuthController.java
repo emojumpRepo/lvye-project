@@ -60,6 +60,9 @@ public class AuthController {
     private SocialClientService socialClientService;
 
     @Resource
+    private cn.iocoder.yudao.module.system.service.tenant.TenantService tenantService;
+
+    @Resource
     private SecurityProperties securityProperties;
 
     @PostMapping("/login")
@@ -111,8 +114,17 @@ public class AuthController {
         List<MenuDO> menuList = menuService.getMenuList(menuIds);
         menuList = menuService.filterDisableMenus(menuList);
 
+        // 1.4 获得租户名称
+        String tenantName = null;
+        if (user.getTenantId() != null) {
+            cn.iocoder.yudao.module.system.dal.dataobject.tenant.TenantDO tenant = tenantService.getTenant(user.getTenantId());
+            if (tenant != null) {
+                tenantName = tenant.getName();
+            }
+        }
+
         // 2. 拼接结果返回
-        return success(AuthConvert.INSTANCE.convert(user, roles, menuList));
+        return success(AuthConvert.INSTANCE.convert(user, roles, menuList, null, tenantName));
     }
 
     @PostMapping("/register")

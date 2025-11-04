@@ -31,6 +31,9 @@ public class AuthPermissionInfoRespVO {
     @Schema(description = "是否为家长登录", example = "yudao@iocoder.cn")
     private Integer isParent;
 
+    @Schema(description = "租户名称", example = "芋道科技")
+    private String tenantName;
+
     @Schema(description = "用户信息 VO")
     @Data
     @NoArgsConstructor

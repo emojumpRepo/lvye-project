@@ -166,22 +166,28 @@ public class WebAuthServiceImpl implements WebAuthService {
                 .setScene(cn.iocoder.yudao.module.system.enums.sms.SmsSceneEnum.MEMBER_LOGIN.getScene())
                 .setUsedIp(userIp));
 
-        // 根据手机号查找学生档案
+        // 1. 先根据手机号查找用户账号
         log.info("尝试通过手机号登录，手机号: {}, 当前租户ID: {}", reqVO.getMobile(), TenantContextHolder.getTenantId());
-        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByMobile(reqVO.getMobile());
+        AdminUserDO user = userMapper.selectByMobile(reqVO.getMobile());
+
+        if (user == null) {
+            log.warn("用户账号不存在，手机号: {}, 租户ID: {}", reqVO.getMobile(), TenantContextHolder.getTenantId());
+            throw exception(cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_NOT_EXISTS);
+        }
+
+        log.info("通过手机号找到用户账号: userId={}, username={}", user.getId(), user.getUsername());
+
+        // 2. 再通过用户ID查找学生档案
+        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(user.getId());
 
         if (studentProfile == null) {
-            log.warn("学生档案不存在，手机号: {}, 租户ID: {}", reqVO.getMobile(), TenantContextHolder.getTenantId());
+            log.warn("学生档案不存在，用户ID: {}, 手机号: {}, 租户ID: {}", user.getId(), reqVO.getMobile(), TenantContextHolder.getTenantId());
             throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
         }
 
-        log.info("通过手机号找到学生档案: {}, 学号: {}", studentProfile.getId(), studentProfile.getStudentNo());
+        log.info("通过用户ID找到学生档案: {}, 学号: {}", studentProfile.getId(), studentProfile.getStudentNo());
 
-        // 通过学号获取用户账号并校验用户状态
-        AdminUserDO user = userMapper.selectByUsername(studentProfile.getStudentNo());
-        if (user == null) {
-            throw exception(cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_NOT_EXISTS);
-        }
+        // 3. 校验用户状态
         if (cn.iocoder.yudao.framework.common.enums.CommonStatusEnum.DISABLE.getStatus().equals(user.getStatus())) {
             throw exception(cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_IS_DISABLE, user.getNickname());
         }
