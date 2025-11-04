@@ -55,4 +55,9 @@ public class InterventionEventDO extends TenantBaseDO {
      */
     private Long templateId;
 
+    /**
+     * 状态（1=进行中）
+     */
+    private Integer status;
+
 }

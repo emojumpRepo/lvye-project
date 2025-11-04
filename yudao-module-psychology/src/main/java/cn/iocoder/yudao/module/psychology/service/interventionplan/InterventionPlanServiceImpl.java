@@ -86,6 +86,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
         event.setTitle(createReqVO.getTitle());
         event.setTemplateId(createReqVO.getTemplateId());
         event.setRelativeEventIds(relativeEventIds);
+        event.setStatus(1); // 设置状态为1（进行中）
         interventionEventMapper.insert(event);
 
         log.info("[createInterventionPlan] 创建干预事件成功，eventId: {}, interventionId: {}, studentProfileId: {}",
