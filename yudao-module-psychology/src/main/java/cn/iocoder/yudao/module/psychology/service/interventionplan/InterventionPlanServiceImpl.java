@@ -21,6 +21,8 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.interventionplan.Interventio
 import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
+import cn.iocoder.yudao.module.system.service.user.AdminUserService;
+import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +78,9 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
 
     @Resource
     private StudentProfileService studentProfileService;
+
+    @Resource
+    private AdminUserService adminUserService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -142,7 +147,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 createReqVO.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "创建危机干预计划(" + event.getInterventionId() + ")",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "创建危机干预计划(" + event.getInterventionId() + ")",
                 meta
         );
@@ -240,7 +245,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "修改干预计划(" + event.getInterventionId() + ")的步骤标题",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "步骤标题从「" + oldStep.getTitle() + "」修改为「" + newTitle + "」",
                 meta
         );
@@ -268,7 +273,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "更新干预计划(" + event.getInterventionId() + ")的步骤状态",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "步骤「" + oldStep.getTitle() + "」状态从「" + oldStatusName + "」变更为「" + newStatusName + "」",
                 meta
         );
@@ -289,7 +294,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "更新干预计划(" + event.getInterventionId() + ")的步骤笔记",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "更新了步骤「" + oldStep.getTitle() + "」的教师笔记/详情方案",
                 meta
         );
@@ -313,7 +318,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "更新干预计划(" + event.getInterventionId() + ")的步骤附件",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "更新了步骤「" + oldStep.getTitle() + "」的附件列表(共" + newCount + "个)",
                 meta
         );
@@ -388,7 +393,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "更新危机干预计划(" + event.getInterventionId() + ")的标题",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "更新干预事件标题从「" + oldTitle + "」变更为「" + title + "」",
                 meta
         );
@@ -438,7 +443,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "从危机干预计划(" + event.getInterventionId() + ")中移除关联事件",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "移除关联事件(ID=" + relativeEventId + ")",
                 meta
         );
@@ -472,7 +477,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "更新危机干预计划(" + event.getInterventionId() + ")的关联事件列表",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "更新关联事件列表(共" + relativeEventIds.size() + "个)",
                 meta
         );
@@ -526,7 +531,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "为干预计划(" + event.getInterventionId() + ")新增步骤",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "新增干预步骤：" + createReqVO.getTitle(),
                 meta
         );
@@ -668,7 +673,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                     event.getStudentProfileId(),
                     TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                     "调整危机干预计划(" + event.getInterventionId() + ")的步骤顺序",
-                    event.getId().toString(),
+                    "intervention_plan_" + event.getId(),
                     "调整步骤「" + stepTitle + "」的顺序(从第" + oldSort + "位调整为第" + newSort + "位)",
                     meta
             );
@@ -722,13 +727,80 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "干预计划(" + event.getInterventionId() + ")已完成",
-                event.getId().toString(),
+                "intervention_plan_" + event.getId(),
                 "所有干预步骤已完成，干预计划状态更新为已完成",
                 meta
         );
 
         log.info("[completeInterventionEvent] 完成干预事件成功，eventId: {}, interventionId: {}, totalSteps: {}",
                 id, event.getInterventionId(), steps.size());
+    }
+
+    @Override
+    public List<InterventionPlanRespVO> getInterventionEventsByStudentProfileId(Long studentProfileId) {
+        // 1. 验证学生档案是否存在
+        validateStudentProfile(studentProfileId);
+
+        // 2. 根据学生档案ID查询干预事件列表
+        List<InterventionEventDO> events = interventionEventMapper.selectListByStudentId(studentProfileId);
+
+        // 3. 转换为响应VO
+        List<InterventionPlanRespVO> result = new ArrayList<>();
+        if (events != null && !events.isEmpty()) {
+            for (InterventionEventDO event : events) {
+                InterventionPlanRespVO respVO = BeanUtils.toBean(event, InterventionPlanRespVO.class);
+                
+                // 获取创建者名字
+                if (event.getCreator() != null) {
+                    try {
+                        Long creatorId = Long.valueOf(event.getCreator());
+                        AdminUserDO creator = adminUserService.getUser(creatorId);
+                        if (creator != null) {
+                            respVO.setCreatorName(creator.getNickname());
+                        }
+                    } catch (NumberFormatException e) {
+                        log.warn("[getInterventionEventsByStudentProfileId] 创建者ID格式错误，eventId: {}, creator: {}",
+                                event.getId(), event.getCreator());
+                    }
+                }
+                
+                // 查询关联事件详情
+                if (event.getRelativeEventIds() != null && !event.getRelativeEventIds().isEmpty()) {
+                    List<RelativeCrisisEventVO> relativeEvents = new ArrayList<>();
+                    for (Long eventId : event.getRelativeEventIds()) {
+                        CrisisInterventionDO crisis = crisisInterventionMapper.selectById(eventId);
+                        if (crisis != null) {
+                            RelativeCrisisEventVO relativeEvent = new RelativeCrisisEventVO();
+                            relativeEvent.setId(crisis.getId());
+                            relativeEvent.setEventId(crisis.getEventId());
+                            relativeEvent.setSourceType(crisis.getSourceType());
+                            relativeEvents.add(relativeEvent);
+                        }
+                    }
+                    respVO.setRelativeEvents(relativeEvents);
+                }
+                
+                // 查询干预步骤
+                List<InterventionEventStepDO> steps = interventionEventStepMapper.selectListByInterventionId(event.getId());
+                if (steps != null && !steps.isEmpty()) {
+                    // 按照排序字段排序
+                    List<InterventionEventStepDO> sortedSteps = steps.stream()
+                            .sorted(Comparator.comparing(InterventionEventStepDO::getSort))
+                            .collect(Collectors.toList());
+                    
+                    // 转换为响应VO
+                    List<InterventionEventStepRespVO> stepRespVOs = BeanUtils.toBean(sortedSteps, InterventionEventStepRespVO.class);
+                    respVO.setSteps(stepRespVOs);
+                }
+                
+                result.add(respVO);
+            }
+        }
+        
+        log.info("[getInterventionEventsByStudentProfileId] 查询学生干预事件列表成功，studentProfileId: {}, count: {}",
+                studentProfileId, result.size());
+        
+        return result;
     }
 
 }

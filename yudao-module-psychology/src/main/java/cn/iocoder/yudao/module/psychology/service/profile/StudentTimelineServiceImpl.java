@@ -79,4 +79,9 @@ public class StudentTimelineServiceImpl implements StudentTimelineService {
         return studentTimelineMapper.selectListByStudentProfileId(studentProfileId);
     }
 
+    @Override
+    public List<StudentTimelineDO> selectListByBizId(String bizId){
+        return studentTimelineMapper.selectListByBizId(bizId);
+    }
+
 }

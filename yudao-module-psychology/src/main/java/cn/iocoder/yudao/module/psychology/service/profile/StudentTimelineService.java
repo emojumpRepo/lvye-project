@@ -40,4 +40,11 @@ public interface StudentTimelineService {
      * @return
      */
     List<StudentTimelineDO> selectListByStudentProfileId(String studentProfileId);
+
+    /**
+     * 根据业务ID查询时间线数据
+     * @param bizId 业务ID
+     * @return 时间线数据列表
+     */
+    List<StudentTimelineDO> selectListByBizId(String bizId);
 }

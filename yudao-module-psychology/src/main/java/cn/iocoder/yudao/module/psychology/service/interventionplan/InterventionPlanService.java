@@ -86,4 +86,12 @@ public interface InterventionPlanService {
      */
     void completeInterventionEvent(Long id);
 
+    /**
+     * 根据学生档案ID查询干预事件列表
+     *
+     * @param studentProfileId 学生档案ID
+     * @return 干预事件列表
+     */
+    List<InterventionPlanRespVO> getInterventionEventsByStudentProfileId(Long studentProfileId);
+
 }

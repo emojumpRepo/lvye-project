@@ -18,6 +18,8 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -110,6 +112,15 @@ public class InterventionPlanController {
     public CommonResult<Boolean> completeInterventionEvent(@RequestParam("id") Long id) {
         interventionPlanService.completeInterventionEvent(id);
         return success(true);
+    }
+
+    @GetMapping("/list-by-student")
+    @Operation(summary = "根据学生档案ID查询干预事件列表")
+    @Parameter(name = "studentProfileId", description = "学生档案ID", required = true, example = "1")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention-plan:query')")
+    public CommonResult<List<InterventionPlanRespVO>> getInterventionEventsByStudentProfileId(@RequestParam("studentProfileId") Long studentProfileId) {
+        List<InterventionPlanRespVO> events = interventionPlanService.getInterventionEventsByStudentProfileId(studentProfileId);
+        return success(events);
     }
 
 }

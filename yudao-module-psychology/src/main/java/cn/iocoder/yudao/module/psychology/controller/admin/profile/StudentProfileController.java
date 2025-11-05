@@ -207,6 +207,15 @@ public class StudentProfileController {
         return success(list);
     }
 
+    @GetMapping("/timeline-by-bizid")
+    @Operation(summary = "根据业务ID查询时间线数据")
+//    @PreAuthorize("@ss.hasPermission('psychology:student-profile:query')")
+    @DataPermission(enable = false)
+    public CommonResult<List<StudentTimelineDO>> getTimelineByBizId(@RequestParam String bizId) {
+        List<StudentTimelineDO> list = studentTimelineService.selectListByBizId(bizId);
+        return success(list);
+    }
+
     @GetMapping("/student-task-list")
     @Operation(summary = "获得学生测评任务历史")
     @DataPermission(enable = false)

@@ -39,7 +39,16 @@ public class InterventionPlanRespVO {
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime createTime;
 
+    @Schema(description = "更新时间", requiredMode = Schema.RequiredMode.REQUIRED)
+    private LocalDateTime updateTime;
+
+    @Schema(description = "创建者名字")
+    private String creatorName;
+
     @Schema(description = "干预步骤列表")
     private List<InterventionEventStepRespVO> steps;
+
+    @Schema(description = "状态（1=进行中）", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private Integer status;
 
 }
