@@ -14,6 +14,10 @@ public class StudentAssessmentSubmitReqVO {
     @NotNull(message = "学生档案ID不能为空")
     private Long studentProfileId;
 
+    @Schema(description = "来源类型", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "来源类型不能为空")
+    private Integer sourceType;
+
     @Schema(description = "风险等级", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "风险等级不能为空")
     private Integer riskLevel;

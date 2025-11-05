@@ -1108,11 +1108,72 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             throw ServiceExceptionUtil.exception(STUDENT_PROFILE_NOT_EXISTS);
         }
 
-        // 保存独立评估记录
+        // 获取当前登录用户信息
+        Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
+        AdminUserRespDTO currentUser = adminUserApi.getUser(currentUserId);
+        String operatorName = currentUser != null ? currentUser.getNickname() : "未知";
+
+        // 构建事件描述
+        String eventDescription = String.format("%s给%s上报独立评估事件", operatorName, student.getName());
+
+        // 创建危机事件
+        CrisisInterventionDO event = new CrisisInterventionDO();
+
+        // 生成事件编号：RPT_年份_随机数
+        String currentYear = String.valueOf(LocalDateTime.now().getYear());
+        String eventId = "RPT_" + currentYear + "_" + RandomUtil.randomNumbers(6);
+        event.setEventId(eventId);
+
+        event.setTitle("上报独立评估");
+        event.setLocation(null); // 不设置地点
+        event.setDescription(eventDescription);
+        // 根据 sourceType 设置优先级：3->2, 其他->1（高）
+        Integer priority = (submitReqVO.getSourceType() != null && submitReqVO.getSourceType() == 3) ? 2 : 1;
+        event.setPriority(priority);
+        event.setSourceType(submitReqVO.getSourceType());
+        event.setRiskLevel(null); // 不设置风险等级
+        event.setStatus(2); // 已分配
+        event.setProcessStatus(0); // 默认处理状态
+        event.setStudentProfileId(submitReqVO.getStudentProfileId());
+        event.setReporterUserId(currentUserId);
+        event.setHandlerUserId(currentUserId); // 处理人就是上报人
+        event.setReportedAt(LocalDateTime.now());
+        event.setHandleAt(LocalDateTime.now()); // 已分配时间
+        event.setProgress(50); // 已分配进度
+        event.setAutoAssigned(false);
+        crisisInterventionMapper.insert(event);
+
+        // 记录上报动作
+        String reportContent = String.format("事件标题：%s，紧急程度：%s", event.getTitle(), getPriorityLevelName(event.getPriority()));
+        recordEventProcessWithUsers(event.getId(), "REPORT", eventDescription,
+            reportContent,
+            null, null, null, null);
+
+        // 添加危机事件时间线记录
+        Map<String, Object> eventMeta = new HashMap<>();
+        eventMeta.put("eventId", event.getId());
+        eventMeta.put("priorityLevel", event.getPriority());
+        eventMeta.put("priorityLevelName", getPriorityLevelName(event.getPriority()));
+        eventMeta.put("reporterUserId", currentUserId);
+        eventMeta.put("handlerUserId", currentUserId);
+        eventMeta.put("description", eventDescription);
+        eventMeta.put("status", "已分配");
+
+        String eventTimelineContent = String.format("危机事件已上报并分配给 %s 处理", operatorName);
+        studentTimelineService.saveTimelineWithMeta(
+            submitReqVO.getStudentProfileId(),
+            TimelineEventTypeEnum.CRISIS_INTERVENTION.getType(),
+            "危机事件(" + event.getEventId() + ")上报",
+            event.getEventId(),
+            eventTimelineContent,
+            eventMeta
+        );
+
+        // 保存独立评估记录（绑定到危机事件）
         CrisisEventAssessmentDO assessment = new CrisisEventAssessmentDO();
-        assessment.setEventId(null); // 不绑定危机事件
-        assessment.setStudentProfileId(submitReqVO.getStudentProfileId()); // 设置学生档案ID
-        assessment.setAssessorUserId(SecurityFrameworkUtils.getLoginUserId());
+        assessment.setEventId(event.getId()); // 绑定到新创建的危机事件
+        assessment.setStudentProfileId(submitReqVO.getStudentProfileId());
+        assessment.setAssessorUserId(currentUserId);
         assessment.setAssessmentType(3); // 独立评估
         assessment.setRiskLevel(submitReqVO.getRiskLevel());
         assessment.setProblemTypes(submitReqVO.getProblemTypes());
@@ -1123,6 +1184,47 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         assessment.setObservationRecord(submitReqVO.getObservationRecord());
         assessment.setAttachmentIds(submitReqVO.getAttachmentIds());
         eventAssessmentMapper.insert(assessment);
+
+        // 获取评估记录ID
+        Long assessmentId = assessment.getId();
+
+        // 构建评估信息
+        String riskLevelInfo = "风险等级：" + getRiskLevelName(submitReqVO.getRiskLevel());
+
+        // 处理问题类型数组
+        String problemTypesInfo = "问题类型：";
+        if (CollUtil.isNotEmpty(submitReqVO.getProblemTypes())) {
+            problemTypesInfo += String.join("、", submitReqVO.getProblemTypes());
+        } else {
+            problemTypesInfo += "无";
+        }
+
+        // 是否就诊用药情况
+        String hasMedicalVisitInfo = "是否有就诊用药情况：" + (submitReqVO.getHasMedicalVisit() != null && submitReqVO.getHasMedicalVisit() ? "是" : "否");
+
+        // 获取后续建议（如果有）
+        String followUpInfo = "";
+        if (submitReqVO.getFollowUpSuggestion() != null) {
+            followUpInfo = "，后续建议：" + getFollowUpSuggestionName(submitReqVO.getFollowUpSuggestion());
+        }
+
+        // 组合完整的评估信息
+        String assessmentInfoRecord = riskLevelInfo + "，" + problemTypesInfo + "，" + hasMedicalVisitInfo + followUpInfo;
+
+        // 记录评估动作到事件处理历史
+        recordEventProcessWithUsers(event.getId(), "CLOSE",
+            submitReqVO.getContent(),
+            assessmentInfoRecord,
+            null, null,
+            submitReqVO.getAttachmentIds(),
+            assessmentId);
+
+        // 更新危机事件为已结案状态
+        CrisisInterventionDO updateEvent = new CrisisInterventionDO();
+        updateEvent.setId(event.getId());
+        updateEvent.setStatus(5); // 已结案
+        updateEvent.setProgress(100);
+        crisisInterventionMapper.updateById(updateEvent);
 
         // 更新学生档案的风险等级
         if (submitReqVO.getRiskLevel() != null) {
@@ -1135,34 +1237,36 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             studentProfileService.updateStudentSpecialMarks(submitReqVO.getStudentProfileId(), specialMarks);
         }
 
-        // 添加时间线记录
-        Map<String, Object> meta = new HashMap<>();
-        meta.put("assessmentId", assessment.getId());
-        meta.put("riskLevel", submitReqVO.getRiskLevel());
-        meta.put("riskLevelName", getRiskLevelName(submitReqVO.getRiskLevel()));
-        meta.put("problemTypes", submitReqVO.getProblemTypes());
-        meta.put("followUpSuggestion", submitReqVO.getFollowUpSuggestion());
-        meta.put("followUpSuggestionName", getFollowUpSuggestionName(submitReqVO.getFollowUpSuggestion()));
+        // 添加独立评估时间线记录
+        Map<String, Object> assessmentMeta = new HashMap<>();
+        assessmentMeta.put("assessmentId", assessment.getId());
+        assessmentMeta.put("eventId", event.getId());
+        assessmentMeta.put("riskLevel", submitReqVO.getRiskLevel());
+        assessmentMeta.put("riskLevelName", getRiskLevelName(submitReqVO.getRiskLevel()));
+        assessmentMeta.put("problemTypes", submitReqVO.getProblemTypes());
+        assessmentMeta.put("followUpSuggestion", submitReqVO.getFollowUpSuggestion());
+        assessmentMeta.put("followUpSuggestionName", getFollowUpSuggestionName(submitReqVO.getFollowUpSuggestion()));
 
         // 构建时间线内容
-        String content = String.format("提交独立评估，风险等级：%s", getRiskLevelName(submitReqVO.getRiskLevel()));
+        String assessmentContent = String.format("提交独立评估，风险等级：%s", getRiskLevelName(submitReqVO.getRiskLevel()));
         if (CollUtil.isNotEmpty(submitReqVO.getProblemTypes())) {
-            content += "，问题类型：" + String.join("、", submitReqVO.getProblemTypes());
+            assessmentContent += "，问题类型：" + String.join("、", submitReqVO.getProblemTypes());
         }
 
         studentTimelineService.saveTimelineWithMeta(
             submitReqVO.getStudentProfileId(),
             TimelineEventTypeEnum.ASSESSMENT_REPORT.getType(),
             "提交独立评估",
-            null, // 没有关联ID
-            content,
-            meta
+            event.getEventId(), // 关联到危机事件
+            assessmentContent,
+            assessmentMeta
         );
 
-        log.info("用户 {} 为学生 {} 提交独立评估，风险等级：{}",
-                SecurityFrameworkUtils.getLoginUserId(),
+        log.info("用户 {} 为学生 {} 提交独立评估，风险等级：{}，已自动创建并结案危机事件 {}",
+                currentUserId,
                 submitReqVO.getStudentProfileId(),
-                getRiskLevelName(submitReqVO.getRiskLevel()));
+                getRiskLevelName(submitReqVO.getRiskLevel()),
+                event.getEventId());
     }
 
     @Override

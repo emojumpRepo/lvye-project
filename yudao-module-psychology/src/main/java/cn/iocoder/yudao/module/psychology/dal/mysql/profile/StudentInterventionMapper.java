@@ -56,6 +56,7 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "  SELECT student_profile_id, id, status " +
             "  FROM lvye_intervention_event " +
             "  WHERE deleted = 0 " +
+            "  <if test='reqVO.interventionEventStatus == null'> AND status = 1 </if>" +
             "  AND id IN ( " +
             "    SELECT MAX(id) FROM lvye_intervention_event " +
             "    WHERE deleted = 0 " +
@@ -75,9 +76,6 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "</if>" +
             "<if test='reqVO.interventionEventStatus != null'> " +
             "  AND ie.status = #{reqVO.interventionEventStatus} " +
-            "</if>" +
-            "<if test='reqVO.riskLevel != null and reqVO.riskLevel >= 3'> " +
-            "  AND NOT EXISTS (SELECT 1 FROM lvye_intervention_event ie_exclude WHERE ie_exclude.student_profile_id = sp.id AND ie_exclude.deleted = 0 AND ie_exclude.status IN (1, 2)) " +
             "</if>" +
             "<choose>" +
             "  <when test='reqVO.excludeCrisisStatus != null'>" +
@@ -122,9 +120,6 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "</if>" +
             "<if test='reqVO.interventionEventStatus != null'> " +
             "  AND EXISTS (SELECT 1 FROM lvye_intervention_event ie_status WHERE ie_status.student_profile_id = sp.id AND ie_status.deleted = 0 AND ie_status.status = #{reqVO.interventionEventStatus}) " +
-            "</if>" +
-            "<if test='reqVO.riskLevel != null and reqVO.riskLevel >= 3'> " +
-            "  AND NOT EXISTS (SELECT 1 FROM lvye_intervention_event ie_exclude WHERE ie_exclude.student_profile_id = sp.id AND ie_exclude.deleted = 0 AND ie_exclude.status IN (1, 2)) " +
             "</if>" +
             "<choose>" +
             "  <when test='reqVO.excludeCrisisStatus != null'>" +

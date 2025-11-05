@@ -21,7 +21,7 @@ public class InterventionEventUpdateRelativeEventsReqVO {
     private Long id;
 
     @Schema(description = "关联事件ID列表", requiredMode = Schema.RequiredMode.REQUIRED, example = "[1, 2, 3]")
-    @NotEmpty(message = "关联事件ID列表不能为空")
+    @NotNull(message = "关联事件ID列表不能为null")
     private List<Long> relativeEventIds;
 
 }

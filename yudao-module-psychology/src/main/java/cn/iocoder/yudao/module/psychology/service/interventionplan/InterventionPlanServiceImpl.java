@@ -46,6 +46,7 @@ import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERV
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERVENTION_EVENT_STEP_NOT_EXISTS;
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERVENTION_EVENT_STEPS_NOT_COMPLETED;
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.INTERVENTION_TEMPLATE_NOT_EXISTS;
+import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.STUDENT_HAS_ONGOING_INTERVENTION;
 import static cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS;
 
 /**
@@ -88,16 +89,19 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
         // 1. 验证学生档案是否存在
         validateStudentProfile(createReqVO.getStudentProfileId());
 
-        // 2. 验证模板是否存在，并获取模板详情
+        // 2. 检查该学生是否有正在进行的干预事件（status = 1）
+        checkOngoingIntervention(createReqVO.getStudentProfileId());
+
+        // 3. 验证模板是否存在，并获取模板详情
         InterventionTemplateRespVO template = interventionTemplateService.getTemplateById(createReqVO.getTemplateId());
         if (template == null) {
             throw exception(INTERVENTION_TEMPLATE_NOT_EXISTS);
         }
 
-        // 3. 查询该学生 status=5（持续关注）的最新危机干预记录
+        // 4. 查询该学生 status=5（持续关注）的最新危机干预记录
         List<Long> relativeEventIds = getLatestCrisisInterventionId(createReqVO.getStudentProfileId());
 
-        // 4. 创建干预事件记录
+        // 5. 创建干预事件记录
         InterventionEventDO event = new InterventionEventDO();
         event.setInterventionId(generateInterventionId());
         event.setStudentProfileId(createReqVO.getStudentProfileId());
@@ -110,7 +114,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
         log.info("[createInterventionPlan] 创建干预事件成功，eventId: {}, interventionId: {}, studentProfileId: {}",
                 event.getId(), event.getInterventionId(), createReqVO.getStudentProfileId());
 
-        // 5. 根据模板步骤创建干预步骤
+        // 6. 根据模板步骤创建干预步骤
         List<InterventionTemplateStepDO> templateSteps = interventionTemplateStepMapper.selectListByTemplateId(createReqVO.getTemplateId());
         if (templateSteps != null && !templateSteps.isEmpty()) {
             List<InterventionEventStepDO> steps = new ArrayList<>();
@@ -135,7 +139,7 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                     event.getId(), steps.size());
         }
 
-        // 6. 添加时间线记录
+        // 7. 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
         meta.put("templateId", createReqVO.getTemplateId());
         meta.put("interventionId", event.getInterventionId());
@@ -170,6 +174,25 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
     }
 
     /**
+     * 检查该学生是否有正在进行的干预事件
+     *
+     * @param studentProfileId 学生档案ID
+     */
+    private void checkOngoingIntervention(Long studentProfileId) {
+        LambdaQueryWrapper<InterventionEventDO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(InterventionEventDO::getStudentProfileId, studentProfileId)
+                .eq(InterventionEventDO::getStatus, 1); // status=1 表示正在进行
+
+        List<InterventionEventDO> ongoingEvents = interventionEventMapper.selectList(wrapper);
+
+        if (ongoingEvents != null && !ongoingEvents.isEmpty()) {
+            log.warn("[checkOngoingIntervention] 学生已有正在进行的干预事件，studentProfileId: {}, eventCount: {}",
+                    studentProfileId, ongoingEvents.size());
+            throw exception(STUDENT_HAS_ONGOING_INTERVENTION);
+        }
+    }
+
+    /**
      * 查询该学生 status=5（持续关注）的最新危机干预记录ID
      *
      * @param studentProfileId 学生档案ID
@@ -196,15 +219,13 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
 
     /**
      * 生成干预编号
-     * 格式: IV + yyyyMMdd + 6位随机数
-     * 示例: IV20250318123456
      *
      * @return 干预编号
      */
     private String generateInterventionId() {
         String dateStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String randomStr = RandomUtil.randomNumbers(6);
-        return "IV" + dateStr + randomStr;
+        String randomStr = RandomUtil.randomNumbers(4);
+        return "IV_" + dateStr + "_" + randomStr;
     }
 
     /**
