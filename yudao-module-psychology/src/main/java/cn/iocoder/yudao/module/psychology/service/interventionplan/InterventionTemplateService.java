@@ -33,9 +33,9 @@ public interface InterventionTemplateService {
     /**
      * 查询所有模板列表
      *
-     * @return 模板列表，只包含基本信息（不含步骤详情）
+     * @return 模板列表，包含步骤信息
      */
-    List<InterventionTemplateSimpleRespVO> getTemplateList();
+    List<InterventionTemplateRespVO> getTemplateList();
 
     /**
      * 根据ID获取模板详情

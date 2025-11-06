@@ -57,8 +57,8 @@ public class InterventionTemplateController {
     @GetMapping("/get-template-list")
     @Operation(summary = "查询所有模板")
     @PreAuthorize("@ss.hasPermission('psychology:intervention-template:query')")
-    public CommonResult<List<InterventionTemplateSimpleRespVO>> getTemplateList() {
-        List<InterventionTemplateSimpleRespVO> templateList = templateService.getTemplateList();
+    public CommonResult<List<InterventionTemplateRespVO>> getTemplateList() {
+        List<InterventionTemplateRespVO> templateList = templateService.getTemplateList();
         return success(templateList);
     }
 

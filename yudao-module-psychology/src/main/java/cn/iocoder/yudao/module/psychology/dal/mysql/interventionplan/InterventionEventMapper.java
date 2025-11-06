@@ -1,7 +1,9 @@
 package cn.iocoder.yudao.module.psychology.dal.mysql.interventionplan;
 
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanOngoingRespVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.interventionplan.InterventionEventDO;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -23,5 +25,13 @@ public interface InterventionEventMapper extends BaseMapperX<InterventionEventDO
     default List<InterventionEventDO> selectListByStudentId(Long studentProfileId) {
         return selectList(InterventionEventDO::getStudentProfileId, studentProfileId);
     }
+
+    /**
+     * 分页查询正在进行的干预计划列表
+     *
+     * @param page 分页对象
+     * @return 分页结果
+     */
+    IPage<InterventionPlanOngoingRespVO> selectOngoingPage(IPage<InterventionPlanOngoingRespVO> page);
 
 }

@@ -24,6 +24,15 @@ public class InterventionPlanRespVO {
     @Schema(description = "学生档案ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long studentProfileId;
 
+    @Schema(description = "学号", example = "2024001")
+    private String studentNo;
+
+    @Schema(description = "学生姓名", example = "张三")
+    private String studentName;
+
+    @Schema(description = "班级名称", example = "高一(1)班")
+    private String className;
+
     @Schema(description = "干预事件标题", requiredMode = Schema.RequiredMode.REQUIRED, example = "学生心理干预计划")
     private String title;
 

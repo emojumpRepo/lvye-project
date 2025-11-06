@@ -160,17 +160,47 @@ public class InterventionTemplateServiceImpl implements InterventionTemplateServ
     }
 
     @Override
-    public List<InterventionTemplateSimpleRespVO> getTemplateList() {
+    public List<InterventionTemplateRespVO> getTemplateList() {
         // 1. 查询当前租户下的所有模板
         List<InterventionTemplateDO> templates = templateMapper.selectList();
+        if (CollUtil.isEmpty(templates)) {
+            return new ArrayList<>();
+        }
 
-        // 2. 转换为简单响应VO（不包含步骤详情）
+        // 2. 批量查询所有模板的步骤（避免 N+1 查询问题）
+        List<Long> templateIds = convertList(templates, InterventionTemplateDO::getId);
+        List<InterventionTemplateStepDO> allSteps = stepMapper.selectList(
+                "template_id", templateIds
+        );
+
+        // 3. 按 templateId 分组
+        Map<Long, List<InterventionTemplateStepDO>> stepMap = allSteps.stream()
+                .collect(Collectors.groupingBy(InterventionTemplateStepDO::getTemplateId));
+
+        // 4. 组装返回结果
         return templates.stream()
                 .map(template -> {
-                    InterventionTemplateSimpleRespVO vo = new InterventionTemplateSimpleRespVO();
+                    InterventionTemplateRespVO vo = new InterventionTemplateRespVO();
                     vo.setId(template.getId());
                     vo.setTitle(template.getTitle());
                     vo.setIsOfficial(template.getIsOfficial());
+
+                    // 获取该模板的步骤并按 sort 排序
+                    List<InterventionTemplateStepDO> steps = stepMap.getOrDefault(
+                            template.getId(), new ArrayList<>()
+                    );
+                    List<InterventionTemplateStepRespVO> stepVOs = steps.stream()
+                            .sorted(Comparator.comparing(InterventionTemplateStepDO::getSort))
+                            .map(step -> {
+                                InterventionTemplateStepRespVO stepVO = new InterventionTemplateStepRespVO();
+                                stepVO.setId(step.getId());
+                                stepVO.setSort(step.getSort());
+                                stepVO.setTitle(step.getTitle());
+                                return stepVO;
+                            })
+                            .collect(Collectors.toList());
+                    vo.setSteps(stepVOs);
+
                     return vo;
                 })
                 .collect(Collectors.toList());

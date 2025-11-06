@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.psychology.service.interventionplan;
 
 import cn.hutool.core.util.RandomUtil;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.framework.dict.core.DictFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepBatchUpdateSortReqVO;
@@ -8,6 +10,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.I
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepUpdateReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanCreateReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanOngoingRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionTemplateRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.RelativeCrisisEventVO;
@@ -23,9 +26,12 @@ import cn.iocoder.yudao.module.psychology.enums.DictTypeConstants;
 import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
+import cn.iocoder.yudao.module.psychology.controller.admin.profile.vo.StudentProfileVO;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -360,6 +366,30 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
 
         // 3. 转换为 VO
         InterventionPlanRespVO respVO = BeanUtils.toBean(event, InterventionPlanRespVO.class);
+
+        // 3.1. 获取创建者名字
+        if (event.getCreator() != null) {
+            try {
+                Long creatorId = Long.valueOf(event.getCreator());
+                AdminUserDO creator = adminUserService.getUser(creatorId);
+                if (creator != null) {
+                    respVO.setCreatorName(creator.getNickname());
+                }
+            } catch (NumberFormatException e) {
+                log.warn("[getInterventionPlan] 创建者ID格式错误，eventId: {}, creator: {}",
+                        event.getId(), event.getCreator());
+            }
+        }
+
+        // 3.2. 获取学生信息
+        if (event.getStudentProfileId() != null) {
+            StudentProfileVO studentProfile = studentProfileService.getStudentProfile(event.getStudentProfileId());
+            if (studentProfile != null) {
+                respVO.setStudentNo(studentProfile.getStudentNo());
+                respVO.setStudentName(studentProfile.getName());
+                respVO.setClassName(studentProfile.getClassName());
+            }
+        }
 
         // 4. 转换步骤列表并排序
         List<InterventionEventStepRespVO> stepVOs = steps.stream()
@@ -850,8 +880,23 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
         
         log.info("[getInterventionEventsByStudentProfileId] 查询学生干预事件列表成功，studentProfileId: {}, count: {}",
                 studentProfileId, result.size());
-        
+
         return result;
+    }
+
+    @Override
+    public PageResult<InterventionPlanOngoingRespVO> getOngoingInterventionPlanPage(PageParam pageParam) {
+        // 1. 创建分页对象
+        IPage<InterventionPlanOngoingRespVO> page = new Page<>(pageParam.getPageNo(), pageParam.getPageSize());
+
+        // 2. 调用 Mapper 查询正在进行的干预计划
+        interventionEventMapper.selectOngoingPage(page);
+
+        // 3. 返回分页结果
+        log.info("[getOngoingInterventionPlanPage] 查询正在进行的干预计划分页列表成功，pageNo: {}, pageSize: {}, total: {}",
+                pageParam.getPageNo(), pageParam.getPageSize(), page.getTotal());
+
+        return new PageResult<>(page.getRecords(), page.getTotal());
     }
 
 }

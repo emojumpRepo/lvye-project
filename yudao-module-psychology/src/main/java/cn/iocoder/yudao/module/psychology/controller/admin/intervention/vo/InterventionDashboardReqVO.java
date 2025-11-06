@@ -47,4 +47,7 @@ public class InterventionDashboardReqVO extends PageParam {
 
     @Schema(description = "干预事件状态（1=危机干预中，2=危机干预结案）", example = "1")
     private Integer interventionEventStatus;
+
+    @Schema(description = "排除的干预事件状态（用于排除正在干预的学生）", example = "1")
+    private Integer excludeInterventionEventStatus;
 }

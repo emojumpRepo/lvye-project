@@ -16,8 +16,7 @@ public class InterventionEventStepCreateReqVO {
     @NotNull(message = "干预事件ID不能为空")
     private Long interventionId;
 
-    @Schema(description = "步骤标题", requiredMode = Schema.RequiredMode.REQUIRED, example = "第一次家访")
-    @NotBlank(message = "步骤标题不能为空")
+    @Schema(description = "步骤标题", example = "第一次家访")
     @Size(max = 100, message = "步骤标题长度不能超过100个字符")
     private String title;
 
@@ -28,7 +27,7 @@ public class InterventionEventStepCreateReqVO {
     private Integer status;
 
     @Schema(description = "教师笔记", example = "初步沟通情况记录")
-    @Size(max = 2000, message = "教师笔记长度不能超过2000个字符")
+    @Size(max = 5000, message = "教师笔记长度不能超过5000个字符")
     private String notes;
 
     @Schema(description = "附件ID列表", example = "[1, 2, 3]")

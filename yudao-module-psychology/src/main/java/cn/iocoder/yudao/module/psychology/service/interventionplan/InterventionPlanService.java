@@ -1,9 +1,12 @@
 package cn.iocoder.yudao.module.psychology.service.interventionplan;
 
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepBatchUpdateSortReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepCreateReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepUpdateReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanCreateReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanOngoingRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanRespVO;
 import jakarta.validation.Valid;
 
@@ -93,5 +96,13 @@ public interface InterventionPlanService {
      * @return 干预事件列表
      */
     List<InterventionPlanRespVO> getInterventionEventsByStudentProfileId(Long studentProfileId);
+
+    /**
+     * 分页查询正在进行的干预计划列表
+     *
+     * @param pageParam 分页参数
+     * @return 分页结果
+     */
+    PageResult<InterventionPlanOngoingRespVO> getOngoingInterventionPlanPage(PageParam pageParam);
 
 }

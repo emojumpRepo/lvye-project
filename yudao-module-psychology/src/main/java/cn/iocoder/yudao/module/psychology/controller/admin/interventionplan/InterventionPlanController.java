@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.psychology.controller.admin.interventionplan;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventRemoveRelativeEventReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepBatchUpdateSortReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepCreateReqVO;
@@ -8,6 +10,7 @@ import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.I
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventUpdateRelativeEventsReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventUpdateTitleReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanCreateReqVO;
+import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanOngoingRespVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionPlanRespVO;
 import cn.iocoder.yudao.module.psychology.service.interventionplan.InterventionPlanService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -121,6 +124,14 @@ public class InterventionPlanController {
     public CommonResult<List<InterventionPlanRespVO>> getInterventionEventsByStudentProfileId(@RequestParam("studentProfileId") Long studentProfileId) {
         List<InterventionPlanRespVO> events = interventionPlanService.getInterventionEventsByStudentProfileId(studentProfileId);
         return success(events);
+    }
+
+    @GetMapping("/ongoing-page")
+    @Operation(summary = "获取正在进行的干预计划分页列表")
+    @PreAuthorize("@ss.hasPermission('psychology:intervention-plan:query')")
+    public CommonResult<PageResult<InterventionPlanOngoingRespVO>> getOngoingInterventionPlanPage(@Valid PageParam pageParam) {
+        PageResult<InterventionPlanOngoingRespVO> pageResult = interventionPlanService.getOngoingInterventionPlanPage(pageParam);
+        return success(pageResult);
     }
 
 }

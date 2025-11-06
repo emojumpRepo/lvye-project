@@ -192,7 +192,8 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
             riskLevel,
             reqVO.getClassId(),
             reqVO.getGradeId(),
-            reqVO.getCounselorUserId()
+            reqVO.getCounselorUserId(),
+            reqVO.getExcludeInterventionEventStatus()
         );
         return count != null ? count.intValue() : 0;
     }
@@ -386,9 +387,13 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         // 获取各等级学生数量
         Integer pendingCount = getCountByInterventionEventStatus(1, reqVO);  // 危机干预中：interventionEventStatus=1
         Integer observationCount = getCountByInterventionEventStatus(2, reqVO);  // 危机干预结案：interventionEventStatus=2
+
+        // 后三个等级需要排除"危机干预中"的学生
+        reqVO.setExcludeInterventionEventStatus(1);
         Integer generalCount = getCountByRiskLevelWithFilter(3, reqVO);
         Integer severeCount = getCountByRiskLevelWithFilter(4, reqVO);
         Integer majorCount = getCountByRiskLevelWithFilter(5, reqVO);
+        reqVO.setExcludeInterventionEventStatus(null);  // 清空，避免影响后续查询
 
         // 创建危机干预中等级（原待评）
         InterventionDashboardLevelVO pending = new InterventionDashboardLevelVO();
@@ -430,7 +435,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         general.setCount(generalCount);
         if (generalCount > 0) {
             reqVO.setRiskLevel(3);
+            reqVO.setExcludeInterventionEventStatus(1);  // 排除干预中的学生
             general.setStudentPage(getStudentPageByFilter(reqVO));
+            reqVO.setExcludeInterventionEventStatus(null);  // 清空，避免影响后续查询
         } else {
             general.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
         }
@@ -444,7 +451,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         severe.setCount(severeCount);
         if (severeCount > 0) {
             reqVO.setRiskLevel(4);
+            reqVO.setExcludeInterventionEventStatus(1);  // 排除干预中的学生
             severe.setStudentPage(getStudentPageByFilter(reqVO));
+            reqVO.setExcludeInterventionEventStatus(null);  // 清空，避免影响后续查询
         } else {
             severe.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
         }
@@ -458,7 +467,9 @@ public class CrisisInterventionServiceImpl implements CrisisInterventionService 
         major.setCount(majorCount);
         if (majorCount > 0) {
             reqVO.setRiskLevel(5);
+            reqVO.setExcludeInterventionEventStatus(1);  // 排除干预中的学生
             major.setStudentPage(getStudentPageByFilter(reqVO));
+            reqVO.setExcludeInterventionEventStatus(null);  // 清空，避免影响后续查询
         } else {
             major.setStudentPage(new PageResult<>(new ArrayList<>(), 0L));
         }

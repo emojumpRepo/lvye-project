@@ -84,6 +84,9 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='reqVO.interventionEventStatus != null'> " +
             "  AND ie.status = #{reqVO.interventionEventStatus} " +
             "</if>" +
+            "<if test='reqVO.excludeInterventionEventStatus != null'> " +
+            "  AND NOT EXISTS (SELECT 1 FROM lvye_intervention_event ie_exclude WHERE ie_exclude.student_profile_id = sp.id AND ie_exclude.deleted = 0 AND ie_exclude.status = #{reqVO.excludeInterventionEventStatus}) " +
+            "</if>" +
             "<choose>" +
             "  <when test='reqVO.excludeCrisisStatus != null'>" +
             "    AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status WHERE ci_status.student_profile_id = sp.id AND ci_status.status != #{reqVO.excludeCrisisStatus} AND ci_status.deleted = 0) " +
@@ -128,6 +131,9 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='reqVO.interventionEventStatus != null'> " +
             "  AND EXISTS (SELECT 1 FROM lvye_intervention_event ie_status WHERE ie_status.student_profile_id = sp.id AND ie_status.deleted = 0 AND ie_status.status = #{reqVO.interventionEventStatus}) " +
             "</if>" +
+            "<if test='reqVO.excludeInterventionEventStatus != null'> " +
+            "  AND NOT EXISTS (SELECT 1 FROM lvye_intervention_event ie_exclude WHERE ie_exclude.student_profile_id = sp.id AND ie_exclude.deleted = 0 AND ie_exclude.status = #{reqVO.excludeInterventionEventStatus}) " +
+            "</if>" +
             "<choose>" +
             "  <when test='reqVO.excludeCrisisStatus != null'>" +
             "    AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status WHERE ci_status.student_profile_id = sp.id AND ci_status.status != #{reqVO.excludeCrisisStatus} AND ci_status.deleted = 0) " +
@@ -151,12 +157,16 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "<if test='counselorUserId != null'> " +
             "  AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci WHERE ci.student_profile_id = sp.id AND ci.handler_user_id = #{counselorUserId} AND ci.deleted = 0 AND ci.status IN (2, 3, 4, 5)) " +
             "</if>" +
+            "<if test='excludeInterventionEventStatus != null'> " +
+            "  AND NOT EXISTS (SELECT 1 FROM lvye_intervention_event ie_exclude WHERE ie_exclude.student_profile_id = sp.id AND ie_exclude.deleted = 0 AND ie_exclude.status = #{excludeInterventionEventStatus}) " +
+            "</if>" +
             "</script>")
     Long countByRiskLevelWithFilter(
             @Param("riskLevel") Integer riskLevel,
             @Param("classId") Long classId,
             @Param("gradeId") Long gradeId,
-            @Param("counselorUserId") Long counselorUserId);
+            @Param("counselorUserId") Long counselorUserId,
+            @Param("excludeInterventionEventStatus") Integer excludeInterventionEventStatus);
 
     /**
      * 统计待评估学生数量（风险等级为空或为0）
