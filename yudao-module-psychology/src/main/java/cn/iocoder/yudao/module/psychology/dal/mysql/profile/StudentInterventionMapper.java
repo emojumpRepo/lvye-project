@@ -32,7 +32,14 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "  sp.sex as gender, " +
             "  sp.risk_level as current_risk_level, " +
             "  sp.graduation_status as study_status, " +
-            "  sp.update_time as last_update_time, " +
+            "  <choose>" +
+            "    <when test='reqVO.interventionEventStatus != null'>" +
+            "      ie.update_time as last_update_time, " +
+            "    </when>" +
+            "    <otherwise>" +
+            "      sp.update_time as last_update_time, " +
+            "    </otherwise>" +
+            "  </choose>" +
             "  d1.name as class_name, " +
             "  su.nickname as counselor_name, " +
             "  COUNT(DISTINCT ci.id) as crisis_event_count, " +
@@ -53,7 +60,7 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "LEFT JOIN lvye_crisis_intervention ci ON sp.id = ci.student_profile_id AND ci.deleted = 0 " +
             "LEFT JOIN lvye_consultation_appointment ca ON sp.id = ca.student_profile_id AND ca.deleted = 0 " +
             "LEFT JOIN ( " +
-            "  SELECT student_profile_id, id, status " +
+            "  SELECT student_profile_id, id, status, update_time " +
             "  FROM lvye_intervention_event " +
             "  WHERE deleted = 0 " +
             "  <if test='reqVO.interventionEventStatus == null'> AND status = 1 </if>" +
@@ -85,7 +92,7 @@ public interface StudentInterventionMapper extends BaseMapperX<StudentProfileDO>
             "    AND EXISTS (SELECT 1 FROM lvye_crisis_intervention ci_status5 WHERE ci_status5.student_profile_id = sp.id AND ci_status5.status = 5 AND ci_status5.deleted = 0) " +
             "  </when>" +
             "</choose>" +
-            "GROUP BY sp.id, sp.name, sp.student_no, sp.sex, sp.risk_level, sp.graduation_status, sp.update_time, d1.name, latest_ci.handler_user_id, su.nickname, ie.id " +
+            "GROUP BY sp.id, sp.name, sp.student_no, sp.sex, sp.risk_level, sp.graduation_status, sp.update_time, d1.name, latest_ci.handler_user_id, su.nickname, ie.id, ie.update_time " +
             "<if test='reqVO.sortField != null and reqVO.sortField == \"riskLevel\"'>" +
             "  ORDER BY sp.risk_level " +
             "  <if test='reqVO.sortOrder != null and reqVO.sortOrder == \"desc\"'>DESC</if>" +

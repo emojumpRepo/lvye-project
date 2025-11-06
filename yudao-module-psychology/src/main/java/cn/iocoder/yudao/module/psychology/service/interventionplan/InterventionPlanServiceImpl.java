@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.psychology.service.interventionplan;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.dict.core.DictFrameworkUtils;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepBatchUpdateSortReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepCreateReqVO;
 import cn.iocoder.yudao.module.psychology.controller.admin.interventionplan.vo.InterventionEventStepRespVO;
@@ -18,6 +19,7 @@ import cn.iocoder.yudao.module.psychology.dal.mysql.consultation.CrisisIntervent
 import cn.iocoder.yudao.module.psychology.dal.mysql.interventionplan.InterventionEventMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.interventionplan.InterventionEventStepMapper;
 import cn.iocoder.yudao.module.psychology.dal.mysql.interventionplan.InterventionTemplateStepMapper;
+import cn.iocoder.yudao.module.psychology.enums.DictTypeConstants;
 import cn.iocoder.yudao.module.psychology.enums.TimelineEventTypeEnum;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentTimelineService;
@@ -379,6 +381,9 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                     .filter(vo -> vo != null)
                     .collect(Collectors.toList());
             respVO.setRelativeEvents(relativeEvents);
+        } else {
+            // 如果没有关联事件，返回空数组
+            respVO.setRelativeEvents(new ArrayList<>());
         }
 
         return respVO;
@@ -453,19 +458,41 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
         updateObj.setRelativeEventIds(newRelativeEventIds);
         interventionEventMapper.updateById(updateObj);
 
-        // 6. 添加时间线记录
+        // 6. 查询危机干预事件详情，获取事件类型和eventId
+        CrisisInterventionDO crisis = crisisInterventionMapper.selectById(relativeEventId);
+        String eventTypeLabel = "未知类型";
+        String eventId = String.valueOf(relativeEventId);
+
+        if (crisis != null) {
+            // 获取事件类型字典标签
+            String dictLabel = DictFrameworkUtils.parseDictDataLabel(
+                DictTypeConstants.CRISIS_SOURCE_TYPE,
+                crisis.getSourceType()
+            );
+            if (dictLabel != null && !dictLabel.isEmpty()) {
+                eventTypeLabel = dictLabel;
+            }
+            eventId = crisis.getEventId();
+        }
+
+        // 构建时间线展示内容
+        String displayText = String.format("移除关联事件：%s(%s)", eventTypeLabel, eventId);
+
+        // 7. 添加时间线记录
         Map<String, Object> meta = new HashMap<>();
         meta.put("removedEventId", relativeEventId);
         meta.put("interventionId", event.getInterventionId());
         meta.put("action", "updateRelativeEvents");
-        meta.put("description", "移除关联事件(ID=" + relativeEventId + ")");
+        meta.put("eventType", eventTypeLabel);
+        meta.put("eventId", eventId);
+        meta.put("description", displayText);
 
         studentTimelineService.saveTimelineWithMeta(
                 event.getStudentProfileId(),
                 TimelineEventTypeEnum.CRISIS_INTERVENTION_PLAN.getType(),
                 "从危机干预计划(" + event.getInterventionId() + ")中移除关联事件",
                 "intervention_plan_" + event.getId(),
-                "移除关联事件(ID=" + relativeEventId + ")",
+                displayText,
                 meta
         );
 
@@ -799,6 +826,9 @@ public class InterventionPlanServiceImpl implements InterventionPlanService {
                         }
                     }
                     respVO.setRelativeEvents(relativeEvents);
+                } else {
+                    // 如果没有关联事件，返回空数组
+                    respVO.setRelativeEvents(new ArrayList<>());
                 }
                 
                 // 查询干预步骤
