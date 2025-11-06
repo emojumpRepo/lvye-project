@@ -21,4 +21,10 @@ public interface StudentTimelineMapper extends BaseMapperX<StudentTimelineDO> {
         return selectList(new LambdaQueryWrapperX<StudentTimelineDO>().eq(StudentTimelineDO::getStudentProfileId, studentProfileId));
     }
 
+    default List<StudentTimelineDO> selectListByBizId(String bizId) {
+        return selectList(new LambdaQueryWrapperX<StudentTimelineDO>()
+                .eq(StudentTimelineDO::getBizId, bizId)
+                .orderByDesc(StudentTimelineDO::getCreateTime));
+    }
+
 }
