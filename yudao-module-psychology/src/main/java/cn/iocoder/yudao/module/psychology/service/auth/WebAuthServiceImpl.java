@@ -160,11 +160,12 @@ public class WebAuthServiceImpl implements WebAuthService {
     public WebAuthLoginRespVO smsLogin(WebAuthSmsLoginReqVO reqVO) {
         // 校验验证码
         String userIp = getClientIP();
-        smsCodeApi.useSmsCode(new SmsCodeUseReqDTO()
-                .setMobile(reqVO.getMobile())
-                .setCode(reqVO.getCode())
-                .setScene(cn.iocoder.yudao.module.system.enums.sms.SmsSceneEnum.MEMBER_LOGIN.getScene())
-                .setUsedIp(userIp));
+        SmsCodeUseReqDTO smsCodeUseReqDTO = new SmsCodeUseReqDTO();
+        smsCodeUseReqDTO.setMobile(reqVO.getMobile());
+        smsCodeUseReqDTO.setCode(reqVO.getCode());
+        smsCodeUseReqDTO.setScene(cn.iocoder.yudao.module.system.enums.sms.SmsSceneEnum.MEMBER_LOGIN.getScene());
+        smsCodeUseReqDTO.setUsedIp(userIp);
+        smsCodeApi.useSmsCode(smsCodeUseReqDTO);
 
         // 1. 先根据手机号查找用户账号
         log.info("尝试通过手机号登录，手机号: {}, 当前租户ID: {}", reqVO.getMobile(), TenantContextHolder.getTenantId());
@@ -198,17 +199,18 @@ public class WebAuthServiceImpl implements WebAuthService {
                     reqVO.getSocialType(), reqVO.getSocialCode(), reqVO.getSocialState()));
         }
 
-        // 创建 Token 令牌，记录登录日志（验证码登录不区分是否为家长）
-        return createTokenAfterLoginSuccess(user.getId(), reqVO.getMobile(), LoginLogTypeEnum.LOGIN_SMS, null);
+        // 创建 Token 令牌，记录登录日志
+        return createTokenAfterLoginSuccess(user.getId(), reqVO.getMobile(), LoginLogTypeEnum.LOGIN_SMS, reqVO.getIsParent());
     }
 
     @Override
     public void sendSmsCode(WebAuthSmsSendReqVO reqVO) {
         // 发送短信验证码
-        smsCodeApi.sendSmsCode(new SmsCodeSendReqDTO()
-                .setMobile(reqVO.getMobile())
-                .setScene(reqVO.getScene())
-                .setCreateIp(getClientIP()));
+        SmsCodeSendReqDTO smsCodeSendReqDTO = new SmsCodeSendReqDTO();
+        smsCodeSendReqDTO.setMobile(reqVO.getMobile());
+        smsCodeSendReqDTO.setScene(reqVO.getScene());
+        smsCodeSendReqDTO.setCreateIp(getClientIP());
+        smsCodeApi.sendSmsCode(smsCodeSendReqDTO);
     }
 
     @Override
@@ -235,7 +237,7 @@ public class WebAuthServiceImpl implements WebAuthService {
     }
 
     void validateCaptcha(WebAuthLoginReqVO reqVO) {
-        ResponseModel response = doValidateCaptcha(reqVO);
+        ResponseModel response = doValidateCaptcha((CaptchaVerificationReqVO) reqVO);
         // 校验验证码
         if (!response.isSuccess()) {
             // 创建登录失败日志（验证码不正确)

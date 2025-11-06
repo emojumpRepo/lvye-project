@@ -34,6 +34,10 @@ public class WebAuthSmsLoginReqVO {
     @Pattern(regexp = "^[0-9]+$", message = "手机验证码必须都是数字")
     private String code;
 
+    @Schema(description = "是否为家长登录", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
+    @InEnum(LoginTypeEnum.class)
+    private Integer isParent;
+
     // ========== 绑定社交登录时，需要传递如下参数 ==========
 
     @Schema(description = "社交平台的类型，参见 SocialTypeEnum 枚举值", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
