@@ -248,10 +248,10 @@ public class QuestionnaireResultCalculateServiceImpl implements QuestionnaireRes
         // 叠加特殊等级
         if (!multiLevels.isEmpty()) {
             String baseLevel = finalResult.getLevel();
-            String specialJoined = String.join("、", deduplicatePreserveOrder(multiLevels));
+            String specialJoined = String.join("，", deduplicatePreserveOrder(multiLevels));
             finalResult.setLevel(baseLevel == null || baseLevel.trim().isEmpty()
                     ? specialJoined
-                    : baseLevel + "、" + specialJoined);
+                    : baseLevel + "，" + specialJoined);
         }
 
         // 叠加教师评语（以主结果在前，多命中规则在后），以分号隔开
