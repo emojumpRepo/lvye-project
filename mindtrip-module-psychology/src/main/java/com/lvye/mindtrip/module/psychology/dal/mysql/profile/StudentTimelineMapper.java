@@ -1,0 +1,30 @@
+package com.lvye.mindtrip.module.psychology.dal.mysql.profile;
+
+import com.lvye.mindtrip.framework.mybatis.core.mapper.BaseMapperX;
+import com.lvye.mindtrip.framework.mybatis.core.query.LambdaQueryWrapperX;
+import com.lvye.mindtrip.module.psychology.dal.dataobject.timeline.StudentTimelineDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
+
+/**
+ * @Author: MinGoo
+ * @CreateTime: 2025-08-18
+ * @Description:学生档案时间线数据库组件
+ * @Version: 1.0
+ */
+@Mapper
+public interface StudentTimelineMapper extends BaseMapperX<StudentTimelineDO> {
+
+    default List<StudentTimelineDO> selectListByStudentProfileId(String studentProfileId) {
+        return selectList(new LambdaQueryWrapperX<StudentTimelineDO>().eq(StudentTimelineDO::getStudentProfileId, studentProfileId));
+    }
+
+    default List<StudentTimelineDO> selectListByBizId(String bizId) {
+        return selectList(new LambdaQueryWrapperX<StudentTimelineDO>()
+                .eq(StudentTimelineDO::getBizId, bizId)
+                .orderByDesc(StudentTimelineDO::getCreateTime));
+    }
+
+}

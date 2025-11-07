@@ -25,7 +25,7 @@ from typing import Dict, Generator, Optional, Tuple, Union
 from simple_ddl_parser import DDLParser
 
 PREAMBLE = """/*
- Yudao Database Transfer Tool
+ Mindtrip Database Transfer Tool
 
  Source Server Type    : MySQL
 

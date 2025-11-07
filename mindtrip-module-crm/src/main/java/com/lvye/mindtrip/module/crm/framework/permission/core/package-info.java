@@ -1,0 +1,1 @@
+package com.lvye.mindtrip.module.crm.framework.permission.core;

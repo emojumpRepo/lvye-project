@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>mindtrip</artifactId>
+        <groupId>com.lvye.boot</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>mindtrip-module-mall</artifactId>
+    <packaging>pom</packaging>
+
+    <name>${project.artifactId}</name>
+
+    <description>
+        商城大模块，由 product 商品、promotion 营销、trade 交易、statistics 统计等组成
+    </description>
+    <modules>
+        <module>mindtrip-module-product</module>
+        <module>mindtrip-module-promotion</module>
+        <module>mindtrip-module-trade</module>
+        <module>mindtrip-module-statistics</module>
+        <!--
+            特殊：为什么会有 mindtrip-module-trade-api 呢？
+                mindtrip-module-promotion 和 mindtrip-module-trade 之间相互循环依赖，所以抽出 mindtrip-module-trade-api 模块，这样：
+                1. mindtrip-module-promotion 依赖 mindtrip-module-trade-api
+                2. mindtrip-module-trade 依赖 mindtrip-module-promotion
+            从而不存在相互（循环）依赖，即 mindtrip-module-trade => mindtrip-module-promotion => mindtrip-module-trade-api
+         -->
+        <module>mindtrip-module-trade-api</module>
+    </modules>
+
+</project>

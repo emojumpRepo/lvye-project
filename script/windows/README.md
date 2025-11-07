@@ -125,7 +125,7 @@ coscli cp cos://mindtrip-1305613707/archives/admin/dist-20250106_120000.zip ./
 
 # 3. 解压并部署
 unzip dist-20250106_120000.zip -d dist-rollback
-mv dist-rollback yudao-ui/lvye-project-frontend/apps/admin/dist
+mv dist-rollback mindtrip-ui/lvye-project-frontend/apps/admin/dist
 npm run deploy:frontend
 ```
 
@@ -164,9 +164,9 @@ TENCENT_SECRET_KEY=your_secret_key
 ## 本地构建产物位置
 
 - **前端构建目录**：
-  - Admin：`yudao-ui/lvye-project-frontend/apps/admin/dist/`
-  - Web：`yudao-ui/lvye-project-frontend/apps/web/dist/`
-- **后端 JAR**：`yudao-server/target/yudao-server.jar`
+  - Admin：`mindtrip-ui/lvye-project-frontend/apps/admin/dist/`
+  - Web：`mindtrip-ui/lvye-project-frontend/apps/web/dist/`
+- **后端 JAR**：`mindtrip-server/target/mindtrip-server.jar`
 
 ## 依赖要求
 
@@ -203,7 +203,7 @@ npm run config:cos
 # TENCENT_SECRET_KEY=your_secret_key
 
 # 3. 构建前端
-cd yudao-ui/lvye-project-frontend/apps/admin
+cd mindtrip-ui/lvye-project-frontend/apps/admin
 pnpm install
 pnpm build:antd  # 生成 dist 目录
 cd ../../..
@@ -216,7 +216,7 @@ npm run deploy:frontend
 
 ```bash
 # 构建并部署 Admin
-cd yudao-ui/lvye-project-frontend/apps/admin
+cd mindtrip-ui/lvye-project-frontend/apps/admin
 pnpm build:antd
 cd ../../..
 npm run deploy:frontend
@@ -234,7 +234,7 @@ coscli ls cos://mindtrip-1305613707/archives/admin/
 
 # 下载并部署指定版本
 coscli cp cos://mindtrip-1305613707/archives/admin/dist-20250106_120000.zip ./
-unzip dist-20250106_120000.zip -d yudao-ui/lvye-project-frontend/apps/admin/dist
+unzip dist-20250106_120000.zip -d mindtrip-ui/lvye-project-frontend/apps/admin/dist
 npm run deploy:frontend
 ```
 

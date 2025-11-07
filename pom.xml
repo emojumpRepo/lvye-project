@@ -3,29 +3,29 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>cn.iocoder.boot</groupId>
-    <artifactId>yudao</artifactId>
+    <groupId>com.lvye.boot</groupId>
+    <artifactId>mindtrip</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
     <modules>
-        <module>yudao-dependencies</module>
-        <module>yudao-framework</module>
+        <module>mindtrip-dependencies</module>
+        <module>mindtrip-framework</module>
         <!-- Server 主项目 -->
-        <module>yudao-server</module>
+        <module>mindtrip-server</module>
         <!-- 各种 module 拓展 -->
-        <module>yudao-module-system</module>
-        <module>yudao-module-infra</module>
-        <module>yudao-module-psychology</module>
-<!--        <module>yudao-module-member</module>-->
-<!--        <module>yudao-module-bpm</module>-->
-<!--        <module>yudao-module-report</module>-->
-<!--        <module>yudao-module-mp</module>-->
-<!--        <module>yudao-module-pay</module>-->
-<!--        <module>yudao-module-mall</module>-->
-<!--        <module>yudao-module-crm</module>-->
-<!--        <module>yudao-module-erp</module>-->
-<!--        <module>yudao-module-ai</module>-->
-<!--        <module>yudao-module-iot</module>-->
+        <module>mindtrip-module-system</module>
+        <module>mindtrip-module-infra</module>
+        <module>mindtrip-module-psychology</module>
+<!--        <module>mindtrip-module-member</module>-->
+<!--        <module>mindtrip-module-bpm</module>-->
+<!--        <module>mindtrip-module-report</module>-->
+<!--        <module>mindtrip-module-mp</module>-->
+<!--        <module>mindtrip-module-pay</module>-->
+<!--        <module>mindtrip-module-mall</module>-->
+<!--        <module>mindtrip-module-crm</module>-->
+<!--        <module>mindtrip-module-erp</module>-->
+<!--        <module>mindtrip-module-ai</module>-->
+<!--        <module>mindtrip-module-iot</module>-->
     </modules>
 
     <name>${project.artifactId}</name>
@@ -51,8 +51,8 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>cn.iocoder.boot</groupId>
-                <artifactId>yudao-dependencies</artifactId>
+                <groupId>com.lvye.boot</groupId>
+                <artifactId>mindtrip-dependencies</artifactId>
                 <version>${revision}</version>
                 <type>pom</type>
                 <scope>import</scope>

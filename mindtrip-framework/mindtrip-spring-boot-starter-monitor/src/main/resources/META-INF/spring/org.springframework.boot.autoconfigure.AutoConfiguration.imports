@@ -1,0 +1,2 @@
+com.lvye.mindtrip.framework.tracer.config.MindtripTracerAutoConfiguration
+com.lvye.mindtrip.framework.tracer.config.MindtripMetricsAutoConfiguration

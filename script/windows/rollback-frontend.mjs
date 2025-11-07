@@ -62,12 +62,12 @@ const cosClient = new COS({
 const PROJECTS = {
     '1': {
         name: 'Admin Management Backend',
-        localDistPath: path.join(__dirname, '../../yudao-ui/lvye-project-frontend/apps/admin/dist'),
+        localDistPath: path.join(__dirname, '../../mindtrip-ui/lvye-project-frontend/apps/admin/dist'),
         cosArchivePath: '/archives/admin',
     },
     '2': {
         name: 'Web User Frontend',
-        localDistPath: path.join(__dirname, '../../yudao-ui/lvye-project-frontend/apps/web/dist'),
+        localDistPath: path.join(__dirname, '../../mindtrip-ui/lvye-project-frontend/apps/web/dist'),
         cosArchivePath: '/archives/web',
     }
 };

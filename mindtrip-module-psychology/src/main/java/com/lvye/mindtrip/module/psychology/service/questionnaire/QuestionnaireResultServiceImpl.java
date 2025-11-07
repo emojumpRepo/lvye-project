@@ -1,0 +1,150 @@
+package com.lvye.mindtrip.module.psychology.service.questionnaire;
+
+import com.lvye.mindtrip.framework.common.pojo.PageResult;
+import com.lvye.mindtrip.framework.common.util.object.BeanUtils;
+import com.lvye.mindtrip.framework.common.util.json.JsonUtils;
+import com.lvye.mindtrip.module.psychology.controller.admin.profile.vo.StudentAssessmentQuestionnaireDetailVO;
+import com.lvye.mindtrip.module.psychology.controller.admin.questionnaire.vo.QuestionnaireResultRespVO;
+import com.lvye.mindtrip.module.psychology.dal.dataobject.questionnaire.QuestionnaireResultDO;
+import com.lvye.mindtrip.module.psychology.dal.dataobject.questionnaire.QuestionnaireDimensionDO;
+import com.lvye.mindtrip.module.psychology.dal.mysql.questionnaire.QuestionnaireResultMapper;
+import com.lvye.mindtrip.module.psychology.dal.mysql.questionnaire.QuestionnaireDimensionMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.lvye.mindtrip.framework.mybatis.core.query.LambdaQueryWrapperX;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+
+/**
+ * 问卷结果服务实现（简化版本）
+ *
+ * @author 芋道源码
+ */
+@Slf4j
+@Service
+public class QuestionnaireResultServiceImpl implements QuestionnaireResultService {
+
+    @Resource
+    private QuestionnaireResultMapper questionnaireResultMapper;
+    
+    @Resource
+    private QuestionnaireDimensionMapper questionnaireDimensionMapper;
+
+    @Override
+    public boolean hasUserCompletedTaskQuestionnaire(String taskNo, Long questionnaireId, Long userId) {
+        log.debug("检查用户是否已完成问卷，任务编号: {}, 问卷ID: {}, 用户ID: {}", taskNo, questionnaireId, userId);
+        
+        // 使用Mapper的selectByUnique方法查询对应任务编号、userId和questionnaireId的记录
+        QuestionnaireResultDO result = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
+        
+        // 如果存在记录且score不为null，说明用户已经完成问卷
+        return result != null;
+    }
+
+    @Override
+    public boolean hasUserCompletedQuestionnaire(Long questionnaireId, Long userId) {
+        log.debug("检查用户是否已完成问卷，问卷ID: {}, 用户ID: {}", questionnaireId, userId);
+        Long count = questionnaireResultMapper.selectCount(
+                new LambdaQueryWrapper<QuestionnaireResultDO>()
+                        .eq(QuestionnaireResultDO::getQuestionnaireId, questionnaireId)
+                        .eq(QuestionnaireResultDO::getUserId, userId)
+        );
+        return count != null && count > 0;
+    }
+
+    @Override
+    public List<StudentAssessmentQuestionnaireDetailVO> selectQuestionnaireResultByTaskNoAndUserId(String taskNo, Long userId){
+        List<QuestionnaireResultDO> questionnaireResultList = questionnaireResultMapper.selectListByTaskNoAndUserId(taskNo, userId);
+        List<StudentAssessmentQuestionnaireDetailVO> questionnaireDetailList = new ArrayList<>();
+        if (!questionnaireResultList.isEmpty()) {
+            for (QuestionnaireResultDO questionnaireResultDO : questionnaireResultList) {
+                StudentAssessmentQuestionnaireDetailVO questionnaireDetailVO = BeanUtils.toBean(questionnaireResultDO, StudentAssessmentQuestionnaireDetailVO.class);
+                questionnaireDetailList.add(questionnaireDetailVO);
+            }
+        }
+        return questionnaireDetailList;
+    }
+
+    @Override
+    public StudentAssessmentQuestionnaireDetailVO selectQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId){
+        QuestionnaireResultDO questionnaireResult = questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
+        StudentAssessmentQuestionnaireDetailVO questionnaireDetailVO = BeanUtils.toBean(questionnaireResult, StudentAssessmentQuestionnaireDetailVO.class);
+        return questionnaireDetailVO;
+    }
+
+    @Override
+    public QuestionnaireResultDO getQuestionnaireResultByUnique(String taskNo, Long questionnaireId, Long userId) {
+        return questionnaireResultMapper.selectByUnique(taskNo, userId, questionnaireId);
+    }
+
+    @Override
+    public QuestionnaireResultRespVO getQuestionnaireResult(Long id) {
+        log.debug("根据ID获取问卷结果，结果ID: {}", id);
+        
+        // 根据ID查询问卷结果
+        QuestionnaireResultDO result = questionnaireResultMapper.selectById(id);
+        if (result == null) {
+            log.warn("未找到ID为{}的问卷结果", id);
+            return null;
+        }
+        
+        // 转换为响应VO
+        QuestionnaireResultRespVO respVO = BeanUtils.toBean(result, QuestionnaireResultRespVO.class);
+        
+        // 处理时间字段转换（从Date转换为LocalDateTime）
+        if (result.getCompletedTime() != null) {
+            respVO.setCompletedTime(result.getCompletedTime().toInstant()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDateTime());
+        }
+        if (result.getGenerationTime() != null) {
+            respVO.setGenerationTime(result.getGenerationTime().toInstant()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDateTime());
+        }
+        
+        // 解析 resultData 为 dimensions 列表并填充 description
+        if (result.getResultData() != null && !result.getResultData().isEmpty()) {
+            try {
+                List<QuestionnaireResultRespVO.DimensionVO> dimensions = 
+                    JsonUtils.parseArray(result.getResultData(), 
+                        QuestionnaireResultRespVO.DimensionVO.class);
+                
+                if (dimensions != null && !dimensions.isEmpty()) {
+                    // 根据问卷ID查询所有维度信息
+                    List<QuestionnaireDimensionDO> dimensionDOList = 
+                        questionnaireDimensionMapper.selectByQuestionnaireId(result.getQuestionnaireId());
+                    
+                    // 构建维度ID到维度DO的映射
+                    Map<Long, QuestionnaireDimensionDO> dimensionMap = dimensionDOList.stream()
+                        .collect(Collectors.toMap(QuestionnaireDimensionDO::getId, d -> d));
+                    
+                    // 遍历每个dimension，填充description
+                    for (QuestionnaireResultRespVO.DimensionVO dimension : dimensions) {
+                        QuestionnaireDimensionDO dimensionDO = dimensionMap.get(dimension.getDimensionId());
+                        if (dimensionDO != null) {
+                            dimension.setName(dimensionDO.getDimensionName());
+                            dimension.setDescription(dimensionDO.getDescription());
+                        }
+                    }
+                    
+                    respVO.setDimensions(dimensions);
+                }
+            } catch (Exception e) {
+                log.warn("解析问卷结果维度数据失败，结果ID: {}, 错误: {}", id, e.getMessage());
+            }
+        }
+        
+        return respVO;
+    }
+
+}

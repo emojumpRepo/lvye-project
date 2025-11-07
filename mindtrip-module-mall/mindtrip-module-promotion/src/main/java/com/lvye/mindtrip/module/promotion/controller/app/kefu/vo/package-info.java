@@ -1,0 +1,1 @@
+package com.lvye.mindtrip.module.promotion.controller.app.kefu.vo;

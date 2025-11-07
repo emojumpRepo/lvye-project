@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvye.mindtrip.module.psychology.dal.mysql.profile.StudentProfileMapper">
+
+    <select id="selectPageList"
+            resultType="com.lvye.mindtrip.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
+        SELECT a.id, a.user_id, a.student_no, a.name,
+               CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
+               a.home_address, a.sex, a.ethnicity, a.guardian_mobile, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.psychological_status, a.risk_level, a.special_marks, a.remark,
+               a.create_time, a.update_time,
+               b.mobile, c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0
+            <if test="pageReqVO.studentNo != null and pageReqVO.studentNo !=''">
+                AND a.student_no LIKE CONCAT('%', #{pageReqVO.studentNo}, '%')
+            </if>
+            <if test="pageReqVO.name != null and pageReqVO.name !=''">
+                AND a.name LIKE CONCAT('%', #{pageReqVO.name}, '%')
+            </if>
+            <if test="pageReqVO.sex != null">
+                AND a.sex = #{pageReqVO.sex}
+            </if>
+            <if test="pageReqVO.ethnicity != null">
+                AND a.ethnicity = #{pageReqVO.ethnicity}
+            </if>
+            <if test="pageReqVO.gradeDeptId != null">
+                AND a.grade_dept_id = #{pageReqVO.gradeDeptId}
+            </if>
+            <if test="pageReqVO.classDeptId != null">
+                AND a.class_dept_id = #{pageReqVO.classDeptId}
+            </if>
+            <if test="pageReqVO.graduationStatus != null">
+                AND a.graduation_status = #{pageReqVO.graduationStatus}
+            </if>
+            <if test="pageReqVO.psychologicalStatus != null">
+                AND a.psychological_status = #{pageReqVO.psychologicalStatus}
+            </if>
+            <if test="pageReqVO.riskLevel != null">
+                AND a.risk_level = #{pageReqVO.riskLevel}
+            </if>
+            <!-- 数据权限：按可见部门与本人过滤 -->
+            <if test="(deptIds != null and deptIds.size > 0) or selfUserId != null">
+                AND (
+                <if test="deptIds != null and deptIds.size > 0">
+                    (
+                        a.class_dept_id IN
+                        <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+                        OR
+                        a.grade_dept_id IN
+                        <foreach collection="deptIds" item="gid" open="(" separator="," close=")">#{gid}</foreach>
+                    )
+                </if>
+                <if test="selfUserId != null">
+                    <if test="deptIds != null and deptIds.size > 0"> OR </if>
+                    a.user_id = #{selfUserId}
+                </if>
+                )
+            </if>
+            ORDER BY a.id DESC
+        </where>
+    </select>
+
+    <select id="selectInfoByStudentProfileId"
+            resultType="com.lvye.mindtrip.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
+        SELECT a.id, a.user_id, a.student_no, a.name,
+               CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
+               a.home_address, a.sex, a.ethnicity, a.guardian_mobile, a.id_card, a.enrollment_year, a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.psychological_status, a.risk_level, a.special_marks, a.remark,
+               a.create_time, a.update_time,
+               b.mobile, c.name AS gradeName, d.name AS className,
+               e.nickname AS updater,
+               (SELECT risk_level
+                FROM lvye_assessment_user_task
+                WHERE user_id = a.user_id
+                  AND deleted = 0
+                  AND status = 2
+                ORDER BY submit_time DESC
+                LIMIT 1) AS assessmentRiskLevel
+        FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        LEFT JOIN system_users e ON a.updater = e.id
+        <where>
+            a.deleted = 0 and a.id = #{studentProfileId}
+        </where>
+    </select>
+
+    <select id="selectInfoByUserId"
+            resultType="com.lvye.mindtrip.module.psychology.controller.admin.profile.vo.StudentProfileVO" >
+        SELECT a.*,b.mobile,c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0 and a.user_id = #{userId}
+        </where>
+    </select>
+
+    <select id="selectClassStudentCount" resultType="com.lvye.mindtrip.module.psychology.controller.admin.profile.vo.StudentClassVO">
+        select class_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 and graduation_status != 1 group by class_dept_id;
+    </select>
+
+    <select id="selectGradeStudentCount" resultType="com.lvye.mindtrip.module.psychology.controller.admin.profile.vo.StudentClassVO">
+        select grade_dept_id AS dept_id, count(*) AS count from lvye_student_profile where deleted = 0 and graduation_status != 1 group by grade_dept_id;
+    </select>
+
+    <!-- 根据学号和姓名模糊查询学生档案简化列表 -->
+    <select id="searchSimpleByStudentNoAndName"
+            resultType="com.lvye.mindtrip.module.psychology.controller.admin.profile.vo.StudentProfileSimpleVO">
+        SELECT a.id, a.student_no, a.name, a.grade_dept_id, a.class_dept_id,
+               c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0
+            <if test="studentNo != null and studentNo != ''">
+                AND a.student_no LIKE CONCAT('%', #{studentNo}, '%')
+            </if>
+            <if test="name != null and name != ''">
+                AND a.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <!-- 数据权限控制 -->
+            <if test="(deptIds != null and deptIds.size > 0) or selfUserId != null">
+                AND (
+                <if test="deptIds != null and deptIds.size > 0">
+                    (
+                        a.class_dept_id IN
+                        <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+                        OR
+                        a.grade_dept_id IN
+                        <foreach collection="deptIds" item="gid" open="(" separator="," close=")">#{gid}</foreach>
+                    )
+                </if>
+                <if test="selfUserId != null">
+                    <if test="deptIds != null and deptIds.size > 0"> OR </if>
+                    a.user_id = #{selfUserId}
+                </if>
+                )
+            </if>
+        </where>
+        ORDER BY a.id DESC
+    </select>
+
+    <!-- 根据年级部门ID和入学年份查询学生列表（用于批量毕业） -->
+    <select id="selectByGradeDeptIdAndEnrollmentYear"
+            resultType="com.lvye.mindtrip.module.psychology.dal.dataobject.profile.StudentProfileDO">
+        SELECT *
+        FROM lvye_student_profile
+        <where>
+            deleted = 0
+            AND grade_dept_id = #{gradeDeptId}
+            AND enrollment_year = #{enrollmentYear}
+            AND (graduation_status IS NULL OR graduation_status != 1)
+            <if test="excludeIds != null and excludeIds.size > 0">
+                AND id NOT IN
+                <foreach collection="excludeIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY id ASC
+    </select>
+
+    <!-- 根据年级部门ID和入学年份查询风险等级异常的学生列表（风险等级不为1） -->
+    <select id="selectAbnormalStudentsByGradeDeptIdAndEnrollmentYear"
+            resultType="com.lvye.mindtrip.module.psychology.controller.admin.profile.vo.StudentProfileVO">
+        SELECT a.id, a.user_id, a.student_no, a.name,
+               CASE WHEN a.birth_date IS NOT NULL THEN CONCAT(a.birth_date, ' 00:00:00') ELSE NULL END AS birth_date,
+               a.home_address, a.sex, a.ethnicity, a.guardian_mobile, a.id_card, a.enrollment_year, a.graduation_year,
+               a.grade_dept_id, a.class_dept_id, a.graduation_status,
+               a.psychological_status, a.risk_level, a.special_marks, a.remark,
+               a.create_time, a.update_time,
+               b.mobile, c.name AS gradeName, d.name AS className
+        FROM lvye_student_profile a
+        LEFT JOIN system_users b ON a.user_id = b.id
+        LEFT JOIN system_dept c ON a.grade_dept_id = c.id
+        LEFT JOIN system_dept d ON a.class_dept_id = d.id
+        <where>
+            a.deleted = 0
+            AND a.grade_dept_id = #{gradeDeptId}
+            AND a.enrollment_year = #{enrollmentYear}
+            AND (a.risk_level IS NULL OR a.risk_level != 1)
+        </where>
+        ORDER BY a.id ASC
+    </select>
+
+</mapper>

@@ -1,7 +1,7 @@
 # Java/Spring Boot 后端开发指南
 
 > **技能类型**: 开发规范和最佳实践  
-> **适用范围**: yudao-module-*、yudao-framework、yudao-server  
+> **适用范围**: mindtrip-module-*、mindtrip-framework、mindtrip-server  
 > **技术栈**: Java 8+, Spring Boot, MyBatis-Plus, Redis, MySQL
 
 ---
@@ -35,12 +35,12 @@
 
 ```
 lvye-project/
-├── yudao-framework/           # 框架核心
-│   ├── yudao-common/         # 通用工具和基础类
-│   ├── yudao-spring-boot-starter-*  # 各种 Starter
-├── yudao-module-*/           # 业务模块
+├── mindtrip-framework/           # 框架核心
+│   ├── mindtrip-common/         # 通用工具和基础类
+│   ├── mindtrip-spring-boot-starter-*  # 各种 Starter
+├── mindtrip-module-*/           # 业务模块
 │   └── src/main/java/
-│       └── cn/iocoder/yudao/module/[module]/
+│       └── com.lvye.mindtrip/module/[module]/
 │           ├── controller/   # 控制器层
 │           │   └── [admin|app]/  # 管理端/用户端
 │           ├── service/      # 业务逻辑层
@@ -54,7 +54,7 @@ lvye-project/
 │           └── vo/           # VO (Value Object)
 │               ├── [ReqVO].java   # 请求参数
 │               └── [RespVO].java  # 响应参数
-└── yudao-server/             # 服务启动入口
+└── mindtrip-server/             # 服务启动入口
 ```
 
 ### 技术栈
@@ -286,7 +286,7 @@ public enum UserTypeEnum {
 
 在以下情况下，此技能会自动激活：
 - 编辑 Java 文件 (Controller, Service, Mapper)
-- 在 yudao-module-* 或 yudao-framework 目录工作
+- 在 mindtrip-module-* 或 mindtrip-framework 目录工作
 - 询问关于后端、接口、数据库的问题
 
 手动激活：`@backend-dev-guidelines`

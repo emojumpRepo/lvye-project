@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvye.mindtrip.module.system.dal.mysql.permission.UserRoleMapper">
+
+    <select id="selectUserListByRoleIdAndDeptId"
+            resultType="com.lvye.mindtrip.module.system.api.user.dto.QuickReportHandleUserVO">
+        select a.user_id, c.name as role_name, b.nickname as name from system_user_role a
+        left join system_users b on b.id = a.user_id
+        left join system_role c on c.id = a.role_id
+        where a.deleted = 0 and b.deleted = 0 and a.role_id = #{roleId}
+        <if test="deptId != null">
+            and b.dept_id = #{deptId}
+        </if>
+    </select>
+
+    <!-- 结果映射：用户及角色信息 -->
+    <resultMap id="UserWithRoleInfoResultMap" type="com.lvye.mindtrip.module.system.controller.admin.user.vo.user.UserWithRoleInfoRespVO">
+        <id property="id" column="id"/>
+        <result property="nickname" column="nickname"/>
+        <collection property="roleInfo" ofType="com.lvye.mindtrip.module.system.controller.admin.user.vo.user.UserWithRoleInfoRespVO$RoleInfo">
+            <result property="roleId" column="roleId"/>
+            <result property="roleCode" column="roleCode"/>
+        </collection>
+    </resultMap>
+
+    <!-- 查询非学生角色的用户及其角色信息 -->
+    <select id="selectNonStudentUsersWithRoles" resultMap="UserWithRoleInfoResultMap">
+        SELECT
+            u.id,
+            u.nickname,
+            ur.role_id as roleId,
+            r.code as roleCode
+        FROM system_users u
+        LEFT JOIN system_user_role ur ON u.id = ur.user_id AND ur.deleted = 0
+        LEFT JOIN system_role r ON ur.role_id = r.id AND r.deleted = 0 AND r.name != '学生'
+        WHERE u.deleted = 0
+          -- 排除只有学生角色的用户，但保留没有角色的用户
+          AND (
+              -- 没有任何角色
+              NOT EXISTS (
+                  SELECT 1 FROM system_user_role ur_check
+                  WHERE ur_check.user_id = u.id AND ur_check.deleted = 0
+              )
+              OR
+              -- 至少有一个非学生角色
+              EXISTS (
+                  SELECT 1
+                  FROM system_user_role ur_ns
+                  INNER JOIN system_role r_ns ON ur_ns.role_id = r_ns.id
+                  WHERE ur_ns.user_id = u.id
+                    AND ur_ns.deleted = 0
+                    AND r_ns.deleted = 0
+                    AND r_ns.name != '学生'
+              )
+          )
+        ORDER BY u.id, ur.role_id
+    </select>
+
+</mapper>

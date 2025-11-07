@@ -17,7 +17,7 @@
 - ✅ 建立独立版本体系（从 v0.0.1 开始）
 - ✅ 前后端独立版本文件：
   - 后端：`version.properties`
-  - 前端：`yudao-ui/lvye-project-frontend/version.json`
+  - 前端：`mindtrip-ui/lvye-project-frontend/version.json`
 - ✅ Git tag 命名规范：
   - 后端：`mindtrip-backend-v0.0.1`
   - 前端：`mindtrip-frontend-v0.0.1`
@@ -86,7 +86,7 @@ node script/test-dify.mjs
 │       ├── deploy-backend.mjs
 │       └── deploy-frontend.mjs
 ├── version.properties       # 后端版本文件
-└── yudao-ui/
+└── mindtrip-ui/
     └── lvye-project-frontend/
         └── version.json     # 前端版本文件
 ```

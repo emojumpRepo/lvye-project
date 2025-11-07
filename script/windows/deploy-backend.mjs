@@ -32,8 +32,8 @@ const SERVER_USER = 'root';
 const SERVER_PORT = 22;
 
 // 本地 JAR 路径
-const LOCAL_JAR = path.join(__dirname, '../../yudao-server/target/yudao-server.jar');
-const JAR_NAME = 'yudao-server.jar';
+const LOCAL_JAR = path.join(__dirname, '../../mindtrip-server/target/mindtrip-server.jar');
+const JAR_NAME = 'mindtrip-server.jar';
 
 console.log(chalk.cyan('========================================'));
 console.log(chalk.cyan('    Mindtrip Backend Deployment (SSH2)'));
@@ -62,7 +62,7 @@ console.log();
 // Check if local JAR exists
 if (!fs.existsSync(LOCAL_JAR)) {
     console.log(chalk.red('[Error] Local JAR file not found, please build first:'));
-    console.log('  mvn -f yudao-server clean package -DskipTests');
+    console.log('  mvn -f mindtrip-server clean package -DskipTests');
     process.exit(1);
 }
 
@@ -177,10 +177,10 @@ function deployWithSSH() {
                                 `docker rm mindtrip-server 2>/dev/null || true`,
                                 
                                 // Build Docker image with no cache to ensure fresh build
-                                `cd "${REMOTE_DIR}" && echo "[Docker] Building fresh image (no cache)..." && docker build --no-cache -t yudao-server .`,
+                                `cd "${REMOTE_DIR}" && echo "[Docker] Building fresh image (no cache)..." && docker build --no-cache -t mindtrip-server .`,
                                 
                                 // Run new container
-                                `echo "[Docker] Starting new container..." && docker run -d --name mindtrip-server --restart=always -p 48080:48080 yudao-server:latest`,
+                                `echo "[Docker] Starting new container..." && docker run -d --name mindtrip-server --restart=always -p 48080:48080 mindtrip-server:latest`,
                                 
                                 // Verify container is running
                                 `sleep 3 && docker ps | grep mindtrip-server && echo "[Success] Container is running" || echo "[Error] Container failed to start"`
@@ -195,9 +195,9 @@ function deployWithSSH() {
                                 // Also copy to root directory to be safe
                                 `cp -f "${REMOTE_DIR}/target/${JAR_NAME}" "${REMOTE_DIR}/${JAR_NAME}"`,
                                 // Build Docker image
-                                `cd "${REMOTE_DIR}" && echo "[Docker] Building image..." && docker build -t yudao-server .`,
+                                `cd "${REMOTE_DIR}" && echo "[Docker] Building image..." && docker build -t mindtrip-server .`,
                                 // Execute deployment script
-                                `cd "${REMOTE_DIR}" && chmod +x deploy.sh && echo "[Deploy] Running deploy.sh..." && IMAGE=yudao-server:latest bash deploy.sh`
+                                `cd "${REMOTE_DIR}" && chmod +x deploy.sh && echo "[Deploy] Running deploy.sh..." && IMAGE=mindtrip-server:latest bash deploy.sh`
                             ];
                         }
 

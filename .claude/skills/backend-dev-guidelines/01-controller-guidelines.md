@@ -21,12 +21,12 @@ Controller 层是 **薄控制器**，只负责：
 ### 基础 CRUD Controller
 
 ```java
-package cn.iocoder.yudao.module.psychology.controller.admin.user;
+package com.lvye.mindtrip.module.psychology.controller.admin.user;
 
-import cn.iocoder.yudao.framework.common.pojo.CommonResult;
-import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.psychology.controller.admin.user.vo.*;
-import cn.iocoder.yudao.module.psychology.service.user.UserService;
+import com.lvye.mindtrip.framework.common.pojo.CommonResult;
+import com.lvye.mindtrip.framework.common.pojo.PageResult;
+import com.lvye.mindtrip.module.psychology.controller.admin.user.vo.*;
+import com.lvye.mindtrip.module.psychology.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 
-import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static com.lvye.mindtrip.framework.common.pojo.CommonResult.success;
 
 /**
  * 用户管理 Controller

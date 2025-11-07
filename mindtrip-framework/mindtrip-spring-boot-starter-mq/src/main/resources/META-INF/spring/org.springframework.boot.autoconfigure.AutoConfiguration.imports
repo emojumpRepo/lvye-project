@@ -1,0 +1,3 @@
+com.lvye.mindtrip.framework.mq.redis.config.MindtripRedisMQProducerAutoConfiguration
+com.lvye.mindtrip.framework.mq.redis.config.MindtripRedisMQConsumerAutoConfiguration
+com.lvye.mindtrip.framework.mq.rabbitmq.config.MindtripRabbitMQAutoConfiguration

@@ -65,8 +65,8 @@ if (!COS_CONFIG.secretId || !COS_CONFIG.secretKey) {
 const PROJECTS = {
     '1': {
         name: 'Admin Management Backend',
-        localDistPath: path.join(__dirname, '../../yudao-ui/lvye-project-frontend/apps/admin/dist'),
-        buildPath: 'yudao-ui/lvye-project-frontend/apps/admin',
+        localDistPath: path.join(__dirname, '../../mindtrip-ui/lvye-project-frontend/apps/admin/dist'),
+        buildPath: 'mindtrip-ui/lvye-project-frontend/apps/admin',
         cosPath: '/admin',
         nginxPath: '/root/mindfront/work/nginx/html/admin',
         cdnUrl: `https://${COS_CONFIG.cdnDomain}/admin`,
@@ -74,8 +74,8 @@ const PROJECTS = {
     },
     '2': {
         name: 'Web User Frontend', 
-        localDistPath: path.join(__dirname, '../../yudao-ui/lvye-project-frontend/apps/web/dist'),
-        buildPath: 'yudao-ui/lvye-project-frontend/apps/web',
+        localDistPath: path.join(__dirname, '../../mindtrip-ui/lvye-project-frontend/apps/web/dist'),
+        buildPath: 'mindtrip-ui/lvye-project-frontend/apps/web',
         cosPath: '/web',
         nginxPath: '/root/mindfront/work/nginx/html/web',
         cdnUrl: `https://${COS_CONFIG.cdnDomain}/web`,

@@ -44,7 +44,7 @@ const COS_CONFIG = {
 // 项目配置
 const TEST_PROJECT = {
     name: 'Admin Frontend Test',
-    localDistPath: path.join(__dirname, '../../yudao-ui/lvye-project-frontend/apps/admin/dist'),
+    localDistPath: path.join(__dirname, '../../mindtrip-ui/lvye-project-frontend/apps/admin/dist'),
     cosPath: COS_CONFIG.testPath,
     directUrl: `${COS_CONFIG.cosUrl}${COS_CONFIG.testPath}`
 };

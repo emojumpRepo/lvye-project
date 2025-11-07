@@ -1,0 +1,3 @@
+com.lvye.mindtrip.framework.datasource.config.MindtripDataSourceAutoConfiguration
+com.lvye.mindtrip.framework.mybatis.config.MindtripMybatisAutoConfiguration
+com.lvye.mindtrip.framework.translate.config.MindtripTranslateAutoConfiguration

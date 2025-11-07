@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lvye.mindtrip.module.psychology.dal.mysql.consultation.CrisisInterventionMapper">
+
+    <!-- 带关联查询的分页查询 - 查询数据 -->
+    <select id="selectPageWithStudentInfo"
+            resultType="com.lvye.mindtrip.module.psychology.dal.dataobject.consultation.CrisisInterventionDO">
+        SELECT DISTINCT a.*
+        FROM lvye_crisis_intervention a
+        LEFT JOIN lvye_student_profile b ON a.student_profile_id = b.id AND b.deleted = 0
+        <where>
+            a.deleted = 0
+            <if test="reqVO.studentProfileId != null">
+                AND a.student_profile_id = #{reqVO.studentProfileId}
+            </if>
+            <if test="reqVO.priority != null">
+                AND a.priority = #{reqVO.priority}
+            </if>
+            <if test="reqVO.processStatus != null">
+                AND a.process_status = #{reqVO.processStatus}
+            </if>
+            <!-- 负责心理老师查询 -->
+            <if test="reqVO.counselorUserId != null">
+                AND a.handler_user_id = #{reqVO.counselorUserId}
+            </if>
+            <!-- 事件来源类型查询 -->
+            <if test="reqVO.sourceType != null">
+                AND a.source_type = #{reqVO.sourceType}
+            </if>
+            <!-- 状态查询 -->
+            <if test="reqVO.status != null">
+                AND a.status = #{reqVO.status}
+            </if>
+            <!-- 学号模糊查询 -->
+            <if test="reqVO.studentNo != null and reqVO.studentNo != ''">
+                AND b.student_no LIKE CONCAT('%', #{reqVO.studentNo}, '%')
+            </if>
+            <!-- 学生姓名模糊查询 -->
+            <if test="reqVO.studentName != null and reqVO.studentName != ''">
+                AND b.name LIKE CONCAT('%', #{reqVO.studentName}, '%')
+            </if>
+            <!-- 班级查询 -->
+            <if test="reqVO.classId != null">
+                AND b.class_dept_id = #{reqVO.classId}
+            </if>
+        </where>
+        ORDER BY a.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 带关联查询的分页查询 - 统计总数 -->
+    <select id="countPageWithStudentInfo" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT a.id)
+        FROM lvye_crisis_intervention a
+        LEFT JOIN lvye_student_profile b ON a.student_profile_id = b.id AND b.deleted = 0
+        <where>
+            a.deleted = 0
+            <if test="reqVO.studentProfileId != null">
+                AND a.student_profile_id = #{reqVO.studentProfileId}
+            </if>
+            <if test="reqVO.priority != null">
+                AND a.priority = #{reqVO.priority}
+            </if>
+            <if test="reqVO.processStatus != null">
+                AND a.process_status = #{reqVO.processStatus}
+            </if>
+            <!-- 负责心理老师查询 -->
+            <if test="reqVO.counselorUserId != null">
+                AND a.handler_user_id = #{reqVO.counselorUserId}
+            </if>
+            <!-- 事件来源类型查询 -->
+            <if test="reqVO.sourceType != null">
+                AND a.source_type = #{reqVO.sourceType}
+            </if>
+            <!-- 状态查询 -->
+            <if test="reqVO.status != null">
+                AND a.status = #{reqVO.status}
+            </if>
+            <!-- 学号模糊查询 -->
+            <if test="reqVO.studentNo != null and reqVO.studentNo != ''">
+                AND b.student_no LIKE CONCAT('%', #{reqVO.studentNo}, '%')
+            </if>
+            <!-- 学生姓名模糊查询 -->
+            <if test="reqVO.studentName != null and reqVO.studentName != ''">
+                AND b.name LIKE CONCAT('%', #{reqVO.studentName}, '%')
+            </if>
+            <!-- 班级查询 -->
+            <if test="reqVO.classId != null">
+                AND b.class_dept_id = #{reqVO.classId}
+            </if>
+        </where>
+    </select>
+
+</mapper>
