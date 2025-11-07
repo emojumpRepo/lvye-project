@@ -1,0 +1,127 @@
+{
+  "$schema": "https://claude.ai/skill-rules-schema.json",
+  "version": "1.0",
+  "description": "技能自动激活规则配置 - Java/Spring Boot + Vue 3 项目",
+  "skills": {
+    "backend-dev-guidelines": {
+      "enabled": true,
+      "description": "Java/Spring Boot 后端开发规范和最佳实践",
+      "filePatterns": [
+        "yudao-module-",
+        "yudao-framework",
+        "yudao-server",
+        "/controller/",
+        "/service/",
+        "/mapper/",
+        "/dal/",
+        ".java"
+      ],
+      "keywords": [
+        "controller",
+        "service",
+        "mapper",
+        "entity",
+        "dto",
+        "vo",
+        "mybatis",
+        "spring boot",
+        "后端",
+        "接口",
+        "数据库",
+        "redis",
+        "事务"
+      ]
+    },
+    "frontend-dev-guidelines": {
+      "enabled": true,
+      "description": "Vue 3 前端开发规范和最佳实践",
+      "filePatterns": [
+        "yudao-ui",
+        "lvye-project-frontend",
+        "/apps/admin/",
+        "/apps/web/",
+        ".vue",
+        ".ts",
+        "/views/",
+        "/components/",
+        "/api/"
+      ],
+      "keywords": [
+        "vue",
+        "component",
+        "组件",
+        "前端",
+        "页面",
+        "路由",
+        "状态",
+        "api",
+        "typescript",
+        "vite",
+        "tailwind"
+      ]
+    },
+    "database-guidelines": {
+      "enabled": true,
+      "description": "数据库设计和 MyBatis 使用规范",
+      "filePatterns": [
+        "/sql/",
+        "/mapper/",
+        "/dal/",
+        ".sql",
+        "Mapper.java",
+        "Mapper.xml"
+      ],
+      "keywords": [
+        "数据库",
+        "sql",
+        "mybatis",
+        "mapper",
+        "查询",
+        "建表",
+        "索引",
+        "mysql",
+        "分页"
+      ]
+    },
+    "testing-guidelines": {
+      "enabled": true,
+      "description": "单元测试和集成测试规范",
+      "filePatterns": [
+        "/test/",
+        "Test.java",
+        "test.ts",
+        ".spec.ts"
+      ],
+      "keywords": [
+        "测试",
+        "test",
+        "junit",
+        "mock",
+        "单元测试",
+        "集成测试"
+      ]
+    },
+    "error-tracking": {
+      "enabled": true,
+      "description": "错误处理和异常追踪",
+      "filePatterns": [
+        "/exception/",
+        "Exception.java",
+        "/enums/ErrorCode"
+      ],
+      "keywords": [
+        "异常",
+        "错误",
+        "exception",
+        "error",
+        "错误码"
+      ]
+    }
+  },
+  "globalRules": {
+    "maxSuggestionsPerPrompt": 3,
+    "prioritizeRecentlyUsed": true,
+    "combineRelatedSkills": true
+  }
+}
+
