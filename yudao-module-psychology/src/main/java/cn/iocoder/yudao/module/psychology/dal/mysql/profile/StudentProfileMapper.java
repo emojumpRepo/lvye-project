@@ -81,6 +81,10 @@ public interface StudentProfileMapper extends BaseMapperX<StudentProfileDO> {
         return selectList(StudentProfileDO::getGraduationStatus, 1);
     }
 
+    default StudentProfileDO selectByMobile(String mobile) {
+        return selectOne(StudentProfileDO::getGuardianMobile, mobile);
+    }
+
     /**
      * 根据年级部门ID和入学年份查询学生列表（用于批量毕业）
      *

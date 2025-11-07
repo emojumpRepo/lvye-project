@@ -96,8 +96,18 @@ public class AssessmentTaskDO extends TenantBaseDO {
     @TableField(exist = false)
     private Long totalNum;
 
+    /**
+     * 场景编号(非持久化字段)
+     */
+    @TableField(exist = false)
+    private String scenarioCode;
+
+    /**
+     * 场景名称(非持久化字段)
+     */
+    @TableField(exist = false)
+    private String scenarioName;
 
 }
-
 
 

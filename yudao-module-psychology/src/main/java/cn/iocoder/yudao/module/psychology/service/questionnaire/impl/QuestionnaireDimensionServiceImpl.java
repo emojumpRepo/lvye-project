@@ -48,7 +48,8 @@ public class QuestionnaireDimensionServiceImpl implements QuestionnaireDimension
         dimension.setParticipateModuleCalc(booleanToInteger(createReqVO.getParticipateModuleCalc()));
         dimension.setParticipateAssessmentCalc(booleanToInteger(createReqVO.getParticipateAssessmentCalc()));
         dimension.setParticipateRanking(booleanToInteger(createReqVO.getParticipateRanking()));
-        
+        dimension.setShowScore(booleanToInteger(createReqVO.getShowScore()));
+
         dimension.setCreateTime(LocalDateTime.now());
         dimension.setUpdateTime(LocalDateTime.now());
         dimension.setDeleted(false);
@@ -76,7 +77,8 @@ public class QuestionnaireDimensionServiceImpl implements QuestionnaireDimension
         updateObj.setParticipateModuleCalc(booleanToInteger(updateReqVO.getParticipateModuleCalc()));
         updateObj.setParticipateAssessmentCalc(booleanToInteger(updateReqVO.getParticipateAssessmentCalc()));
         updateObj.setParticipateRanking(booleanToInteger(updateReqVO.getParticipateRanking()));
-        
+        updateObj.setShowScore(booleanToInteger(updateReqVO.getShowScore()));
+
         updateObj.setUpdateTime(LocalDateTime.now());
         
         questionnaireDimensionMapper.updateById(updateObj);
@@ -168,7 +170,8 @@ public class QuestionnaireDimensionServiceImpl implements QuestionnaireDimension
             dimension.setParticipateModuleCalc(booleanToInteger(createReqVO.getParticipateModuleCalc()));
             dimension.setParticipateAssessmentCalc(booleanToInteger(createReqVO.getParticipateAssessmentCalc()));
             dimension.setParticipateRanking(booleanToInteger(createReqVO.getParticipateRanking()));
-            
+            dimension.setShowScore(booleanToInteger(createReqVO.getShowScore()));
+
             dimension.setCreateTime(LocalDateTime.now());
             dimension.setUpdateTime(LocalDateTime.now());
             dimension.setDeleted(false);

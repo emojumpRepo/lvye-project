@@ -40,6 +40,8 @@ public interface AuthConvert {
                 .menus(buildMenuTree(menuList))
                 //是否为家长登录
                 .isParent(WebFrameworkUtils.getIsParent())
+                // 租户名称（默认为 null）
+                .tenantName(null)
                 .build();
     }
 
@@ -55,6 +57,25 @@ public interface AuthConvert {
                 .menus(buildMenuTree(menuList))
                 //是否为家长登录
                 .isParent(WebFrameworkUtils.getIsParent())
+                // 租户名称（默认为 null）
+                .tenantName(null)
+                .build();
+    }
+
+    default AuthPermissionInfoRespVO convert(AdminUserDO user, List<RoleDO> roleList, List<MenuDO> menuList, String deptName, String tenantName) {
+        AuthPermissionInfoRespVO.UserVO userVO = BeanUtils.toBean(user, AuthPermissionInfoRespVO.UserVO.class);
+        userVO.setDeptName(deptName);
+        return AuthPermissionInfoRespVO.builder()
+                .user(userVO)
+                .roles(convertSet(roleList, RoleDO::getCode))
+                // 权限标识信息
+                .permissions(convertSet(menuList, MenuDO::getPermission))
+                // 菜单树
+                .menus(buildMenuTree(menuList))
+                //是否为家长登录
+                .isParent(WebFrameworkUtils.getIsParent())
+                // 租户名称
+                .tenantName(tenantName)
                 .build();
     }
 

@@ -201,4 +201,12 @@ public interface StudentProfileService {
      */
     Integer changeClass(ChangeClassReqVO reqVO);
 
+    /**
+     * 根据监护人手机号获取学生档案
+     *
+     * @param mobile 监护人手机号
+     * @return 学生档案
+     */
+    StudentProfileDO getStudentProfileByMobile(String mobile);
+
 }

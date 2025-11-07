@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -23,7 +24,7 @@ public class YudaoApiEncryptAutoConfiguration {
     @Bean
     public FilterRegistrationBean<ApiEncryptFilter> apiEncryptFilter(WebProperties webProperties,
                                                                      ApiEncryptProperties apiEncryptProperties,
-                                                                     RequestMappingHandlerMapping requestMappingHandlerMapping,
+                                                                     @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping requestMappingHandlerMapping,
                                                                      GlobalExceptionHandler globalExceptionHandler) {
         ApiEncryptFilter filter = new ApiEncryptFilter(webProperties, apiEncryptProperties,
                 requestMappingHandlerMapping, globalExceptionHandler);

@@ -532,6 +532,14 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         return studentProfileMapper.searchSimpleByStudentNoAndName(studentNo, name, deptIds, selfUserId);
     }
 
+    @Override
+    public StudentProfileDO getStudentProfileByMobile(String mobile) {
+        if (mobile == null || mobile.trim().isEmpty()) {
+            return null;
+        }
+        return studentProfileMapper.selectByMobile(mobile.trim());
+    }
+
     /**
      * 检查字段完善情况
      */

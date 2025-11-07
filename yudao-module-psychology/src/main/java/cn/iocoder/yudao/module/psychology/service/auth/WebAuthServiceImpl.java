@@ -7,10 +7,15 @@ import cn.iocoder.yudao.framework.common.util.validation.ValidationUtils;
 import cn.iocoder.yudao.framework.tenant.core.context.TenantContextHolder;
 import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthLoginReqVO;
 import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthLoginRespVO;
+import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthSmsLoginReqVO;
+import cn.iocoder.yudao.module.psychology.controller.app.auth.vo.WebAuthSmsSendReqVO;
 import cn.iocoder.yudao.module.psychology.dal.dataobject.profile.StudentProfileDO;
 import cn.iocoder.yudao.module.psychology.enums.ErrorCodeConstants;
 import cn.iocoder.yudao.module.psychology.service.profile.StudentProfileService;
 import cn.iocoder.yudao.module.system.api.logger.dto.LoginLogCreateReqDTO;
+import cn.iocoder.yudao.module.system.api.sms.SmsCodeApi;
+import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeSendReqDTO;
+import cn.iocoder.yudao.module.system.api.sms.dto.code.SmsCodeUseReqDTO;
 import cn.iocoder.yudao.module.system.api.social.dto.SocialUserBindReqDTO;
 import cn.iocoder.yudao.module.system.controller.admin.auth.vo.CaptchaVerificationReqVO;
 import cn.iocoder.yudao.module.system.dal.dataobject.oauth2.OAuth2AccessTokenDO;
@@ -38,6 +43,7 @@ import org.springframework.validation.annotation.Validated;
 import java.util.Objects;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.framework.common.util.servlet.ServletUtils.getClientIP;
 import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.AUTH_LOGIN_CAPTCHA_CODE_ERROR;
 
 /**
@@ -84,6 +90,9 @@ public class WebAuthServiceImpl implements WebAuthService {
 
     @Resource
     private cn.iocoder.yudao.module.infra.api.config.ConfigApi configApi;
+
+    @Resource
+    private SmsCodeApi smsCodeApi;
 
     private static final String KEY_ENABLE_PASSWORD_LOGIN = "student.enablePasswordLogin";
 
@@ -143,8 +152,65 @@ public class WebAuthServiceImpl implements WebAuthService {
             socialUserService.bindSocialUser(new SocialUserBindReqDTO(user.getId(), getUserType().getValue(),
                     reqVO.getSocialType(), reqVO.getSocialCode(), reqVO.getSocialState()));
         }
-        // 创建 Token 令牌，记录登录日志
+        // 创建 Token 令牌,记录登录日志
         return createTokenAfterLoginSuccess(user.getId(), reqVO.getUsername(), LoginLogTypeEnum.LOGIN_USERNAME, reqVO.getIsParent());
+    }
+
+    @Override
+    public WebAuthLoginRespVO smsLogin(WebAuthSmsLoginReqVO reqVO) {
+        // 校验验证码
+        String userIp = getClientIP();
+        SmsCodeUseReqDTO smsCodeUseReqDTO = new SmsCodeUseReqDTO();
+        smsCodeUseReqDTO.setMobile(reqVO.getMobile());
+        smsCodeUseReqDTO.setCode(reqVO.getCode());
+        smsCodeUseReqDTO.setScene(cn.iocoder.yudao.module.system.enums.sms.SmsSceneEnum.MEMBER_LOGIN.getScene());
+        smsCodeUseReqDTO.setUsedIp(userIp);
+        smsCodeApi.useSmsCode(smsCodeUseReqDTO);
+
+        // 1. 先根据手机号查找用户账号
+        log.info("尝试通过手机号登录，手机号: {}, 当前租户ID: {}", reqVO.getMobile(), TenantContextHolder.getTenantId());
+        AdminUserDO user = userMapper.selectByMobile(reqVO.getMobile());
+
+        if (user == null) {
+            log.warn("用户账号不存在，手机号: {}, 租户ID: {}", reqVO.getMobile(), TenantContextHolder.getTenantId());
+            throw exception(cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_NOT_EXISTS);
+        }
+
+        log.info("通过手机号找到用户账号: userId={}, username={}", user.getId(), user.getUsername());
+
+        // 2. 再通过用户ID查找学生档案
+        StudentProfileDO studentProfile = studentProfileService.getStudentProfileByUserId(user.getId());
+
+        if (studentProfile == null) {
+            log.warn("学生档案不存在，用户ID: {}, 手机号: {}, 租户ID: {}", user.getId(), reqVO.getMobile(), TenantContextHolder.getTenantId());
+            throw exception(ErrorCodeConstants.STUDENT_PROFILE_NOT_EXISTS);
+        }
+
+        log.info("通过用户ID找到学生档案: {}, 学号: {}", studentProfile.getId(), studentProfile.getStudentNo());
+
+        // 3. 校验用户状态
+        if (cn.iocoder.yudao.framework.common.enums.CommonStatusEnum.DISABLE.getStatus().equals(user.getStatus())) {
+            throw exception(cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_IS_DISABLE, user.getNickname());
+        }
+
+        // 如果 socialType 非空，说明需要绑定社交用户
+        if (reqVO.getSocialType() != null) {
+            socialUserService.bindSocialUser(new SocialUserBindReqDTO(user.getId(), getUserType().getValue(),
+                    reqVO.getSocialType(), reqVO.getSocialCode(), reqVO.getSocialState()));
+        }
+
+        // 创建 Token 令牌，记录登录日志
+        return createTokenAfterLoginSuccess(user.getId(), reqVO.getMobile(), LoginLogTypeEnum.LOGIN_SMS, reqVO.getIsParent());
+    }
+
+    @Override
+    public void sendSmsCode(WebAuthSmsSendReqVO reqVO) {
+        // 发送短信验证码
+        SmsCodeSendReqDTO smsCodeSendReqDTO = new SmsCodeSendReqDTO();
+        smsCodeSendReqDTO.setMobile(reqVO.getMobile());
+        smsCodeSendReqDTO.setScene(reqVO.getScene());
+        smsCodeSendReqDTO.setCreateIp(getClientIP());
+        smsCodeApi.sendSmsCode(smsCodeSendReqDTO);
     }
 
     @Override
@@ -171,7 +237,7 @@ public class WebAuthServiceImpl implements WebAuthService {
     }
 
     void validateCaptcha(WebAuthLoginReqVO reqVO) {
-        ResponseModel response = doValidateCaptcha(reqVO);
+        ResponseModel response = doValidateCaptcha((CaptchaVerificationReqVO) reqVO);
         // 校验验证码
         if (!response.isSuccess()) {
             // 创建登录失败日志（验证码不正确)
