@@ -59,9 +59,6 @@ application-my.yaml
 # Ignore frontend UI project contents
 /yudao-ui/
 
-# Ignore Claude config/state
-.claude
-
 # Ignore environment files (e.g., .env, .env.local, .env.production)
 .env
 .env.local

@@ -1,0 +1,143 @@
+{
+  "$schema": "https://claude.ai/settings-schema.json",
+  "name": "lvye-project",
+  "description": "绿叶心理项目 - Java/Spring Boot + Vue 3 开发环境配置",
+  "version": "1.0.0",
+  
+  "hooks": {
+    "userPromptSubmit": [
+      {
+        "enabled": true,
+        "name": "skill-activation",
+        "description": "自动激活相关技能",
+        "script": ".claude/hooks/skill-activation-prompt.js"
+      }
+    ],
+    "postToolUse": [
+      {
+        "enabled": true,
+        "name": "tool-tracker",
+        "description": "追踪工具使用",
+        "script": ".claude/hooks/post-tool-use-tracker.sh"
+      }
+    ]
+  },
+  
+  "skills": [
+    {
+      "name": "backend-dev-guidelines",
+      "path": ".claude/skills/backend-dev-guidelines/SKILL.md",
+      "enabled": true,
+      "autoLoad": false,
+      "description": "Java/Spring Boot 后端开发规范"
+    },
+    {
+      "name": "frontend-dev-guidelines",
+      "path": ".claude/skills/frontend-dev-guidelines/SKILL.md",
+      "enabled": true,
+      "autoLoad": false,
+      "description": "Vue 3 前端开发规范"
+    },
+    {
+      "name": "database-guidelines",
+      "path": ".claude/skills/database-guidelines/SKILL.md",
+      "enabled": true,
+      "autoLoad": false,
+      "description": "数据库和 MyBatis 使用规范"
+    },
+    {
+      "name": "testing-guidelines",
+      "path": ".claude/skills/testing-guidelines/SKILL.md",
+      "enabled": true,
+      "autoLoad": false,
+      "description": "测试规范"
+    },
+    {
+      "name": "error-tracking",
+      "path": ".claude/skills/error-tracking/SKILL.md",
+      "enabled": true,
+      "autoLoad": false,
+      "description": "错误追踪和异常处理"
+    }
+  ],
+  
+  "agents": [
+    {
+      "name": "code-reviewer",
+      "path": ".claude/agents/code-reviewer.md",
+      "enabled": true,
+      "description": "代码审查助手"
+    },
+    {
+      "name": "refactor-planner",
+      "path": ".claude/agents/refactor-planner.md",
+      "enabled": true,
+      "description": "重构规划助手"
+    },
+    {
+      "name": "error-resolver",
+      "path": ".claude/agents/error-resolver.md",
+      "enabled": true,
+      "description": "错误解决助手"
+    },
+    {
+      "name": "api-tester",
+      "path": ".claude/agents/api-tester.md",
+      "enabled": true,
+      "description": "API 测试助手"
+    }
+  ],
+  
+  "commands": [
+    {
+      "name": "/dev-docs",
+      "path": ".claude/commands/dev-docs.md",
+      "enabled": true,
+      "description": "创建开发文档"
+    }
+  ],
+  
+  "preferences": {
+    "language": "zh-CN",
+    "codeStyle": {
+      "java": {
+        "indentSize": 4,
+        "useTabs": false,
+        "lineLength": 120
+      },
+      "typescript": {
+        "indentSize": 2,
+        "useTabs": false,
+        "lineLength": 100,
+        "semi": true,
+        "singleQuote": true
+      },
+      "vue": {
+        "scriptSetup": true,
+        "indentSize": 2
+      }
+    },
+    "contextPreservation": {
+      "enabled": true,
+      "devDocsPath": "dev/active"
+    }
+  },
+  
+  "projectInfo": {
+    "type": "fullstack",
+    "backend": {
+      "language": "Java",
+      "framework": "Spring Boot 2.x",
+      "buildTool": "Maven",
+      "database": "MySQL 8.0",
+      "orm": "MyBatis-Plus"
+    },
+    "frontend": {
+      "framework": "Vue 3",
+      "language": "TypeScript",
+      "buildTool": "Vite",
+      "uiFramework": "Vben Admin"
+    }
+  }
+}
+
