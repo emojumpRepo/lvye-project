@@ -107,7 +107,7 @@ npm run test:dify         # 测试 Dify API
 
 ### 版本文件
 - **后端**：`/version.properties`
-- **前端**：`/yudao-ui/lvye-project-frontend/version.json`
+- **前端**：`/mindtrip-ui/lvye-project-frontend/version.json`
 
 ## 🏷️ Git 标签规范
 

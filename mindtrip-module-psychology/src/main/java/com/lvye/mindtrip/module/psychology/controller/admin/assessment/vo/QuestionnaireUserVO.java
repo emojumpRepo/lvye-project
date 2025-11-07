@@ -1,0 +1,115 @@
+package com.lvye.mindtrip.module.psychology.controller.admin.assessment.vo;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+import java.util.Date;
+
+/**
+ * @Author: MinGoo
+ * @CreateTime: 2025-08-13
+ * @Description:问卷任务参与人员列表
+ * @Version: 1.0
+ */
+@Data
+public class QuestionnaireUserVO {
+
+    /**
+     * 学生档案ID
+     */
+    @Schema(description = "学生档案ID")
+    private Long studentProfileId;
+
+    /**
+     * 用户ID
+     */
+    @Schema(description = "用户ID")
+    private Long userId;
+
+    /**
+     * 任务编号(唯一)
+     */
+    @Schema(description = "任务编号")
+    private String taskNo;
+
+    /**
+     * 问卷ID
+     */
+    @Schema(description = "问卷ID")
+    private Long questionnaireId;
+
+    /**
+     * 问卷名称
+     */
+    @Schema(description = "问卷名称")
+    private String questionnaireName;
+
+    /**
+     * 学号
+     */
+    @Schema(description = "学号")
+    private String studentNo;
+
+    /**
+     * 名称
+     */
+    @Schema(description = "名称")
+    private String name;
+
+
+    /**
+     * 班级
+     */
+    @Schema(description = "班级")
+    private String className;
+
+    /**
+     * 年级
+     */
+    @Schema(description = "年级")
+    private String gradeName;
+
+    /**
+     * 完成状态
+     */
+    @Schema(description = "完成状态（0：未完成，1：已完成）")
+    private Integer status;
+
+    /**
+     * 完成时间
+     */
+    @Schema(description = "完成时间")
+    private Date finishTime;
+
+    /**
+     * 风险等级
+     */
+    @Schema(description = "风险等级（1-正常，2-关注，3-预警，4-高危）")
+    private Integer riskLevel;
+
+    /**
+     * 原始得分
+     */
+    @Schema(description = "原始得分")
+    private java.math.BigDecimal score;
+
+    /**
+     * 问卷结果ID（格式：id:xxx，未完成时为null）
+     */
+    @Schema(description = "问卷结果ID（格式：id:xxx，未完成时为null）")
+    private String id;
+
+    /**
+     * 等级（从result_data中提取的level值）
+     */
+    @Schema(description = "等级（从result_data中提取的level值）")
+    private String level;
+
+    /**
+     * 结果数据（仅用于内部处理，不返回给前端）
+     */
+    @JsonIgnore
+    private String resultData;
+
+}

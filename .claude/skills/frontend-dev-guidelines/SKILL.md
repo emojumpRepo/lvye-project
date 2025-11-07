@@ -1,7 +1,7 @@
 # Vue 3 前端开发指南
 
 > **技能类型**: 开发规范和最佳实践  
-> **适用范围**: yudao-ui/lvye-project-frontend  
+> **适用范围**: mindtrip-ui/lvye-project-frontend  
 > **技术栈**: Vue 3, TypeScript, Vite, Tailwind CSS, Pinia, Vue Router
 
 ---
@@ -58,7 +58,7 @@
 ### 整体结构
 
 ```
-yudao-ui/lvye-project-frontend/
+mindtrip-ui/lvye-project-frontend/
 ├── apps/                      # 应用目录
 │   ├── admin/                # 管理后台
 │   ├── web/                  # 用户端 Web
@@ -606,7 +606,7 @@ export interface UserForm {
 
 在以下情况下，此技能会自动激活：
 - 编辑 `.vue`、`.ts` 文件
-- 在 `yudao-ui/lvye-project-frontend` 目录工作
+- 在 `mindtrip-ui/lvye-project-frontend` 目录工作
 - 询问关于前端、组件、页面的问题
 
 手动激活：`@frontend-dev-guidelines`

@@ -1,0 +1,2 @@
+com.lvye.mindtrip.framework.quartz.config.MindtripQuartzAutoConfiguration
+com.lvye.mindtrip.framework.quartz.config.MindtripAsyncAutoConfiguration

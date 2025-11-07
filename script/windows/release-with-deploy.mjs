@@ -56,7 +56,7 @@ if (versionArg) {
   // Auto get next patch version
   try {
     const packageJson = JSON.parse(
-      fs.readFileSync(path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend/package.json'), 'utf-8')
+      fs.readFileSync(path.join(PROJECT_ROOT, 'mindtrip-ui/lvye-project-frontend/package.json'), 'utf-8')
     );
     const [major, minor, patch] = packageJson.version.split('.');
     version = `${major}.${minor}.${parseInt(patch) + 1}`;
@@ -123,7 +123,7 @@ async function release() {
         console.log(chalk.green('✓ Backend build successful'));
 
         // Check JAR file
-        const jarPath = path.join(PROJECT_ROOT, 'yudao-server/target/yudao-server.jar');
+        const jarPath = path.join(PROJECT_ROOT, 'mindtrip-server/target/mindtrip-server.jar');
         if (!fs.existsSync(jarPath)) {
           throw new Error('JAR file not generated');
         }
@@ -156,7 +156,7 @@ async function release() {
       // Admin project
       console.log(chalk.blue('[1/4] Building Admin dashboard...'));
       try {
-        const frontendPath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
+        const frontendPath = path.join(PROJECT_ROOT, 'mindtrip-ui/lvye-project-frontend');
         process.chdir(frontendPath);
 
         // Build Admin
@@ -176,7 +176,7 @@ async function release() {
       // Web project
       console.log(chalk.blue('[2/4] Building Web frontend...'));
       try {
-        const frontendPath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
+        const frontendPath = path.join(PROJECT_ROOT, 'mindtrip-ui/lvye-project-frontend');
         process.chdir(frontendPath);
 
         // Build Web

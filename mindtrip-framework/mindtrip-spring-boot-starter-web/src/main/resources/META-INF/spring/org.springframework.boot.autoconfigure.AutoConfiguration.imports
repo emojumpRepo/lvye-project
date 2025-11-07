@@ -1,0 +1,7 @@
+com.lvye.mindtrip.framework.apilog.config.MindtripApiLogAutoConfiguration
+com.lvye.mindtrip.framework.jackson.config.MindtripJacksonAutoConfiguration
+com.lvye.mindtrip.framework.swagger.config.MindtripSwaggerAutoConfiguration
+com.lvye.mindtrip.framework.web.config.MindtripWebAutoConfiguration
+com.lvye.mindtrip.framework.xss.config.MindtripXssAutoConfiguration
+com.lvye.mindtrip.framework.banner.config.MindtripBannerAutoConfiguration
+com.lvye.mindtrip.framework.encrypt.config.MindtripApiEncryptAutoConfiguration

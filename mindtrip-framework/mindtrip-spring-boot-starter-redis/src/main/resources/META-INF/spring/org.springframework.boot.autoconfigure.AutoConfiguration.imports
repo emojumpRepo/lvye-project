@@ -1,0 +1,2 @@
+com.lvye.mindtrip.framework.redis.config.MindtripRedisAutoConfiguration
+com.lvye.mindtrip.framework.redis.config.MindtripCacheAutoConfiguration

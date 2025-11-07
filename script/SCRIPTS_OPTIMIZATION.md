@@ -167,7 +167,7 @@ npm run config:cos         # 配置 COS 认证
 ```bash
 # 1. 修改前端代码
 # 2. 构建
-cd yudao-ui/lvye-project-frontend/apps/web
+cd mindtrip-ui/lvye-project-frontend/apps/web
 pnpm build:antd
 
 # 3. 发布版本（生成日志+通知）

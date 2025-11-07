@@ -1,0 +1,3 @@
+com.lvye.mindtrip.framework.security.config.MindtripSecurityAutoConfiguration
+com.lvye.mindtrip.framework.security.config.MindtripWebSecurityConfigurerAdapter
+com.lvye.mindtrip.framework.operatelog.config.MindtripOperateLogConfiguration

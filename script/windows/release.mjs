@@ -30,7 +30,7 @@ function getProjectVersion(projectType) {
       return match ? match[1] : '0.0.1';
     } else if (projectType === 'frontend') {
       const versionFile = JSON.parse(
-        fs.readFileSync(path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend/version.json'), 'utf-8')
+        fs.readFileSync(path.join(PROJECT_ROOT, 'mindtrip-ui/lvye-project-frontend/version.json'), 'utf-8')
       );
       return versionFile.version;
     }
@@ -54,7 +54,7 @@ function updateProjectVersion(projectType, newVersion) {
   }
 
   if (projectType === 'frontend' || projectType === 'all') {
-    const filePath = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend/version.json');
+    const filePath = path.join(PROJECT_ROOT, 'mindtrip-ui/lvye-project-frontend/version.json');
     const versionFile = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     versionFile.version = newVersion;
     versionFile.buildTime = new Date().toLocaleString('zh-CN', {
@@ -94,7 +94,7 @@ function getGitCommits(projectType, currentVersion) {
 
     let workDir = PROJECT_ROOT;
     if (projectType === 'frontend') {
-      workDir = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
+      workDir = path.join(PROJECT_ROOT, 'mindtrip-ui/lvye-project-frontend');
       if (!fs.existsSync(path.join(workDir, '.git'))) {
         console.log(chalk.yellow('前端项目没有独立的 Git 仓库，使用主仓库的提交记录'));
         workDir = PROJECT_ROOT;
@@ -127,7 +127,7 @@ function getGitCommits(projectType, currentVersion) {
     } else if (allTags.length === 0) {
       console.log(chalk.blue('首次发布，获取最近 15 条提交'));
       if (projectType === 'frontend' && workDir === PROJECT_ROOT) {
-        commits = execSync('git log --oneline -15 -- yudao-ui/lvye-project-frontend/', {
+        commits = execSync('git log --oneline -15 -- mindtrip-ui/lvye-project-frontend/', {
           encoding: 'utf-8',
           cwd: PROJECT_ROOT
         });
@@ -140,7 +140,7 @@ function getGitCommits(projectType, currentVersion) {
     } else {
       console.log(chalk.blue('获取最近 10 条提交'));
       if (projectType === 'frontend' && workDir === PROJECT_ROOT) {
-        commits = execSync('git log --oneline -10 -- yudao-ui/lvye-project-frontend/', {
+        commits = execSync('git log --oneline -10 -- mindtrip-ui/lvye-project-frontend/', {
           encoding: 'utf-8',
           cwd: PROJECT_ROOT
         });
@@ -291,7 +291,7 @@ async function main() {
     try {
       let tagCwd = PROJECT_ROOT;
       if (projectType === 'frontend') {
-        const frontendDir = path.join(PROJECT_ROOT, 'yudao-ui/lvye-project-frontend');
+        const frontendDir = path.join(PROJECT_ROOT, 'mindtrip-ui/lvye-project-frontend');
         if (fs.existsSync(path.join(frontendDir, '.git'))) {
           tagCwd = frontendDir;
         }

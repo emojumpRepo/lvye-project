@@ -2,9 +2,9 @@
 #
 # 项目结构：Spring Boot + Maven 多模块项目
 # 主要模块：
-#   - yudao-server: 主应用服务器
-#   - yudao-module-*: 各业务模块
-#   - yudao-framework*: 框架扩展
+#   - mindtrip-server: 主应用服务器
+#   - mindtrip-module-*: 各业务模块
+#   - mindtrip-framework*: 框架扩展
 #
 # 分支策略：
 #   - develop-web: 测试环境构建和部署
@@ -112,14 +112,14 @@ develop-web:
             fi
 
             # 验证 JAR 文件存在
-            JAR_FILE="./yudao-server/target/yudao-server.jar"
+            JAR_FILE="./mindtrip-server/target/mindtrip-server.jar"
             if [ ! -f "$JAR_FILE" ]; then
               echo "❌ JAR 文件未找到: $JAR_FILE"
               exit 1
             fi
 
             # 设置部署路径（根据后端项目的实际路径）
-            TARGET_JAR="/root/mindfront/work/project/mindtrip_server/yudao-server.jar"
+            TARGET_JAR="/root/mindfront/work/project/mindtrip_server/mindtrip-server.jar"
 
             echo "📋 部署信息:"
             echo "  本地文件: $JAR_FILE"
@@ -184,7 +184,7 @@ develop-web:
 
               # 清理旧备份（保留最近 5 个）
               echo \"🧹 清理旧备份文件...\"
-              cd \"\$(dirname \"$TARGET_JAR\")\" && ls -t yudao-server.jar.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f
+              cd \"\$(dirname \"$TARGET_JAR\")\" && ls -t mindtrip-server.jar.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f
 
               echo \"\"
               echo \"==========================================\"
@@ -219,8 +219,8 @@ develop-web:
             echo "  查看状态: docker ps | grep mindtrip"
             echo "  查看日志: docker logs mindtrip"
             echo "  重启服务: docker restart mindtrip"
-            echo "  查看 JAR 文件: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar"
-            echo "  查看备份: ls -lh /root/mindfront/work/project/mindtrip_server/yudao-server.jar.backup.*"
+            echo "  查看 JAR 文件: ls -lh /root/mindfront/work/project/mindtrip_server/mindtrip-server.jar"
+            echo "  查看备份: ls -lh /root/mindfront/work/project/mindtrip_server/mindtrip-server.jar.backup.*"
             echo ""
 
 # ==================== 生产环境说明 ====================

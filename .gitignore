@@ -50,14 +50,14 @@ rebel.xml
 
 application-my.yaml
 
-/yudao-ui-app/unpackage/
+/mindtrip-ui-app/unpackage/
 **/.DS_Store
 
 ######################################################################
 # Project specific
 
 # Ignore frontend UI project contents
-/yudao-ui/
+/mindtrip-ui/
 
 # Ignore environment files (e.g., .env, .env.local, .env.production)
 .env

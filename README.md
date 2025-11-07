@@ -27,17 +27,17 @@
 mvn clean install -DskipTests
 
 # 2. 启动服务（开发环境）
-cd yudao-server
+cd mindtrip-server
 mvn spring-boot:run -Dspring.profiles.active=local
 
-# 或使用 IDEA 直接运行 YudaoServerApplication
+# 或使用 IDEA 直接运行 MindtripServerApplication
 ```
 
 ### 前端启动
 
 ```bash
 # 1. 进入前端目录
-cd yudao-ui/lvye-project-frontend
+cd mindtrip-ui/lvye-project-frontend
 
 # 2. 安装依赖（使用 pnpm）
 pnpm install
@@ -57,18 +57,18 @@ pnpm dev:web    # 用户前台
 
 ```
 mindtrip-project/
-├── yudao-dependencies/          # Maven 依赖版本管理
-├── yudao-framework/            # 框架核心
-│   ├── yudao-common/          # 公共工具类
-│   ├── yudao-spring-boot-starter-*  # 各类 Spring Boot Starter
+├── mindtrip-dependencies/          # Maven 依赖版本管理
+├── mindtrip-framework/            # 框架核心
+│   ├── mindtrip-common/          # 公共工具类
+│   ├── mindtrip-spring-boot-starter-*  # 各类 Spring Boot Starter
 │   └── ...
-├── yudao-server/              # 服务端主程序
-├── yudao-module-*/            # 业务模块
-│   ├── yudao-module-system/   # 系统管理
-│   ├── yudao-module-psychology/  # 心理健康模块（核心）
-│   ├── yudao-module-infra/    # 基础设施
+├── mindtrip-server/              # 服务端主程序
+├── mindtrip-module-*/            # 业务模块
+│   ├── mindtrip-module-system/   # 系统管理
+│   ├── mindtrip-module-psychology/  # 心理健康模块（核心）
+│   ├── mindtrip-module-infra/    # 基础设施
 │   └── ...
-├── yudao-ui/                  # 前端项目
+├── mindtrip-ui/                  # 前端项目
 │   └── lvye-project-frontend/ # Vue3 前端应用
 ├── script/                    # 部署和工具脚本
 └── sql/                      # 数据库脚本

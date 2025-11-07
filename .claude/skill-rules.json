@@ -7,9 +7,9 @@
       "enabled": true,
       "description": "Java/Spring Boot 后端开发规范和最佳实践",
       "filePatterns": [
-        "yudao-module-",
-        "yudao-framework",
-        "yudao-server",
+        "mindtrip-module-",
+        "mindtrip-framework",
+        "mindtrip-server",
         "/controller/",
         "/service/",
         "/mapper/",
@@ -36,7 +36,7 @@
       "enabled": true,
       "description": "Vue 3 前端开发规范和最佳实践",
       "filePatterns": [
-        "yudao-ui",
+        "mindtrip-ui",
         "lvye-project-frontend",
         "/apps/admin/",
         "/apps/web/",

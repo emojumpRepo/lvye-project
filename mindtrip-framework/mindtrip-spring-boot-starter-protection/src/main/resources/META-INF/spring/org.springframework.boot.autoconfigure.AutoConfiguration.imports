@@ -1,0 +1,4 @@
+com.lvye.mindtrip.framework.idempotent.config.MindtripIdempotentConfiguration
+com.lvye.mindtrip.framework.lock4j.config.MindtripLock4jConfiguration
+com.lvye.mindtrip.framework.ratelimiter.config.MindtripRateLimiterConfiguration
+com.lvye.mindtrip.framework.signature.config.MindtripApiSignatureAutoConfiguration

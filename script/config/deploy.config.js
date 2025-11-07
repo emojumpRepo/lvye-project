@@ -37,7 +37,7 @@ module.exports = {
   // Docker 配置
   docker: {
     backend: {
-      imageName: 'yudao-server',
+      imageName: 'mindtrip-server',
       containerName: 'mindtrip-server',
       port: '48080:48080',
       restart: 'always'
@@ -48,17 +48,17 @@ module.exports = {
   build: {
     backend: {
       command: 'mvn clean package -DskipTests',
-      jarName: 'yudao-server.jar',
-      targetPath: 'yudao-server/target'
+      jarName: 'mindtrip-server.jar',
+      targetPath: 'mindtrip-server/target'
     },
     frontend: {
       admin: {
-        path: 'yudao-ui/lvye-project-frontend/apps/admin',
+        path: 'mindtrip-ui/lvye-project-frontend/apps/admin',
         command: 'pnpm build',
         output: 'dist.zip'
       },
       web: {
-        path: 'yudao-ui/lvye-project-frontend/apps/web',
+        path: 'mindtrip-ui/lvye-project-frontend/apps/web',
         command: 'pnpm build',
         output: 'dist.zip'
       }

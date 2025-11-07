@@ -8,7 +8,7 @@
     "deploy:all": "npm run deploy:backend && npm run deploy:frontend",
     "rollback:frontend": "node script/windows/rollback-frontend.mjs",
     "build:backend": "mvn clean package -DskipTests",
-    "build:frontend": "cd yudao-ui/lvye-project-frontend && pnpm build:admin && pnpm build:web",
+    "build:frontend": "cd mindtrip-ui/lvye-project-frontend && pnpm build:admin && pnpm build:web",
     "build:all": "npm run build:backend && npm run build:frontend",
     "setup:cos": "script\\windows\\tools\\install-coscli-official.bat",
     "config:cos": "script\\windows\\tools\\quick-config-coscli.bat",

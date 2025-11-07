@@ -19,14 +19,14 @@ projects:
     name: "Admin Management Backend"
     cosPath: "/admin"
     nginxPath: "/root/mindfront/work/nginx/html/admin" 
-    buildPath: "yudao-ui/lvye-project-frontend/apps/admin"
+    buildPath: "mindtrip-ui/lvye-project-frontend/apps/admin"
     accessPath: "/admin/"
     
   web:
     name: "Web User Frontend"
     cosPath: "/web" 
     nginxPath: "/root/mindfront/work/nginx/html/web"
-    buildPath: "yudao-ui/lvye-project-frontend/apps/web"
+    buildPath: "mindtrip-ui/lvye-project-frontend/apps/web"
     accessPath: "/"
     
 deployment:
