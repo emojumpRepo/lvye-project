@@ -60,6 +60,8 @@ public class CommonController {
     private NotifyMessageService notifyMessageService;
     @Resource
     private DeptService deptService;
+    @Resource
+    private cn.iocoder.yudao.module.system.service.tenant.TenantService tenantService;
 
     @GetMapping("/system/auth/get-permission-info")
     @Operation(summary = "获取登录用户的权限信息")
@@ -69,7 +71,7 @@ public class CommonController {
         if (user == null) {
             return success(null);
         }
-        
+
         // 1.2 获得部门名称
         String deptName = null;
         if (user.getDeptId() != null) {
@@ -81,22 +83,34 @@ public class CommonController {
                 deptName = null;
             }
         }
-        
-        // 1.3 获得角色列表
+
+        // 1.3 获得租户名称
+        String tenantName = null;
+        if (user.getTenantId() != null) {
+            try {
+                cn.iocoder.yudao.module.system.dal.dataobject.tenant.TenantDO tenant = tenantService.getTenant(user.getTenantId());
+                tenantName = tenant != null ? tenant.getName() : null;
+            } catch (Exception e) {
+                // 如果获取租户信息失败，继续执行，租户名称为null
+                tenantName = null;
+            }
+        }
+
+        // 1.4 获得角色列表
         Set<Long> roleIds = permissionService.getUserRoleIdListByUserId(getLoginUserId());
         if (CollUtil.isEmpty(roleIds)) {
-            return success(AuthConvert.INSTANCE.convert(user, Collections.emptyList(), Collections.emptyList(), deptName));
+            return success(AuthConvert.INSTANCE.convert(user, Collections.emptyList(), Collections.emptyList(), deptName, tenantName));
         }
         List<RoleDO> roles = roleService.getRoleList(roleIds);
         roles.removeIf(role -> !CommonStatusEnum.ENABLE.getStatus().equals(role.getStatus())); // 移除禁用的角色
 
-        // 1.4 获得菜单列表
+        // 1.5 获得菜单列表
         Set<Long> menuIds = permissionService.getRoleMenuListByRoleId(convertSet(roles, RoleDO::getId));
         List<MenuDO> menuList = menuService.getMenuList(menuIds);
         menuList = menuService.filterDisableMenus(menuList);
 
         // 2. 拼接结果返回
-        return success(AuthConvert.INSTANCE.convert(user, roles, menuList, deptName));
+        return success(AuthConvert.INSTANCE.convert(user, roles, menuList, deptName, tenantName));
     }
 
     @GetMapping(value = "/system/dict-data/simple-list")
